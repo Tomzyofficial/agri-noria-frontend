@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+/* Custom Font Declarations */
+@font-face {
+   font-family: "Epunda Sans";
+   src: url("/fonts/Epunda_Sans,Mozilla_Text/Epunda_Sans/EpundaSans-VariableFont_wght.ttf")
+      format("truetype-variations");
+   font-weight: 100 900;
+   font-style: normal;
+   font-display: swap;
+}
+
+@font-face {
+   font-family: "Epunda Sans";
+   src: url("/fonts/Epunda_Sans,Mozilla_Text/Epunda_Sans/EpundaSans-Italic-VariableFont_wght.ttf")
+      format("truetype-variations");
+   font-weight: 100 900;
+   font-style: italic;
+   font-display: swap;
+}
+
+@font-face {
+   font-family: "Mozilla Text";
+   src: url("/fonts/Epunda_Sans,Mozilla_Text/Mozilla_Text/MozillaText-VariableFont_wght.ttf")
+      format("truetype-variations");
+   font-weight: 200 700;
+   font-style: normal;
+   font-display: swap;
+}
+
+:root {
+   --background: #f2f2f2;
+   --white-fff: #ffffff;
+   --foreground: #171717;
+   --greenish-color: #006c36;
+   --dark-green-color: #0e5532;
+   --gray-color: #fafafa;
+   --darker-green-color: #023430;
+   --primary: #3a5f0b;
+
+   /* comment not in use yet */
+   --secondary: #ffa500;
+   --background-dark: #142210;
+   --text-light: #111b0d;
+   --text-dark: #e0e6dd;
+   --text-muted-light: #5e9a4c;
+   --text-muted-dark: #9cb396;
+   --border-light: #d5e7cf;
+   --border-dark: #3a4a35;
+   --surface-light: #f9fcf8;
+   --surface-dark: #192815;
+}
+
+@theme inline {
+   --color-background: var(--background);
+   --color-foreground: var(--foreground);
+   --font-sans: "Epunda Sans", system-ui, -apple-system, sans-serif;
+   --font-mono: "Mozilla Text", "Courier New", monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+   :root {
+      --background: #1b1a19;
+      /* --card-dark: #0000004a; */
+      --card-dark: #4b4b4b56;
+      --foreground: #ededed;
+   }
+}
+
+body {
+   background: var(--background);
+   color: var(--foreground);
+   font-family:
+      "Epunda Sans",
+      system-ui,
+      -apple-system,
+      sans-serif;
+}
+
+header.sticky {
+   position: fixed;
+   top: 0;
+   left: 0;
+   right: 0;
+   z-index: 10;
+   box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.08);
+   transform: translateY(-4px) scale(1.01);
+   transition:
+      background 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+form input:not([type="checkbox"]):not(.bookings),
+select:not(.bookings),
+textarea {
+   @apply border-1 border-transparent ring ring-(--greenish-color) dark:ring-gray-700 outline-none bg-(--gray-color) dark:bg-(--background) focus:border-(--dark-green-color) dark:focus:border-gray-500 rounded p-2 w-full;
+   resize: none;
+}
+
+form label {
+   @apply text-[14px] text-start font-medium text-gray-900 dark:text-white mb-1 block;
+}

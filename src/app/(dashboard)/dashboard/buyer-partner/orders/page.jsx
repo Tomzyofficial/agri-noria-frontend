@@ -1,0 +1,168 @@
+"use client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { useState, useEffect } from "react";
+import { Search, Filter, ShoppingCart, Clock, CheckCircle, AlertCircle, Package, ShieldCheck } from "lucide-react";
+import { useBuyerData } from "../useBuyerData";
+import { Button } from "@/components/ui/Button";
+
+export default function OrdersPage() {
+   const { loading, buyerOrders, payForOrder } = useBuyerData();
+   const [filteredOrders, setFilteredOrders] = useState([]);
+   const [searchTerm, setSearchTerm] = useState("");
+   const [statusFilter, setStatusFilter] = useState("");
+
+   const statuses = ["PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED"];
+
+   useEffect(() => {
+      setFilteredOrders(buyerOrders || []);
+   }, [buyerOrders]);
+
+   useEffect(() => {
+      let filtered = buyerOrders || [];
+
+      if (searchTerm) {
+         filtered = filtered.filter(
+            (order) =>
+               order.id?.includes(searchTerm) || order.buyer_name?.toLowerCase().includes(searchTerm.toLowerCase()),
+         );
+      }
+
+      if (statusFilter) {
+         filtered = filtered.filter((order) => order.status.toUpperCase() === statusFilter);
+      }
+
+      setFilteredOrders(filtered);
+   }, [searchTerm, statusFilter, buyerOrders]);
+
+   return (
+      <div className="space-y-8">
+         <div>
+            <h1 className="text-4xl font-black text-(--foreground) tracking-tight">My Orders</h1>
+            <p className="text-sm text-gray-500 font-bold uppercase tracking-widest mt-1">Track and manage your agricultural input purchases</p>
+         </div>
+
+         <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex-grow flex gap-4 p-4 bg-white dark:bg-gray-950 rounded-3xl border border-gray-100 dark:border-gray-900 shadow-xl">
+               <div className="flex-grow relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 w-4 h-4" />
+                  <input 
+                     type="text" 
+                     placeholder="Search order ID or vendor..." 
+                     value={searchTerm}
+                     onChange={(e) => setSearchTerm(e.target.value)}
+                     className="w-full bg-gray-50 dark:bg-gray-900 border-none pl-12 pr-4 py-3 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500" 
+                  />
+               </div>
+               <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-6 py-3 bg-gray-50 dark:bg-gray-900 border-none rounded-2xl font-black text-[10px] uppercase tracking-widest focus:ring-2 focus:ring-indigo-500"
+               >
+                  <option value="">All Statuses</option>
+                  {statuses.map((status) => (
+                     <option key={status} value={status}>{status}</option>
+                  ))}
+               </select>
+            </div>
+         </div>
+
+         <Card className="border-none shadow-2xl bg-white dark:bg-gray-950 rounded-[2.5rem] overflow-hidden">
+            <CardHeader className="p-10 border-b border-gray-50 dark:border-gray-900">
+               <CardTitle className="text-xl font-black flex items-center gap-3">
+                  <ShoppingCart className="text-indigo-600" /> Order History ({filteredOrders.length})
+               </CardTitle>
+            </CardHeader>
+            <CardContent className="p-10">
+               {loading ? (
+                  <div className="text-center py-20 animate-pulse font-black text-gray-300">Loading Orders...</div>
+               ) : filteredOrders.length > 0 ? (
+                  <div className="space-y-4">
+                     {filteredOrders.map((order) => (
+                        <OrderRow key={order.id} order={order} onPay={payForOrder} />
+                     ))}
+                  </div>
+               ) : (
+                  <div className="text-center py-20 bg-gray-50 dark:bg-gray-900 rounded-3xl border-2 border-dashed border-gray-100 dark:border-gray-900">
+                     <Package className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                     <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No matching orders found</p>
+                  </div>
+               )}
+            </CardContent>
+         </Card>
+      </div>
+   );
+}
+
+function OrderRow({ order, onPay }) {
+   const [paying, setPaying] = useState(false);
+
+   const getStatusInfo = (status) => {
+      const s = (status || "").toUpperCase();
+      switch (s) {
+         case "PENDING":
+            return { icon: <Clock className="w-3 h-3" />, color: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" };
+         case "PAID":
+         case "CONFIRMED":
+            return { icon: <CheckCircle className="w-3 h-3" />, color: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400" };
+         case "ASSIGNED":
+         case "SHIPPED":
+         case "IN_TRANSIT":
+            return { icon: <ShoppingCart className="w-3 h-3" />, color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400" };
+         case "DELIVERED":
+            return { icon: <CheckCircle className="w-3 h-3" />, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" };
+         case "CANCELLED":
+            return { icon: <AlertCircle className="w-3 h-3" />, color: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400" };
+         default:
+            return { icon: null, color: "bg-gray-100 text-gray-700" };
+      }
+   };
+
+   const handlePayment = async () => {
+      setPaying(true);
+      // Simulate payment gateway interaction
+      const mockPaymentRef = "ESCROW-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+      await onPay(order.id, mockPaymentRef);
+      setPaying(false);
+   };
+
+   const { icon, color } = getStatusInfo(order.status);
+   const itemCount = order.items ? (Array.isArray(order.items) ? order.items.length : 1) : 0;
+
+   return (
+      <div className="p-6 bg-gray-50/50 dark:bg-gray-900/30 rounded-3xl border border-gray-100 dark:border-gray-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 hover:shadow-lg transition-all group">
+         <div className="flex items-center gap-6">
+            <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center shadow-sm group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+               <Package size={24} />
+            </div>
+            <div>
+               <h3 className="text-lg font-black">{order.buyer_name || "Ecosystem Order"}</h3>
+               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Order ID: {order.id.split('-')[0]} • {itemCount} items</p>
+               {order.escrow_status === "held" && (
+                  <span className="inline-flex items-center gap-1 mt-2 text-[9px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-md">
+                     <ShieldCheck size={10} /> Escrow Secured
+                  </span>
+               )}
+            </div>
+         </div>
+         <div className="flex flex-col items-end shrink-0">
+            <p className="text-2xl font-black tracking-tighter">₦{parseFloat(order.total_amount).toLocaleString()}</p>
+            <div className="flex items-center gap-3 mt-2">
+               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{new Date(order.created_at).toLocaleDateString()}</span>
+               <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${color}`}>
+                  {icon} {order.status}
+               </span>
+            </div>
+            
+            {order.status === "pending" && (
+               <Button 
+                  onClick={handlePayment} 
+                  disabled={paying}
+                  className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-6 text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20"
+               >
+                  {paying ? "Processing..." : "Pay to Escrow"}
+               </Button>
+            )}
+         </div>
+      </div>
+   );
+}
