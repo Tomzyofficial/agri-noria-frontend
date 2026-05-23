@@ -72,11 +72,11 @@ export default function SalesLayout({ children }) {
          href: "/dashboard/sales-&-distribution/warehouse",
          icon: <Warehouse className="w-4 h-4" />,
       },
-      {
-         label: "Platform Wallet",
-         href: "/dashboard/sales-&-distribution/platform-wallet",
-         icon: <Coins className="w-4 h-4 text-emerald-500" />,
-      },
+      // {
+      //    label: "Platform Wallet",
+      //    href: "/dashboard/sales-&-distribution/platform-wallet",
+      //    icon: <Coins className="w-4 h-4 text-emerald-500" />,
+      // },
       { label: "Sales Wallet", href: "/dashboard/sales-&-distribution/wallet", icon: <Wallet className="w-4 h-4" /> },
       {
          label: "Sales Analytics",
