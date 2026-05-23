@@ -57,17 +57,17 @@ export const sidebarMenu = [
     icon: <FaRobot className="h-4 w-4 text-indigo-600" />,
   },
   {
-    href: "large-scale-farm-management & farm planning design n construction",
-    title: "Large Scale Farm Management",
+    href: "field-operations",
+    title: "Field Operations",
     icon: <FaClipboardCheck className="h-4 w-4 text-emerald-700" />,
   },
+  //   {
+  //     href: "farm-planning",
+  //     title: "Farm planning Design and Construction",
+  //     icon: <FaHammer className="h-4 w-4 text-amber-700" />,
+  //   },
   {
-    href: "farm-planning",
-    title: "Farm planning Design and Construction",
-    icon: <FaHammer className="h-4 w-4 text-amber-700" />,
-  },
-  {
-    href: "agricultural-training",
+    href: "/agricultural-training",
     title: "Agricultural Training",
     icon: <FaUserGraduate className="h-4 w-4 text-sky-600" />,
   },

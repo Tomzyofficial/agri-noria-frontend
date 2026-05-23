@@ -113,7 +113,7 @@ export default function ProgramManagementLayout({ children }) {
                className={`${menuOpen ? "left-0 w-64 h-full bg-white shadow-xl" : "-left-64"} transition-all duration-300 fixed z-40 top-0 lg:left-0 lg:w-64 lg:h-screen dark:bg-gray-950 dark:text-(--foreground) lg:bg-white lg:shadow-md p-4 flex flex-col`}
             >
                <div className="mb-8 px-2">
-                  <h2 className="text-xl font-black text-amber-600 tracking-tighter uppercase">AgriNoria</h2>
+                  <h2 className="text-xl font-black text-amber-600 tracking-tighter uppercase">Agri-Noria</h2>
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
                      Program Management
                   </p>

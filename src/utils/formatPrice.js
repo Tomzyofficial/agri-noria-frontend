@@ -6,6 +6,7 @@ export function formatPrice(price, countryIsoCode, currency) {
    }).format(price);
 }
 
+// Used in the cart page
 export const formatTotalPrice = (cart) => {
    if (!cart || cart.length === 0) return "₦0.00";
 
