@@ -1,54 +1,122 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
-import { FaPlus, FaUsers, FaMapMarkerAlt } from "react-icons/fa";
+import { FaPlus, FaUsers, FaMapMarkerAlt, FaTimes, FaUserTie } from "react-icons/fa";
 import { toast } from "react-toastify";
 
 export default function ClusterManagementPage() {
     const [clusters, setClusters] = useState([]);
+    const [programs, setPrograms] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+
+    // Member / Recruitment States
+    const [showAddMember, setShowAddMember] = useState(null); // stores clusterId
+    const [showMembers, setShowMembers] = useState(null); // stores cluster object
+    const [eligibleFarmers, setEligibleFarmers] = useState([]);
+    const [clusterMembers, setClusterMembers] = useState([]);
+
     const [formData, setFormData] = useState({
         name: "",
         region: "",
         gps_latitude: 0,
         gps_longitude: 0,
-        program_id: null
+        program_id: ""
     });
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
+        setLoading(true);
         try {
-            const res = await fetch("/api/proxy/pipeline/clusters");
-            if (res.ok) {
-                const data = await res.json();
+            const [clustersRes, programsRes] = await Promise.all([
+                fetch("/api/proxy/pipeline/clusters"),
+                fetch("/api/proxy/programs")
+            ]);
+
+            if (clustersRes.ok) {
+                const data = await clustersRes.json();
                 setClusters(data?.data || []);
             }
+            if (programsRes.ok) {
+                const data = await programsRes.json();
+                setPrograms(data || []);
+            }
         } catch (err) {
-            console.error(err);
+            console.error("Error fetching aggregator data:", err);
+            toast.error("Failed to load clusters or programs");
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [fetchData]);
+
+    const fetchClusterMembers = async (cluster) => {
+        try {
+            const res = await fetch(`/api/proxy/pipeline/clusters/${cluster.id}/members`);
+            const json = await res.json();
+            if (json.success) {
+                setClusterMembers(json.data || []);
+            } else {
+                toast.error(json.error || "Failed to load cluster members");
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to fetch members");
+        }
+    };
+
+    const fetchEligibleFarmers = async (programId, clusterId) => {
+        try {
+            let url = `/api/proxy/pipeline/clusters/eligible-farmers?cluster_id=${clusterId}`;
+            if (programId && programId !== 'null' && programId !== 'undefined') {
+                url += `&program_id=${programId}`;
+            }
+            const res = await fetch(url);
+            const json = await res.json();
+            if (json.success) {
+                setEligibleFarmers(json.data || []);
+            } else {
+                toast.error(json.error || "Failed to load eligible farmers");
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to fetch eligible farmers");
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
+            const body = {
+                ...formData,
+                gps_latitude: parseFloat(formData.gps_latitude) || 0,
+                gps_longitude: parseFloat(formData.gps_longitude) || 0
+            };
+            if (!body.program_id || body.program_id === "") {
+                body.program_id = null;
+            }
+
             const res = await fetch("/api/proxy/pipeline/clusters", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(body)
             });
             if (res.ok) {
                 toast.success("Cluster created successfully!");
                 setShowModal(false);
+                setFormData({
+                    name: "",
+                    region: "",
+                    gps_latitude: 0,
+                    gps_longitude: 0,
+                    program_id: ""
+                });
                 fetchData();
             } else {
                 const d = await res.json();
@@ -58,6 +126,48 @@ export default function ClusterManagementPage() {
             toast.error("Network error");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleAssignFarmer = async (clusterId, farmerId) => {
+        try {
+            const res = await fetch("/api/proxy/pipeline/clusters/assign", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ cluster_id: clusterId, farmer_id: farmerId }),
+            });
+            if (res.ok) {
+                toast.success("Farmer assigned to cluster successfully!");
+                setShowAddMember(null);
+                fetchData();
+            } else {
+                const d = await res.json();
+                toast.error(d.error || "Assignment failed");
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error("Assignment network error");
+        }
+    };
+
+    const handleRemoveFarmer = async (clusterId, farmerId) => {
+        try {
+            const res = await fetch(`/api/proxy/pipeline/clusters/${clusterId}/members/${farmerId}`, {
+                method: "DELETE"
+            });
+            if (res.ok) {
+                toast.success("Farmer removed from cluster");
+                if (showMembers) {
+                    fetchClusterMembers(showMembers);
+                }
+                fetchData();
+            } else {
+                const d = await res.json();
+                toast.error(d.error || "Removal failed");
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error("Removal network error");
         }
     };
 
@@ -85,21 +195,48 @@ export default function ClusterManagementPage() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {clusters.map(cluster => (
-                        <Card key={cluster.id} className="rounded-2xl border border-gray-100 dark:border-gray-800 hover:shadow-lg transition-all bg-white dark:bg-gray-900">
-                            <CardContent className="p-6">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-2xl">
-                                        <FaUsers className="text-2xl text-emerald-600" />
+                        <Card key={cluster.id} className="rounded-2xl border border-gray-100 dark:border-gray-800 hover:shadow-lg transition-all bg-white dark:bg-gray-900 flex flex-col justify-between">
+                            <CardContent className="p-6 flex flex-col h-full justify-between space-y-4">
+                                <div>
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div className="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-2xl">
+                                            <FaUsers className="text-2xl text-emerald-600" />
+                                        </div>
+                                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-black uppercase">
+                                            {cluster.status || "Active"}
+                                        </span>
                                     </div>
-                                    <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-black uppercase">
-                                        {cluster.status || "Active"}
-                                    </span>
+                                    <h3 className="text-xl font-bold mb-1">{cluster.name}</h3>
+                                    <p className="text-gray-500 text-sm mb-2">{cluster.region}</p>
+                                    <p className="text-xs text-gray-400 font-medium">Program: {cluster.program_name || "—"}</p>
                                 </div>
-                                <h3 className="text-xl font-bold mb-1">{cluster.name}</h3>
-                                <p className="text-gray-500 text-sm mb-4">{cluster.region}</p>
-                                <div className="flex justify-between items-center pt-4 border-t border-gray-100 dark:border-gray-800">
-                                    <span className="text-sm text-gray-400 font-medium">{cluster.farmer_count || 0} Farmers</span>
-                                    <Button variant="ghost" size="sm" className="text-emerald-600 font-bold hover:bg-emerald-50">View Details</Button>
+
+                                <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+                                    <div className="flex justify-between items-center text-sm text-gray-500 font-semibold">
+                                        <span>{cluster.farmer_count || 0} Farmers Assigned</span>
+                                        <span>{cluster.total_hectares || 0} Ha</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <Button
+                                            onClick={() => {
+                                                setShowAddMember(cluster.id);
+                                                fetchEligibleFarmers(cluster.program_id, cluster.id);
+                                            }}
+                                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 rounded-xl transition"
+                                        >
+                                            Add Farmers
+                                        </Button>
+                                        <Button
+                                            onClick={() => {
+                                                setShowMembers(cluster);
+                                                fetchClusterMembers(cluster);
+                                            }}
+                                            variant="ghost"
+                                            className="text-emerald-600 border border-emerald-200 hover:bg-emerald-50 font-bold text-xs py-2 rounded-xl transition"
+                                        >
+                                            Members
+                                        </Button>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -107,6 +244,7 @@ export default function ClusterManagementPage() {
                 </div>
             )}
 
+            {/* Create Cluster Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                     <Card className="w-full max-w-md rounded-3xl shadow-2xl">
@@ -124,6 +262,19 @@ export default function ClusterManagementPage() {
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                                     />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Target Program</Label>
+                                    <select
+                                        value={formData.program_id}
+                                        onChange={e => setFormData({ ...formData, program_id: e.target.value })}
+                                        className="w-full border border-gray-200 dark:border-gray-700 rounded-xl p-3 bg-white dark:bg-gray-800 font-bold text-sm"
+                                    >
+                                        <option value="">No Program (Independent)</option>
+                                        {programs.map(p => (
+                                            <option key={p.id} value={p.id}>{p.name}</option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Region</Label>
@@ -158,6 +309,101 @@ export default function ClusterManagementPage() {
                                     {loading ? "Creating..." : "Create Cluster"}
                                 </Button>
                             </form>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {/* Recruit Farmers Modal */}
+            {showAddMember && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <Card className="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden">
+                        <CardHeader className="bg-gray-50 dark:bg-gray-800 p-6 flex flex-row items-center justify-between">
+                            <CardTitle className="text-xl font-black">Recruit Farmers</CardTitle>
+                            <button onClick={() => setShowAddMember(null)} className="text-gray-500 hover:text-gray-700 text-xl"><FaTimes /></button>
+                        </CardHeader>
+                        <CardContent className="p-6 max-h-[60vh] overflow-y-auto">
+                            {eligibleFarmers.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <FaUserTie className="text-4xl text-gray-200 mx-auto mb-4" />
+                                    <p className="text-gray-500 font-bold">No eligible farmers found</p>
+                                    <p className="text-xs text-gray-400 mt-1">Only verified farmers matching the cluster region and program are shown.</p>
+                                </div>
+                            ) : (
+                                <div className="grid gap-3">
+                                    {eligibleFarmers.map(farmer => (
+                                        <div key={farmer.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 gap-4 hover:border-emerald-300 transition">
+                                            <div>
+                                                <p className="font-bold text-gray-900 dark:text-white">{farmer.fname} {farmer.lname}</p>
+                                                <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 flex items-center gap-2">
+                                                    <span>{farmer.farm_size_hectares} Ha</span>
+                                                    <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                                                    <span className="text-emerald-600">{farmer.commodity}</span>
+                                                    {farmer.distance !== undefined && (
+                                                        <>
+                                                            <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                                                            <span className="text-amber-600">{parseFloat(farmer.distance).toFixed(1)} miles away</span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <Button
+                                                onClick={() => handleAssignFarmer(showAddMember, farmer.id)}
+                                                className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase px-6 py-3 rounded-xl shadow-lg shadow-emerald-500/10"
+                                            >
+                                                Assign
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {/* Manage Members Modal */}
+            {showMembers && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <Card className="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden">
+                        <CardHeader className="bg-gray-50 dark:bg-gray-800 p-6 flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle className="text-xl font-black">{showMembers.name} - Assigned Farmers</CardTitle>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">{clusterMembers.length} Members</p>
+                            </div>
+                            <button onClick={() => setShowMembers(null)} className="text-gray-500 hover:text-gray-700 text-xl"><FaTimes /></button>
+                        </CardHeader>
+                        <CardContent className="p-6 max-h-[60vh] overflow-y-auto">
+                            {clusterMembers.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <FaUserTie className="text-4xl text-gray-200 mx-auto mb-4" />
+                                    <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">No members assigned yet</p>
+                                </div>
+                            ) : (
+                                <div className="grid gap-3">
+                                    {clusterMembers.map(member => (
+                                        <div key={member.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 gap-4 hover:border-emerald-200 transition">
+                                            <div>
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <p className="font-bold text-gray-900 dark:text-white">{member.fname} {member.lname}</p>
+                                                    <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-100">{member.role}</span>
+                                                </div>
+                                                <div className="text-[10px] text-gray-400 font-black uppercase flex items-center gap-2 tracking-tighter">
+                                                    <span>{member.farm_size_hectares} Ha</span>
+                                                    <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                                                    <span>{member.commodity}</span>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                onClick={() => handleRemoveFarmer(showMembers.id, member.farmer_id)}
+                                                className="bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/10 text-[10px] font-black uppercase px-4 py-2.5 rounded-xl border border-red-100 dark:border-red-900/30"
+                                            >
+                                                Remove
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

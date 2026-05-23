@@ -91,7 +91,7 @@ export default function AggregatorLayout({ children }) {
                className={`${menuOpen ? "left-0 w-64 h-full bg-(--gray-color) shadow-md" : "-left-64"} transition-all duration-300 fixed z-40 top-0 lg:left-0 lg:w-64 lg:h-screen dark:bg-(--card-dark) dark:text-(--foreground) lg:bg-(--gray-color) lg:shadow-md p-4`}
             >
                <div className="mb-8 px-2">
-                  <h2 className="text-xl font-bold text-(--greenish-color)">AgrNoria</h2>
+                  <h2 className="text-xl font-bold text-(--greenish-color)">AgriNoria</h2>
                   <p className="text-xs text-gray-500 uppercase tracking-widest mt-1">Aggregator Portal</p>
                </div>
 

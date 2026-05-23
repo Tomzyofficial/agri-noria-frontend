@@ -69,7 +69,9 @@ export default function InterventionRequestsPage() {
                                         <td className="px-6 py-4">
                                             <div className="flex flex-wrap gap-1">
                                                 {(req.input_items || []).map((it, idx) => (
-                                                    <span key={idx} className="text-[10px] bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded font-bold uppercase">{it}</span>
+                                                    <span key={idx} className="text-[10px] bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded font-bold uppercase">
+                                                        {typeof it === 'object' && it !== null ? `${it.name || 'Item'} (${it.quantity || 1} ${it.unit || 'pcs'})` : it}
+                                                    </span>
                                                 ))}
                                             </div>
                                         </td>
