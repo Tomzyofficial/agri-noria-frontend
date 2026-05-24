@@ -17,7 +17,9 @@ export default function InstitutionDashboard() {
          totalHectares: 0,
          totalDeployed: 0
       },
-      recentPrograms: []
+      recentPrograms: [],
+      systemHealth: [],
+      upcomingDeadlines: []
    });
    const [loading, setLoading] = useState(true);
 
@@ -35,7 +37,9 @@ export default function InstitutionDashboard() {
             if (analyticsJson.success && programsJson.success) {
                setStats({
                   overview: analyticsJson.data.overview,
-                  recentPrograms: programsJson.data.slice(0, 3)
+                  recentPrograms: programsJson.data.slice(0, 3),
+                  systemHealth: analyticsJson.data.systemHealth || [],
+                  upcomingDeadlines: analyticsJson.data.upcomingDeadlines || []
                });
             }
          } catch (error) {
@@ -140,13 +144,8 @@ export default function InstitutionDashboard() {
                </CardHeader>
                <CardContent className="p-6 space-y-6">
                   <div className="space-y-4">
-                     {[
-                        { label: "Loan Disbursement", status: "Operational", color: "emerald" },
-                        { label: "Field Verifications", status: "Active", color: "emerald" },
-                        { label: "Satellite Sync", status: "Pending", color: "amber" },
-                        { label: "Payment Gateway", status: "Operational", color: "emerald" },
-                     ].map((svc, i) => (
-                        <div key={i} className="flex items-center justify-between">
+                     {stats.systemHealth.map((svc) => (
+                        <div key={svc.id} className="flex items-center justify-between">
                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">{svc.label}</span>
                            <div className="flex items-center gap-2">
                               <span className={`w-2 h-2 rounded-full bg-${svc.color}-500 animate-pulse`} />
@@ -154,16 +153,26 @@ export default function InstitutionDashboard() {
                            </div>
                         </div>
                      ))}
+                     {stats.systemHealth.length === 0 && (
+                        <div className="text-center text-gray-400 italic text-sm">No health data available.</div>
+                     )}
                   </div>
                   <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
                      <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-4">Upcoming Deadlines</p>
-                     <div className="flex items-center gap-4 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl">
-                        <Calendar className="w-8 h-8 text-blue-600" />
-                        <div>
-                           <p className="text-sm font-bold text-blue-900 dark:text-blue-100">Wet Season Audit</p>
-                           <p className="text-[10px] text-blue-600 font-black">JUNE 15, 2024</p>
+                     {stats.upcomingDeadlines.map((deadline) => (
+                        <div key={deadline.id} className="flex items-center gap-4 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl mb-2">
+                           <Calendar className="w-8 h-8 text-blue-600 shrink-0" />
+                           <div>
+                              <p className="text-sm font-bold text-blue-900 dark:text-blue-100">{deadline.title}</p>
+                              <p className="text-[10px] text-blue-600 font-black">
+                                 {new Date(deadline.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()}
+                              </p>
+                           </div>
                         </div>
-                     </div>
+                     ))}
+                     {stats.upcomingDeadlines.length === 0 && (
+                        <div className="text-center text-gray-400 italic text-sm p-4">No upcoming deadlines.</div>
+                     )}
                   </div>
                </CardContent>
             </Card>

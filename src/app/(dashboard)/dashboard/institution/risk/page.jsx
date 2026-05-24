@@ -1,8 +1,29 @@
 "use client";
 import { Card, CardContent } from "@/components/ui/Card";
-import { ShieldAlert, AlertTriangle, CheckCircle2, CloudRain, ThermometerSun } from "lucide-react";
+import { ShieldAlert, AlertTriangle, CheckCircle2, CloudRain, ThermometerSun, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export default function RiskManagementPage() {
+   const [clusters, setClusters] = useState([]);
+   const [loading, setLoading] = useState(true);
+
+   useEffect(() => {
+      const fetchClusters = async () => {
+         try {
+            const res = await fetch("/api/proxy/pipeline/clusters");
+            const json = await res.json();
+            if (json.success) {
+               setClusters(json.data.slice(0, 5)); // show top 5
+            }
+         } catch (error) {
+            console.error("Failed to fetch clusters:", error);
+         } finally {
+            setLoading(false);
+         }
+      };
+      fetchClusters();
+   }, []);
+
    return (
       <div className="space-y-6 animate-in fade-in duration-500">
          <div>
@@ -49,12 +70,25 @@ export default function RiskManagementPage() {
             <Card className="p-6 border-none shadow-sm bg-white dark:bg-gray-950">
                <h3 className="font-bold mb-4 flex items-center gap-2"><CloudRain className="w-4 h-4 text-blue-500" /> Weather Anomalies</h3>
                <div className="space-y-4">
-                  {[1,2,3].map(i => (
-                     <div key={i} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-xl">
-                        <div className="text-sm font-bold">Kaduna North</div>
-                        <div className="text-xs text-rose-500 font-bold uppercase">Severe Drought Warning</div>
+                  {loading ? (
+                     <div className="flex justify-center p-4">
+                        <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
                      </div>
-                  ))}
+                  ) : clusters.length === 0 ? (
+                     <div className="text-center text-gray-400 italic text-sm p-4">No active clusters found.</div>
+                  ) : (
+                     clusters.map((cluster) => {
+                        const isHighRisk = cluster.region?.toLowerCase().includes("north") || cluster.name?.toLowerCase().includes("north");
+                        return (
+                           <div key={cluster.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-xl">
+                              <div className="text-sm font-bold">{cluster.name}</div>
+                              <div className={`text-xs font-bold uppercase ${isHighRisk ? 'text-rose-500' : 'text-amber-500'}`}>
+                                 {isHighRisk ? "Severe Drought Warning" : "Moderate Weather Risk"}
+                              </div>
+                           </div>
+                        );
+                     })
+                  )}
                </div>
             </Card>
             <Card className="p-6 border-none shadow-sm bg-white dark:bg-gray-950">
