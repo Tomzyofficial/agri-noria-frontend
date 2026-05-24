@@ -32,32 +32,32 @@ import { FaGlobe } from "react-icons/fa";
 
 export const sidebarMenu = [
   {
-    href: "onboarding",
+    href: "/onboarding",
     title: "Ecosystem Mode",
     icon: <FaGlobe className="h-4 w-4 text-blue-500" />,
   },
   {
-    href: "storage",
+    href: "/storage",
     title: "Storage",
     icon: <FaWarehouse className="h-4 w-4 text-amber-600" />,
   },
   {
-    href: "agro-logistics",
-    title: "Agro Logistics",
+    href: "/agri-logistics",
+    title: "Agri Logistics",
     icon: <FaMotorcycle className="h-4 w-4 text-orange-600" />,
   },
   {
-    href: "premium-advisory",
+    href: "/premium-advisory",
     title: "Premium Advisory",
     icon: <FaSeedling className="h-4 w-4 text-green-600" />,
   },
   {
-    href: "tech-farming",
+    href: "/tech-farming",
     title: "Tech Farming & Drone Services",
     icon: <FaRobot className="h-4 w-4 text-indigo-600" />,
   },
   {
-    href: "farm-development",
+    href: "/farm-development",
     title: "Farm development",
     icon: <FaClipboardCheck className="h-4 w-4 text-emerald-700" />,
   },
@@ -72,7 +72,7 @@ export const sidebarMenu = [
     icon: <FaUserGraduate className="h-4 w-4 text-sky-600" />,
   },
   {
-    href: "agricultural-employment",
+    href: "/agricultural-employment",
     title: "Agricultural Employment",
     icon: <FaClipboardCheck className="h-4 w-4 text-green-600" />,
   },
