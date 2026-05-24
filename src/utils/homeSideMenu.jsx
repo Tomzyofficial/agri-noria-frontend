@@ -57,8 +57,8 @@ export const sidebarMenu = [
     icon: <FaRobot className="h-4 w-4 text-indigo-600" />,
   },
   {
-    href: "field-operations",
-    title: "Field Operations",
+    href: "farm-development",
+    title: "Farm development",
     icon: <FaClipboardCheck className="h-4 w-4 text-emerald-700" />,
   },
   //   {

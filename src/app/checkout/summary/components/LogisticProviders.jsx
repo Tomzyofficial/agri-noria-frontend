@@ -92,22 +92,24 @@ export function LogisticsProviders({ address, onLogisticsSelect }) {
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <h4 className="font-semibold text-lg">
-                          {option.title}
+                          {option?.title?.charAt(0).toUpperCase() +
+                            option?.title?.slice(1)}
                         </h4>
                         <div className="flex items-center text-yellow-500">
-                          <span>{option.rating || "4.5"}</span>
-                          <span className="ml-1">★</span>
+                          {/* <span>{option.rating || "4.5"}</span> */}
+                          {/* <span className="ml-1">★</span> */}
                         </div>
                       </div>
 
                       <div className="mt-3 flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
                         <div className="flex items-center gap-1">
                           <Truck className="w-4 h-4" />
-                          {option.vehicle_type || "Vehicle"}
+                          {option?.vehicle_type.charAt(0).toUpperCase() +
+                            option?.vehicle_type.slice(1)}
                         </div>
                         <div className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          {option.estimated_delivery || "?"} day(s)
+                          <span>Cargo type:</span>
+                          {option?.cargo_type?.replace(/_/g, " ")}
                         </div>
                       </div>
                     </div>

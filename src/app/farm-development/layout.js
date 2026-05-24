@@ -1,7 +1,7 @@
 import NavBar from "@/components/ui/NavBar/NavBar";
 
 export const metadata = {
-  title: "Large-Scale Farming Services | FarmLink",
+  title: "Large-Scale Farming Services",
   description:
     "Connect with verified providers for large-scale farm design, construction, irrigation, and crop production services across Nigeria.",
 };

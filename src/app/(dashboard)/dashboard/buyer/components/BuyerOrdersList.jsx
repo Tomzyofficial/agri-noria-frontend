@@ -5,7 +5,7 @@ import useSWR from "swr";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
-import { MapPin, Truck, ArrowLeft, Eye, Check, X } from "lucide-react";
+import { MapPin, Truck, ArrowLeft, Eye, ThumbsUp } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 import React from "react";
@@ -16,13 +16,16 @@ import {
   formatStatusLabel,
 } from "./BuyerOrderUtils";
 import { BuyerOrderDetailModal } from "./BuyerOrderDetailModal";
+import { OTPVerificationModal } from "../../logistics/components/OTPVerificationModal";
 
 export function BuyerOrdersList() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const statusFilter = searchParams.get("status") || "";
   const [viewOrderId, setViewOrderId] = useState(null);
-  const [actingId, setActingId] = useState(null);
+  const [satisfiedOrderId, setSatisfiedOrderId] = useState(null);
+  const [verifyingOTP, setVerifyingOTP] = useState(false);
+  const [otpError, setOtpError] = useState(null);
 
   const ordersUrl = useMemo(() => {
     const params = new URLSearchParams();
@@ -54,54 +57,40 @@ export function BuyerOrdersList() {
     );
   };
 
-  console.log("orders", orders);
-
-  const handleAccept = async (orderId) => {
-    if (!confirm("Accept this order and assign it for shipment?")) return;
-    setActingId(orderId);
-    try {
-      const res = await fetch(
-        `/api/proxy/vendor/logistics/orders/${orderId}/accept`,
-        { method: "POST" },
-      );
-      const body = await res.json();
-      if (!res.ok || !body.success) {
-        throw new Error(body.error || "Failed to accept order");
-      }
-      toast.success("Order accepted — moved to shipments");
-      mutate();
-      router.push("/dashboard/logistics/shipments");
-    } catch (err) {
-      toast.error(err.message || "Failed to accept order");
-    } finally {
-      setActingId(null);
-    }
+  const handleSatisfied = (orderId) => {
+    setSatisfiedOrderId(orderId);
+    setOtpError(null);
   };
 
-  const handleDecline = async (orderId) => {
-    if (
-      !confirm(
-        "Decline this order? It will be marked declined and reassigned to the nearest available partner.",
-      )
-    ) {
-      return;
-    }
-    setActingId(orderId);
+  const handleOTPVerify = async (otp) => {
+    setVerifyingOTP(true);
+    setOtpError(null);
+
     try {
       const res = await fetch(
-        `/api/proxy/vendor/logistics/orders/${orderId}/decline`,
-        { method: "POST" },
+        `/api/proxy/buyer/orders/${satisfiedOrderId}/confirm-satisfaction`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ otp }),
+        },
       );
+
       const body = await res.json();
+
       if (!res.ok || !body.success) {
-        throw new Error(body.error || "Failed to decline order");
+        throw new Error(body.error || "Failed to verify OTP");
       }
-      toast.success(body.message || "Order declined");
+
+      toast.success("Satisfaction confirmed successfully!");
+      setSatisfiedOrderId(null);
       mutate();
     } catch (err) {
-      toast.error(err.message || "Failed to decline order");
+      setOtpError(err.message || "Failed to verify OTP");
     } finally {
-      setActingId(null);
+      setVerifyingOTP(false);
     }
   };
 
@@ -265,32 +254,20 @@ export function BuyerOrdersList() {
                         <Button
                           type="button"
                           onClick={() => setViewOrderId(order.id)}
-                          className="cursor-pointer inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                          className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
                         >
                           <Eye className="w-3.5 h-3.5" />
                           View
                         </Button>
-                        {canRespond(order.status) && (
-                          <>
-                            <Button
-                              type="button"
-                              disabled={actingId === order.id}
-                              onClick={() => handleAccept(order.id)}
-                              className="cursor-pointer inline-flex items-center gap-1 text-sm text-green-700 hover:underline disabled:opacity-50"
-                            >
-                              <Check className="w-3.5 h-3.5" />
-                              Accept
-                            </Button>
-                            <Button
-                              type="button"
-                              disabled={actingId === order.id}
-                              onClick={() => handleDecline(order.id)}
-                              className="inline-flex items-center gap-1 text-sm text-red-600 hover:underline disabled:opacity-50"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                              Decline
-                            </Button>
-                          </>
+                        {order.status === "delivered" && (
+                          <Button
+                            type="button"
+                            onClick={() => handleSatisfied(order.id)}
+                            className="inline-flex items-center gap-1 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded"
+                          >
+                            <ThumbsUp className="w-3.5 h-3.5" />
+                            Satisfied
+                          </Button>
                         )}
                       </div>
                     </td>
@@ -306,6 +283,19 @@ export function BuyerOrdersList() {
         orderId={viewOrderId}
         open={Boolean(viewOrderId)}
         onClose={() => setViewOrderId(null)}
+      />
+
+      <OTPVerificationModal
+        open={Boolean(satisfiedOrderId)}
+        onClose={() => {
+          setSatisfiedOrderId(null);
+          setOtpError(null);
+        }}
+        onConfirm={handleOTPVerify}
+        title="Confirm Satisfaction"
+        description="Enter the 6-digit OTP code from your shipment confirmation email to confirm you are satisfied with the delivery"
+        loading={verifyingOTP}
+        error={otpError}
       />
     </div>
   );

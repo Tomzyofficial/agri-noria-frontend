@@ -5,7 +5,7 @@ import useSWR from "swr";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { Truck, MapPin, ArrowLeft, Play } from "lucide-react";
+import { Truck, MapPin, ArrowLeft, Play, CheckCircle } from "lucide-react";
 import {
   logisticsFetcher,
   getStatusBadgeClass,
@@ -13,12 +13,16 @@ import {
 } from "./logisticsOrderUtils";
 import { LogisticsOrderDetailModal } from "./LogisticsOrderDetailModal";
 import { ShipmentStartModal } from "./ShipmentStartModal";
+import { OTPVerificationModal } from "./OTPVerificationModal";
 
 export function LogisticsShipmentsList() {
   const router = useRouter();
   const [viewOrderId, setViewOrderId] = useState(null);
   const [shipmentStartOrderId, setShipmentStartOrderId] = useState(null);
   const [shipmentStartOrderData, setShipmentStartOrderData] = useState(null);
+  const [completeDeliveryOrderId, setCompleteDeliveryOrderId] = useState(null);
+  const [verifyingOTP, setVerifyingOTP] = useState(false);
+  const [otpError, setOtpError] = useState(null);
 
   const { data, error, isLoading, mutate } = useSWR(
     "/api/proxy/vendor/logistics/shipments",
@@ -38,6 +42,44 @@ export function LogisticsShipmentsList() {
     );
     mutate();
     router.push("/dashboard/logistics/orders?status=in_transit");
+  };
+
+  const handleCompleteDelivery = (orderId) => {
+    setCompleteDeliveryOrderId(orderId);
+    setOtpError(null);
+  };
+
+  const handleOTPVerify = async (otp) => {
+    setVerifyingOTP(true);
+    setOtpError(null);
+
+    try {
+      const res = await fetch(
+        `/api/proxy/vendor/logistics/orders/${completeDeliveryOrderId}/complete-delivery`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ otp }),
+        },
+      );
+
+      const body = await res.json();
+
+      if (!res.ok || !body.success) {
+        throw new Error(body.error || "Failed to verify OTP");
+      }
+
+      toast.success("Delivery completed successfully!");
+      setCompleteDeliveryOrderId(null);
+      mutate();
+      router.push("/dashboard/logistics/orders?status=completed");
+    } catch (err) {
+      setOtpError(err.message || "Failed to verify OTP");
+    } finally {
+      setVerifyingOTP(false);
+    }
   };
 
   return (
@@ -153,9 +195,14 @@ export function LogisticsShipmentsList() {
                           </button>
                         )}
                         {order.status === "in_transit" && (
-                          <span className="text-xs text-cyan-700">
-                            In transit
-                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleCompleteDelivery(order.id)}
+                            className="inline-flex items-center gap-1 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            Complete
+                          </button>
                         )}
                       </div>
                     </td>
@@ -182,6 +229,19 @@ export function LogisticsShipmentsList() {
           setShipmentStartOrderData(null);
         }}
         onSuccess={handleShipmentStartSuccess}
+      />
+
+      <OTPVerificationModal
+        open={Boolean(completeDeliveryOrderId)}
+        onClose={() => {
+          setCompleteDeliveryOrderId(null);
+          setOtpError(null);
+        }}
+        onConfirm={handleOTPVerify}
+        title="Complete Delivery"
+        description="Enter the 6-digit OTP code provided by the buyer to complete this delivery"
+        loading={verifyingOTP}
+        error={otpError}
       />
     </div>
   );

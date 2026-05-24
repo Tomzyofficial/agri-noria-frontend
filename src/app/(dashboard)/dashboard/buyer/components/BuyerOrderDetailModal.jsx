@@ -16,6 +16,8 @@ import {
   formatStatusLabel,
   getStatusBadgeClass,
 } from "./BuyerOrderUtils";
+import { formatPrice } from "@/utils/formatPrice";
+import Image from "next/image";
 
 export function BuyerOrderDetailModal({ orderId, open, onClose }) {
   const [detail, setDetail] = useState(null);
@@ -53,6 +55,8 @@ export function BuyerOrderDetailModal({ orderId, open, onClose }) {
   const itemBreakdown = Array.isArray(metadata.item_breakdown)
     ? metadata.item_breakdown
     : [];
+  const country_code = itemBreakdown[0]?.country_code;
+  const currency = itemBreakdown[0]?.currency;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -96,7 +100,7 @@ export function BuyerOrderDetailModal({ orderId, open, onClose }) {
                   </h3>
                   <p className="text-sm">
                     <span className="text-gray-500">Name: </span>
-                    {buyerInfo.fname || detail.buyer_name || "—"}
+                    {buyerInfo.fname || buyerInfo.lname || "—"}
                   </p>
                   <p className="text-sm flex items-center gap-1">
                     <Phone className="w-3.5 h-3.5 text-gray-400" />
@@ -158,20 +162,11 @@ export function BuyerOrderDetailModal({ orderId, open, onClose }) {
                   <div className="space-y-2">
                     <p className="text-sm">
                       <span className="text-gray-500">Driver: </span>
-                      {[
-                        logisticsInfo.logistics_fname,
-                        logisticsInfo.logistics_lname,
-                      ]
-                        .filter(Boolean)
-                        .join(" ") || "—"}
+                      {detail.assigned_driver_name || "—"}
                     </p>
                     <p className="text-sm flex items-center gap-1">
                       <Phone className="w-3.5 h-3.5 text-gray-400" />
-                      {logisticsInfo.logistics_partner_phone || "—"}
-                    </p>
-                    <p className="text-sm flex items-center gap-1">
-                      <Mail className="w-3.5 h-3.5 text-gray-400" />
-                      {logisticsInfo.logistics_provider_email || "—"}
+                      {detail.assigned_driver_phone || "—"}
                     </p>
                   </div>
                   <div className="space-y-2">
@@ -182,13 +177,17 @@ export function BuyerOrderDetailModal({ orderId, open, onClose }) {
                         "—"}
                     </p>
                     <p className="text-sm">
-                      <span className="text-gray-500">Rate: </span>₦
-                      {Number(logisticsInfo.rate_amount || 0).toLocaleString()}
+                      <span className="text-gray-500">Rate: </span>
+                      {formatPrice(
+                        logisticsInfo.rate_amount || 0,
+                        country_code,
+                        currency,
+                      )}
                     </p>
                     <p className="text-sm">
                       <span className="text-gray-500">Status: </span>
                       <span className="capitalize font-medium">
-                        {logisticsInfo.status || "pending"}
+                        {detail.status}
                       </span>
                     </p>
                   </div>
@@ -216,28 +215,32 @@ export function BuyerOrderDetailModal({ orderId, open, onClose }) {
                           <tr key={idx}>
                             <td className="px-3 py-3">
                               <div className="flex items-center gap-3">
-                                {item.listing_image && (
-                                  <img
-                                    src={item.listing_image}
-                                    alt={item.listing_name || "Product"}
+                                {item.product_image && (
+                                  <Image
+                                    src={item.product_image}
+                                    alt={`${item.product_name} image`}
                                     width={40}
                                     height={40}
                                     className="rounded object-cover w-10 h-10"
                                   />
                                 )}
-                                <span>{item.listing_name || "—"}</span>
+                                <span>{item.product_name || "—"}</span>
                               </div>
                             </td>
                             <td className="px-3 py-3">{item.quantity}</td>
                             <td className="px-3 py-3">
-                              ₦{Number(item.unit_price || 0).toLocaleString()}
+                              {formatPrice(
+                                item.unit_price,
+                                country_code,
+                                currency,
+                              )}
                             </td>
                             <td className="px-3 py-3">
-                              ₦
-                              {(
-                                Number(item.unit_price || 0) *
-                                Number(item.quantity || 0)
-                              ).toLocaleString()}
+                              {formatPrice(
+                                (item.unit_price || 0) * (item.quantity || 0),
+                                country_code,
+                                currency,
+                              )}
                             </td>
                           </tr>
                         ))
@@ -258,28 +261,32 @@ export function BuyerOrderDetailModal({ orderId, open, onClose }) {
 
               <div className="flex justify-end gap-2 text-sm text-gray-600 pt-4 border-t">
                 <span>
-                  Subtotal: ₦
-                  {Number(
+                  Subtotal:{" "}
+                  {formatPrice(
                     metadata.amount_breakdown?.subtotal || 0,
-                  ).toLocaleString()}
+                    country_code,
+                    currency,
+                  )}
                 </span>
                 <span>·</span>
                 <span>
-                  Delivery fee: ₦
-                  {Number(
-                    metadata.amount_breakdown?.delivery_fee ||
-                      detail.delivery_fee ||
-                      0,
-                  ).toLocaleString()}
+                  Delivery fee:{" "}
+                  {formatPrice(
+                    metadata.amount_breakdown?.delivery_fee,
+                    country_code,
+                    currency,
+                  )}
                 </span>
                 <span>·</span>
                 <span className="font-semibold text-gray-900 dark:text-white">
-                  Total: ₦
-                  {Number(
+                  Total:
+                  {formatPrice(
                     metadata.amount_breakdown?.total_amount ||
                       detail.total_amount ||
                       0,
-                  ).toLocaleString()}
+                    country_code,
+                    currency,
+                  )}
                 </span>
               </div>
             </>

@@ -2,8 +2,16 @@
 
 import { useState } from "react";
 import { X, Upload, Check, AlertCircle, Loader2 } from "lucide-react";
+import Image from "next/image";
+import SubmitButton from "../../components/SubmitButton";
 
-export function ShipmentStartModal({ orderId, orderData, open, onClose, onSuccess }) {
+export function ShipmentStartModal({
+  orderId,
+  orderData,
+  open,
+  onClose,
+  onSuccess,
+}) {
   const [formData, setFormData] = useState({
     assigned_driver_name: "",
     assigned_driver_phone: "",
@@ -61,25 +69,37 @@ export function ShipmentStartModal({ orderId, orderData, open, onClose, onSucces
   const validateForm = () => {
     const errors = {};
 
-    if (!formData.assigned_driver_name || formData.assigned_driver_name.trim().length < 2) {
-      errors.assigned_driver_name = "Driver name is required (min 2 characters)";
+    if (
+      !formData.assigned_driver_name ||
+      formData.assigned_driver_name.trim().length < 2
+    ) {
+      errors.assigned_driver_name =
+        "Driver name is required (min 2 characters)";
     }
 
-    if (!formData.assigned_driver_phone || formData.assigned_driver_phone.trim().length < 10) {
+    if (
+      !formData.assigned_driver_phone ||
+      formData.assigned_driver_phone.trim().length < 10
+    ) {
       errors.assigned_driver_phone = "Driver phone is required (min 10 digits)";
     }
 
-    if (!formData.vehicle_plate_number || formData.vehicle_plate_number.trim().length < 3) {
+    if (
+      !formData.vehicle_plate_number ||
+      formData.vehicle_plate_number.trim().length < 3
+    ) {
       errors.vehicle_plate_number = "Vehicle plate number is required";
     }
 
     if (!formData.estimated_delivery_datetime) {
-      errors.estimated_delivery_datetime = "Estimated delivery date/time is required";
+      errors.estimated_delivery_datetime =
+        "Estimated delivery date/time is required";
     } else {
       const deliveryDate = new Date(formData.estimated_delivery_datetime);
       const minDeliveryTime = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
       if (deliveryDate < minDeliveryTime) {
-        errors.estimated_delivery_datetime = "Delivery time must be at least 1 hour in the future";
+        errors.estimated_delivery_datetime =
+          "Delivery time must be at least 1 hour in the future";
       }
     }
 
@@ -107,11 +127,26 @@ export function ShipmentStartModal({ orderId, orderData, open, onClose, onSucces
 
     try {
       const formDataToSend = new FormData();
-      formDataToSend.append("assigned_driver_name", formData.assigned_driver_name);
-      formDataToSend.append("assigned_driver_phone", formData.assigned_driver_phone);
-      formDataToSend.append("vehicle_plate_number", formData.vehicle_plate_number);
-      formDataToSend.append("estimated_delivery_datetime", formData.estimated_delivery_datetime);
-      formDataToSend.append("pickup_confirmation", formData.pickup_confirmation);
+      formDataToSend.append(
+        "assigned_driver_name",
+        formData.assigned_driver_name,
+      );
+      formDataToSend.append(
+        "assigned_driver_phone",
+        formData.assigned_driver_phone,
+      );
+      formDataToSend.append(
+        "vehicle_plate_number",
+        formData.vehicle_plate_number,
+      );
+      formDataToSend.append(
+        "estimated_delivery_datetime",
+        formData.estimated_delivery_datetime,
+      );
+      formDataToSend.append(
+        "pickup_confirmation",
+        formData.pickup_confirmation,
+      );
       formDataToSend.append("dispatch_notes", formData.dispatch_notes);
       formDataToSend.append("pickup_location", formData.pickup_location);
       formDataToSend.append("delivery_location", formData.delivery_location);
@@ -122,7 +157,7 @@ export function ShipmentStartModal({ orderId, orderData, open, onClose, onSucces
         {
           method: "POST",
           body: formDataToSend,
-        }
+        },
       );
 
       const result = await response.json();
@@ -185,10 +220,15 @@ export function ShipmentStartModal({ orderId, orderData, open, onClose, onSucces
           )}
 
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Driver Information</h3>
-            
+            <h3 className="font-semibold text-gray-900 dark:text-white">
+              Driver Information
+            </h3>
+
             <div>
-              <label htmlFor="assigned_driver_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                htmlFor="assigned_driver_name"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 Driver Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -199,17 +239,24 @@ export function ShipmentStartModal({ orderId, orderData, open, onClose, onSucces
                 onChange={handleInputChange}
                 placeholder="Enter driver's full name"
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                  validationErrors.assigned_driver_name ? "border-red-500" : "border-gray-300"
+                  validationErrors.assigned_driver_name
+                    ? "border-red-500"
+                    : "border-gray-300"
                 }`}
                 disabled={loading}
               />
               {validationErrors.assigned_driver_name && (
-                <p className="mt-1 text-sm text-red-500">{validationErrors.assigned_driver_name}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {validationErrors.assigned_driver_name}
+                </p>
               )}
             </div>
 
             <div>
-              <label htmlFor="assigned_driver_phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                htmlFor="assigned_driver_phone"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 Driver Phone Number <span className="text-red-500">*</span>
               </label>
               <input
@@ -220,17 +267,24 @@ export function ShipmentStartModal({ orderId, orderData, open, onClose, onSucces
                 onChange={handleInputChange}
                 placeholder="Enter driver's phone number"
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                  validationErrors.assigned_driver_phone ? "border-red-500" : "border-gray-300"
+                  validationErrors.assigned_driver_phone
+                    ? "border-red-500"
+                    : "border-gray-300"
                 }`}
                 disabled={loading}
               />
               {validationErrors.assigned_driver_phone && (
-                <p className="mt-1 text-sm text-red-500">{validationErrors.assigned_driver_phone}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {validationErrors.assigned_driver_phone}
+                </p>
               )}
             </div>
 
             <div>
-              <label htmlFor="vehicle_plate_number" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                htmlFor="vehicle_plate_number"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 Vehicle Plate Number <span className="text-red-500">*</span>
               </label>
               <input
@@ -241,22 +295,32 @@ export function ShipmentStartModal({ orderId, orderData, open, onClose, onSucces
                 onChange={handleInputChange}
                 placeholder="Enter vehicle plate number"
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                  validationErrors.vehicle_plate_number ? "border-red-500" : "border-gray-300"
+                  validationErrors.vehicle_plate_number
+                    ? "border-red-500"
+                    : "border-gray-300"
                 }`}
                 disabled={loading}
               />
               {validationErrors.vehicle_plate_number && (
-                <p className="mt-1 text-sm text-red-500">{validationErrors.vehicle_plate_number}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {validationErrors.vehicle_plate_number}
+                </p>
               )}
             </div>
           </div>
 
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Delivery Information</h3>
-            
+            <h3 className="font-semibold text-gray-900 dark:text-white">
+              Delivery Information
+            </h3>
+
             <div>
-              <label htmlFor="estimated_delivery_datetime" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Estimated Delivery Date/Time <span className="text-red-500">*</span>
+              <label
+                htmlFor="estimated_delivery_datetime"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Estimated Delivery Date/Time{" "}
+                <span className="text-red-500">*</span>
               </label>
               <input
                 type="datetime-local"
@@ -264,19 +328,28 @@ export function ShipmentStartModal({ orderId, orderData, open, onClose, onSucces
                 name="estimated_delivery_datetime"
                 value={formData.estimated_delivery_datetime}
                 onChange={handleInputChange}
-                min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)}
+                min={new Date(Date.now() + 60 * 60 * 1000)
+                  .toISOString()
+                  .slice(0, 16)}
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                  validationErrors.estimated_delivery_datetime ? "border-red-500" : "border-gray-300"
+                  validationErrors.estimated_delivery_datetime
+                    ? "border-red-500"
+                    : "border-gray-300"
                 }`}
                 disabled={loading}
               />
               {validationErrors.estimated_delivery_datetime && (
-                <p className="mt-1 text-sm text-red-500">{validationErrors.estimated_delivery_datetime}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {validationErrors.estimated_delivery_datetime}
+                </p>
               )}
             </div>
 
             <div>
-              <label htmlFor="pickup_location" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                htmlFor="pickup_location"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 Pickup Location
               </label>
               <input
@@ -292,7 +365,10 @@ export function ShipmentStartModal({ orderId, orderData, open, onClose, onSucces
             </div>
 
             <div>
-              <label htmlFor="delivery_location" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                htmlFor="delivery_location"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 Delivery Location
               </label>
               <input
@@ -309,20 +385,27 @@ export function ShipmentStartModal({ orderId, orderData, open, onClose, onSucces
           </div>
 
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900 dark:text-white">Pickup Confirmation</h3>
-            
+            <h3 className="font-semibold text-gray-900 dark:text-white">
+              Pickup Confirmation
+            </h3>
+
             <div>
-              <label htmlFor="pickup_photo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                htmlFor="pickup_photo"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 Pickup Photo <span className="text-red-500">*</span>
               </label>
               <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:border-green-500 dark:hover:border-green-500 transition-colors">
                 <div className="space-y-1 text-center">
                   {previewUrl ? (
-                    <div className="relative">
-                      <img
+                    <div>
+                      <Image
                         src={previewUrl}
                         alt="Pickup preview"
                         className="mx-auto h-48 w-auto object-cover rounded-lg"
+                        width={192}
+                        height={192}
                       />
                       <button
                         type="button"
@@ -338,10 +421,10 @@ export function ShipmentStartModal({ orderId, orderData, open, onClose, onSucces
                   ) : (
                     <>
                       <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                      <div className="flex text-sm text-gray-600 dark:text-gray-400">
+                      <div className="flex justify-center text-sm text-gray-600 dark:text-gray-400">
                         <label
                           htmlFor="pickup_photo"
-                          className="relative cursor-pointer rounded-md font-medium text-green-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-green-500 focus-within:ring-offset-2 hover:text-green-500"
+                          className="relative cursor-pointer rounded-lg focus-within:outline-none focus-within:ring-2 focus-within:ring-green-500 focus-within:ring-offset-2 hover:text-green-500"
                         >
                           <span>Upload a file</span>
                           <input
@@ -354,7 +437,7 @@ export function ShipmentStartModal({ orderId, orderData, open, onClose, onSucces
                             disabled={loading}
                           />
                         </label>
-                        <p className="pl-1">or drag and drop</p>
+                        {/* <p className="pl-1">or drag and drop</p> */}
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         PNG, JPG, or WebP up to 5MB
@@ -364,7 +447,9 @@ export function ShipmentStartModal({ orderId, orderData, open, onClose, onSucces
                 </div>
               </div>
               {validationErrors.pickup_photo && (
-                <p className="mt-1 text-sm text-red-500">{validationErrors.pickup_photo}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {validationErrors.pickup_photo}
+                </p>
               )}
             </div>
 
@@ -383,19 +468,28 @@ export function ShipmentStartModal({ orderId, orderData, open, onClose, onSucces
                 />
               </div>
               <div className="ml-3 text-sm">
-                <label htmlFor="pickup_confirmation" className="font-medium text-gray-700 dark:text-gray-300">
-                  I confirm that the pickup has been completed and the goods are in transit
+                <label
+                  htmlFor="pickup_confirmation"
+                  className="font-medium text-gray-700 dark:text-gray-300"
+                >
+                  I confirm that the pickup has been completed and the goods are
+                  in transit
                   <span className="text-red-500">*</span>
                 </label>
                 {validationErrors.pickup_confirmation && (
-                  <p className="mt-1 text-sm text-red-500">{validationErrors.pickup_confirmation}</p>
+                  <p className="mt-1 text-sm text-red-500">
+                    {validationErrors.pickup_confirmation}
+                  </p>
                 )}
               </div>
             </div>
           </div>
 
           <div>
-            <label htmlFor="dispatch_notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label
+              htmlFor="dispatch_notes"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
               Dispatch Notes (Optional)
             </label>
             <textarea
@@ -419,7 +513,12 @@ export function ShipmentStartModal({ orderId, orderData, open, onClose, onSucces
             >
               Cancel
             </button>
-            <button
+            <SubmitButton
+              loading={loading}
+              text="Start Shipment"
+              loadingText="Processing"
+            />
+            {/* <button
               type="submit"
               disabled={loading}
               className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
@@ -435,7 +534,7 @@ export function ShipmentStartModal({ orderId, orderData, open, onClose, onSucces
                   Start Shipment
                 </>
               )}
-            </button>
+            </button> */}
           </div>
         </form>
       </div>

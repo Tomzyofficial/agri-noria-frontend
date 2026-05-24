@@ -114,6 +114,11 @@ export default function DashboardLayout({ children }) {
       icon: <Package2 className="w-4 h-4" />,
     },
     {
+      label: "Enrollments",
+      href: "/dashboard/store/enrollment",
+      icon: <Package2 className="w-4 h-4" />,
+    },
+    {
       label: "Profile",
       href: "/dashboard/store/profile",
       icon: <UserPen className="w-4 h-4" />,

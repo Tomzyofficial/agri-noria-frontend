@@ -4,8 +4,8 @@ import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorize
 import { BuyerOrdersList } from "../components/BuyerOrdersList";
 
 export const metadata = {
-  title: "Logistics Orders",
-  description: "Orders assigned to your logistics vehicles",
+  title: "Buyer Orders",
+  description: "Orders placed by you",
 };
 
 export default async function LogisticsOrdersPage() {

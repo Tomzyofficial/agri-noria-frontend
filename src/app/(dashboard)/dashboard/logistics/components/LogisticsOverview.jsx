@@ -62,8 +62,8 @@ export function LogisticsOverview() {
                   ? "—"
                   : formatPrice(
                       stats?.total_delivery_revenue,
-                      stats.country_code,
-                      stats.currency,
+                      stats?.country_code,
+                      stats?.currency,
                     )}
               </p>
             </div>

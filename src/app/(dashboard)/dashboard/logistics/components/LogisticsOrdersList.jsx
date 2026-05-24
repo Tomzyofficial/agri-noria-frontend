@@ -248,7 +248,7 @@ export function LogisticsOrdersList() {
                         <Button
                           type="button"
                           onClick={() => setViewOrderId(order.id)}
-                          className="cursor-pointer inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                          className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
                         >
                           <Eye className="w-3.5 h-3.5" />
                           View
@@ -268,7 +268,7 @@ export function LogisticsOrdersList() {
                               type="button"
                               disabled={actingId === order.id}
                               onClick={() => handleDecline(order.id)}
-                              className="inline-flex items-center gap-1 text-sm text-red-600 hover:underline disabled:opacity-50"
+                              className="cursor-pointer inline-flex items-center gap-1 text-sm text-red-600 hover:underline disabled:opacity-50"
                             >
                               <X className="w-3.5 h-3.5" />
                               Decline

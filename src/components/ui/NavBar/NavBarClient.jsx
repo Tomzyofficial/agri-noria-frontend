@@ -127,7 +127,7 @@ export default function NavBarClient({ user, initialCartCount }) {
                   {user?.authenticated && user?.isVendor && (
                     <li>
                       <Link
-                        href="/dashboard/store"
+                        href="/dashboard"
                         className="flex items-center gap-2"
                       >
                         <User className="h-3 w-3" /> Dashboard
@@ -137,9 +137,7 @@ export default function NavBarClient({ user, initialCartCount }) {
 
                   <li>
                     <Link
-                      href={
-                        user?.isVendor ? "/dashboard/store/profile" : "/buyer"
-                      }
+                      href={user?.isVendor ? "/dashboard" : "/dashboard/buyer"}
                       className="flex items-center gap-2"
                     >
                       <User className="h-3 w-3" /> My Account

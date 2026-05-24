@@ -1,4 +1,11 @@
-import { Clock, Package, Truck, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  Clock,
+  Package,
+  Truck,
+  CheckCircle,
+  AlertCircle,
+  DollarSign,
+} from "lucide-react";
 
 export const ORDER_STATUS_CONFIG = [
   {
@@ -9,14 +16,14 @@ export const ORDER_STATUS_CONFIG = [
     cardClass: "text-yellow-700",
     iconClass: "text-yellow-500",
   },
-  //   {
-  //     key: "amount_spent",
-  //     label: "Amount Spent",
-  //     status: "paid",
-  //     icon: DollarSign,
-  //     cardClass: "text-blue-700",
-  //     iconClass: "text-blue-500",
-  //   },
+  {
+    key: "paid_orders",
+    label: "Paid",
+    status: "paid",
+    icon: DollarSign,
+    cardClass: "text-blue-700",
+    iconClass: "text-blue-500",
+  },
   {
     key: "processing_orders",
     label: "Processing",
@@ -41,14 +48,14 @@ export const ORDER_STATUS_CONFIG = [
     cardClass: "text-cyan-700",
     iconClass: "text-cyan-500",
   },
-  //   {
-  //     key: "delivered_orders",
-  //     label: "Delivered",
-  //     status: "delivered",
-  //     icon: CheckCircle,
-  //     cardClass: "text-green-700",
-  //     iconClass: "text-green-500",
-  //   },
+  {
+    key: "delivered_orders",
+    label: "Delivered",
+    status: "delivered",
+    icon: CheckCircle,
+    cardClass: "text-green-700",
+    iconClass: "text-green-500",
+  },
   {
     key: "completed_orders",
     label: "Completed",

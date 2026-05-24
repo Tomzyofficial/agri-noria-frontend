@@ -2,9 +2,8 @@
 
 // import ImageUpload from "@/app/(dashboard)/dashboard/sub-store/components/AddStorage/not-in-use-ImageUpload";
 import ImageUploadPreview from "../../../components/ImageUploadPreview";
-
 import FormFields from "@/app/(dashboard)/dashboard/sub-store/components/AddStorage/FormFields";
-import SubmitButton from "@/app/(dashboard)/dashboard/sub-store/components/AddStorage/SubmitButton";
+import SubmitButton from "../../../components/SubmitButton";
 import { Card, CardContent } from "@/components/ui/Card";
 import { useStorageEditForm } from "./UseStorageEditForm";
 
