@@ -13,64 +13,166 @@ import { FaSpinner } from "react-icons/fa6";
 import { registerBridge } from "@/actions/authActions";
 import { Country, State } from "country-state-city";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { verifyVendorSession } from "@/actions/session";
 
-const roleCategories = [
+const workspaceRoleCategories = {
+  ecosystem: [
+    {
+      name: "Institution",
+      roles: [
+        "Government",
+        "Bank",
+        "NGO",
+        "DFI",
+        "Insurance Firm",
+        "Commodity Board",
+        "Finance",
+      ],
+    },
+
+    {
+      name: "Program Management",
+      roles: ["Program Director", "Regional Manager", "Cluster Supervisor"],
+    },
+
+    {
+      name: "Field Operations",
+      roles: [
+        "Field Officer",
+        "Agronomist",
+        "Inspector",
+        "Enumerator",
+        "Field Auditor",
+        "Satellite Monitor",
+      ],
+    },
+
+    {
+      name: "Farm Development",
+      roles: [
+        "Farm Development Officer",
+        "Input Coordinator",
+        "Seed Distribution Officer",
+      ],
+    },
+
+    {
+      name: "Production",
+      roles: ["Farmer", "Aggregator", "Cooperative Leader"],
+    },
+
+    {
+      name: "Supply & Off-take",
+      roles: ["Off-taker", "Warehouse Buyer", "Processor", "Exporter"],
+    },
+
+    {
+      name: "Logistics & Storage",
+      roles: ["Logistics Partner", "Warehouse Operator", "Fleet Manager"],
+    },
+
+    {
+      name: "Intelligence & Monitoring",
+      roles: ["Data Analyst", "Monitoring Officer", "Compliance Officer"],
+    },
+  ],
+
+  marketplace: [
+    {
+      name: "Marketplace Sellers",
+      roles: ["Seller"],
+    },
+
+    {
+      name: "Logistics & Fulfillment",
+      roles: ["Logistics"],
+    },
+
+    {
+      name: "Storage & Warehousing",
+      roles: ["Storage Facility"],
+    },
+
+    {
+      name: "Farmers",
+      roles: ["Farmer"],
+    },
+    {
+      name: "Agricultural Trainers",
+      roles: ["Trainer"],
+    },
+  ],
+};
+
+const workspaceOptions = [
   {
-    name: "Institution",
-    roles: [
-      "Government",
-      "Bank",
-      "NGO",
-      "DFI",
-      "Insurance Firm",
-      "Commodity Board",
-      "Finance",
-      "Distributor",
-    ],
+    id: "ecosystem",
+    title: "Ecosystem Program",
   },
+
   {
-    name: "Program Management",
-    roles: ["Program Director", "Regional Manager", "Cluster Supervisor"],
-  },
-  {
-    name: "Field Operations",
-    roles: ["Field Officer", "Agronomist", "Inspector", "Enumerator"],
-  },
-  {
-    name: "Farm Development",
-    roles: ["Farm Development"],
-  },
-  {
-    name: "Farmer",
-    roles: ["Farmer"],
-  },
-  {
-    name: "Logistics & Supply Chain",
-    roles: ["Logistics_Partner"],
-  },
-  {
-    name: "Buyer / Partner",
-    roles: [
-      "Exporter",
-      "Off-taker",
-      "Warehouse Buyer",
-      "Processor",
-      "Logistics Partner",
-    ],
-  },
-  {
-    name: "Aggregator",
-    roles: ["Aggregator"],
-  },
-  {
-    name: "Sales & Distribution",
-    roles: ["Sales Manager", "Logistics Coordinator", "Warehouse Supervisor"],
-  },
-  {
-    name: "Intelligence & Monitoring",
-    roles: ["Data Analyst", "Satellite Monitor", "Field Auditor"],
+    id: "marketplace",
+    title: "Marketplace",
   },
 ];
+
+// const roleCategories = [
+//   {
+//     name: "Institution",
+//     roles: [
+//       "Government",
+//       "Bank",
+//       "NGO",
+//       "DFI",
+//       "Insurance Firm",
+//       "Commodity Board",
+//       "Finance",
+//       "Distributor",
+//     ],
+//   },
+//   {
+//     name: "Program Management",
+//     roles: ["Program Director", "Regional Manager", "Cluster Supervisor"],
+//   },
+//   {
+//     name: "Field Operations",
+//     roles: ["Field Officer", "Agronomist", "Inspector", "Enumerator"],
+//   },
+//   {
+//     name: "Farm Development",
+//     roles: ["Farm Development"],
+//   },
+//   {
+//     name: "Farmer",
+//     roles: ["Farmer"],
+//   },
+//   {
+//     name: "Logistics & Supply Chain",
+//     roles: ["Logistics_Partner"],
+//   },
+//   {
+//     name: "Buyer / Partner",
+//     roles: [
+//       "Exporter",
+//       "Off-taker",
+//       "Warehouse Buyer",
+//       "Processor",
+//       "Logistics Partner",
+//     ],
+//   },
+//   {
+//     name: "Aggregator",
+//     roles: ["Aggregator"],
+//   },
+//   {
+//     name: "Sales & Distribution",
+//     roles: ["Sales Manager", "Logistics Coordinator", "Warehouse Supervisor"],
+//   },
+//   {
+//     name: "Intelligence & Monitoring",
+//     roles: ["Data Analyst", "Satellite Monitor", "Field Auditor"],
+//   },
+// ];
 
 export function RegisterForm() {
   const router = useRouter();
@@ -79,18 +181,14 @@ export function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // Multistep state
-  const [currentStep, setCurrentStep] = useState(0); // Step 0 is Role Selection
-  const totalSteps = 4;
-
-  const [expandedCategory, setExpandedCategory] = useState(null);
-
   const [formData, setFormData] = useState({
+    workspace: "",
+    role: "",
     fname: "",
     lname: "",
     email: "",
     phone: "",
-    account_type: "",
+    //  account_type: "",
     pword: "",
     confirmPword: "",
     terms_of_service: false,
@@ -100,6 +198,85 @@ export function RegisterForm() {
     state_name: "",
     currency: "",
   });
+
+  // Multistep state
+  const [currentStep, setCurrentStep] = useState(0); // Step 0 is Role Selection
+  const [expandedCategory, setExpandedCategory] = useState(null);
+
+  const totalSteps = 4;
+
+  const selectedWorkspaceTitle =
+    workspaceOptions.find((workspace) => workspace.id === formData.workspace)
+      ?.title || "";
+
+  const selectedRoleCategories =
+    workspaceRoleCategories[formData.workspace] || [];
+
+  const handleWorkspaceSelect = (workspaceId) => {
+    setFormData((prev) => ({
+      ...prev,
+      workspace: workspaceId,
+      role: "",
+      // account_type: "",
+    }));
+    setExpandedCategory(null);
+    setCurrentStep(1);
+  };
+
+  const handleRoleSelect = (role) => {
+    setFormData((prev) => ({
+      ...prev,
+      role,
+      // account_type: role,
+    }));
+    setCurrentStep(2);
+  };
+
+  const validateWithSchemaForStep = (step) => {
+    let schemaForStep = registerFormSchema;
+
+    if (step === 2) {
+      schemaForStep = registerFormSchema.pick({
+        fname: true,
+        lname: true,
+        email: true,
+        phone: true,
+        //   account_type: true,
+        country_code: true,
+        state_code: true,
+      });
+    } else if (step === 3) {
+      schemaForStep = registerFormSchema
+        .pick({ pword: true, confirmPword: true })
+        .refine((data) => data.pword === data.confirmPword, {
+          path: ["confirmPword"],
+          message: "Passwords do not match",
+        });
+    } else if (step === 4) {
+      schemaForStep = registerFormSchema.pick({ terms_of_service: true });
+    }
+
+    const result = schemaForStep.safeParse(formData);
+
+    if (!result.success) {
+      const fieldErrors = result.error.flatten().fieldErrors;
+      setErrors({ err: fieldErrors });
+
+      const firstMsg = Object.values(fieldErrors).flat().filter(Boolean)[0];
+      if (firstMsg) toast.error(firstMsg);
+
+      return false;
+    }
+
+    setErrors({});
+    return true;
+  };
+
+  const validateStep = (step) => {
+    if (step === 0) return !!formData.workspace;
+    if (step === 1) return !!formData.role;
+    return validateWithSchemaForStep(step);
+  };
 
   // Handle input field change
   const handleInputChange = (e) => {
@@ -127,50 +304,44 @@ export function RegisterForm() {
   };
 
   // Schema-based validation per step and final submit
-  const validateWithSchemaForStep = (step) => {
-    let schemaForStep = registerFormSchema;
-    if (step === 1) {
-      schemaForStep = registerFormSchema.pick({
-        fname: true,
-        lname: true,
-        email: true,
-      });
-    } else if (step === 2) {
-      schemaForStep = registerFormSchema.pick({
-        phone: true,
-        account_type: true,
-        country_code: true,
-        state_code: true,
-      });
-    } else if (step === 3) {
-      schemaForStep = registerFormSchema
-        .pick({ pword: true, confirmPword: true })
-        .refine((data) => data.pword === data.confirmPword, {
-          path: ["confirmPword"],
-          message: "Passwords do not match",
-        });
-    } else if (step === 4) {
-      schemaForStep = registerFormSchema.pick({ terms_of_service: true });
-    }
+  //   const validateWithSchemaForStep = (step) => {
+  //     let schemaForStep = registerFormSchema;
+  //     if (step === 1) {
+  //       schemaForStep = registerFormSchema.pick({
+  //         fname: true,
+  //         lname: true,
+  //         email: true,
+  //       });
+  //     } else if (step === 2) {
+  //       schemaForStep = registerFormSchema.pick({
+  //         phone: true,
+  //         account_type: true,
+  //         country_code: true,
+  //         state_code: true,
+  //       });
+  //     } else if (step === 3) {
+  //       schemaForStep = registerFormSchema
+  //         .pick({ pword: true, confirmPword: true })
+  //         .refine((data) => data.pword === data.confirmPword, {
+  //           path: ["confirmPword"],
+  //           message: "Passwords do not match",
+  //         });
+  //     } else if (step === 4) {
+  //       schemaForStep = registerFormSchema.pick({ terms_of_service: true });
+  //     }
 
-    const result = schemaForStep.safeParse(formData);
-    if (!result.success) {
-      const fieldErrors = result.error.flatten().fieldErrors;
-      setErrors({ err: fieldErrors });
-      // Show the first error message if available
-      const firstMsg = Object.values(fieldErrors).flat().filter(Boolean)[0];
-      if (firstMsg) toast.error(firstMsg);
-      return false;
-    }
-    setErrors({});
-    return true;
-  };
-
-  // Per-step client-side validation using schema picks
-  const validateStep = (step) => {
-    if (step === 0) return true; // Role selection doesn't need schema validation yet
-    return validateWithSchemaForStep(step);
-  };
+  //     const result = schemaForStep.safeParse(formData);
+  //     if (!result.success) {
+  //       const fieldErrors = result.error.flatten().fieldErrors;
+  //       setErrors({ err: fieldErrors });
+  //       // Show the first error message if available
+  //       const firstMsg = Object.values(fieldErrors).flat().filter(Boolean)[0];
+  //       if (firstMsg) toast.error(firstMsg);
+  //       return false;
+  //     }
+  //     setErrors({});
+  //     return true;
+  //   };
 
   // Navigation handlers
   const handleNext = () => {
@@ -179,13 +350,18 @@ export function RegisterForm() {
     }
   };
 
+  //   const handleBack = () => {
+  //     setErrors({});
+  //     if (currentStep === 1) {
+  //       setCurrentStep(0); // Go back to role selection
+  //     } else {
+  //       setCurrentStep((s) => Math.max(1, s - 1));
+  //     }
+  //   };
+
   const handleBack = () => {
     setErrors({});
-    if (currentStep === 1) {
-      setCurrentStep(0); // Go back to role selection
-    } else {
-      setCurrentStep((s) => Math.max(1, s - 1));
-    }
+    setCurrentStep((step) => Math.max(0, step - 1));
   };
 
   // Handle form submission (final step)
@@ -197,6 +373,7 @@ export function RegisterForm() {
       fname: formData.fname.trim(),
       lname: formData.lname.trim(),
       email: formData.email.trim().toLowerCase(),
+      role: formData.role.toLowerCase(),
       phone: formData.phone.trim(),
       pword: formData.pword.trim(),
     };
@@ -235,6 +412,8 @@ export function RegisterForm() {
 
       // clear form fields value on successful submission and registration
       setFormData({
+        workspace: "",
+        role: "",
         fname: "",
         lname: "",
         email: "",
@@ -244,7 +423,6 @@ export function RegisterForm() {
         country_code: "",
         state_name: "",
         currency: "",
-        account_type: "",
         pword: "",
         confirmPword: "",
         terms_of_service: false,
@@ -254,7 +432,19 @@ export function RegisterForm() {
       setShowConfirmPassword(false);
       toast.success("Account created successfully!");
 
-      router.push("/onboarding");
+      const session = await verifyVendorSession();
+      console.log(session);
+
+      if (session.authenticated) {
+        const { workspace, role } = session;
+        if (workspace === "ecosystem") {
+          router.push("/onboarding");
+        } else {
+          router.push(
+            `/${workspace}/${role.toLowerCase().replace(/\s+/g, "-")}`,
+          );
+        }
+      }
       router.refresh();
     } catch (err) {
       setErrors((prev) => ({
@@ -297,13 +487,41 @@ export function RegisterForm() {
 
             <form onSubmit={handleSubmit} noValidate>
               {/* Step 0: Role Selection */}
+              {/* Step 0: Workspace Selection */}
               {currentStep === 0 && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium text-center mb-4">
+                    Select Your Workspace Type
+                  </h3>
+
+                  <div className="space-y-2">
+                    {workspaceOptions.map((workspace) => (
+                      <button
+                        key={workspace.id}
+                        type="button"
+                        className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        onClick={() => handleWorkspaceSelect(workspace.id)}
+                      >
+                        <span className="font-medium">{workspace.title}</span>
+                        {/* <ChevronRight className="h-4 w-4" /> */}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {currentStep === 1 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-center">
                     Select Your Role
                   </h3>
+
+                  <p className="text-sm text-center text-muted-foreground">
+                    Workspace: {selectedWorkspaceTitle}
+                  </p>
+
                   <div className="space-y-2">
-                    {roleCategories.map((category) => (
+                    {selectedRoleCategories.map((category) => (
                       <div
                         key={category.name}
                         className="border rounded-md overflow-hidden"
@@ -322,6 +540,7 @@ export function RegisterForm() {
                           <span className="font-medium text-(--foreground)">
                             {category.name}
                           </span>
+
                           {expandedCategory === category.name ? (
                             <ChevronDown className="w-5 h-5" />
                           ) : (
@@ -336,13 +555,7 @@ export function RegisterForm() {
                                 key={role}
                                 type="button"
                                 className="w-full text-left p-2 pl-6 hover:bg-(--greenish-color) hover:text-white rounded transition-colors text-sm"
-                                onClick={() => {
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    account_type: role,
-                                  }));
-                                  setCurrentStep(1);
-                                }}
+                                onClick={() => handleRoleSelect(role)}
                               >
                                 {role}
                               </button>
@@ -356,8 +569,20 @@ export function RegisterForm() {
               )}
 
               {/* Step 1: Personal Info */}
-              {currentStep === 1 && (
+              {currentStep === 2 && (
                 <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid md:grid-cols-2 gap-4 rounded-md bg-gray-50 dark:bg-gray-800 p-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Workspace</p>
+                      <p className="font-medium">{selectedWorkspaceTitle}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-muted-foreground">Role</p>
+                      <p className="font-medium">{formData.role}</p>
+                    </div>
+                  </div>
+
                   <div>
                     <label htmlFor="fname" className="text-start block">
                       First Name

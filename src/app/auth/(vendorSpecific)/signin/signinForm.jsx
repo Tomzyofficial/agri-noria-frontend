@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { FaSpinner } from "react-icons/fa6";
 import { signinBridge } from "@/actions/authActions";
+import { verifyVendorSession } from "@/actions/session";
 
 export function SigninForm() {
   const router = useRouter();
@@ -29,6 +30,110 @@ export function SigninForm() {
     password: "",
     rememberMe: false,
   });
+
+  const roleConfig = {
+    // Institution
+    government: {
+      category: "Institution",
+    },
+    bank: {
+      category: "Institution",
+    },
+    ngo: {
+      category: "Institution",
+    },
+    dfi: {
+      category: "Institution",
+    },
+    "insurance firm": {
+      category: "Institution",
+    },
+    "commodity board": {
+      category: "Institution",
+    },
+    finance: {
+      category: "Institution",
+    },
+    distributor: {
+      category: "Institution",
+    },
+    // Program Management
+    "program director": {
+      category: "Program Management",
+    },
+    "regional manager": {
+      category: "Program Management",
+    },
+    "cluster supervisor": {
+      category: "Program Management",
+    },
+    // Field Operations
+    "field officer": {
+      category: "Field Operations",
+    },
+    agronomist: {
+      category: "Field Operations",
+    },
+    inspector: {
+      category: "Field Operations",
+    },
+    enumerator: {
+      category: "Field Operations",
+    },
+    // Farmer
+    farmer: {
+      category: "Farmer",
+    },
+    // Buyer / Partner
+    exporter: {
+      category: "Buyer / Partner",
+    },
+    "off-taker": {
+      category: "Buyer / Partner",
+    },
+    "warehouse buyer": {
+      category: "Buyer / Partner",
+    },
+    processor: {
+      category: "Buyer / Partner",
+    },
+    "logistics partner": {
+      category: "Buyer / Partner",
+    },
+    seller: {
+      category: "Buyer / Partner",
+    },
+    logistics: {
+      category: "Buyer / Partner",
+    },
+    storage_facility: {
+      category: "Buyer / Partner",
+    },
+    // Aggregator
+    aggregator: {
+      category: "Aggregator",
+    },
+    // Sales & Distribution
+    "sales manager": {
+      category: "Sales & Distribution",
+    },
+    "logistics coordinator": {
+      category: "Sales & Distribution",
+    },
+    "warehouse supervisor": {
+      category: "Sales & Distribution",
+    },
+    // Intelligence & Monitoring
+    "data analyst": {
+      category: "Intelligence & Monitoring",
+    },
+    "satellite monitor": {
+      category: "Intelligence & Monitoring",
+    },
+    "field auditor": {
+      category: "Intelligence & Monitoring",
+    },
+  };
 
   // Handle input field change
   const handleInputChange = (e) => {
@@ -115,8 +220,30 @@ export function SigninForm() {
         rememberMe: false,
       });
 
-      setShowPassword(false);
-      router.push("/dashboard");
+      const session = await verifyVendorSession();
+
+      if (session.authenticated) {
+        const { workspace, role } = session;
+        const categoryRoute = roleConfig[role]?.category
+          .toLowerCase()
+          .replace(/ \/ /g, "-")
+          .replace(/ /g, "-");
+        const normalizedWorkspace = workspace?.toLowerCase().trim();
+        const normalizedRole = role?.toLowerCase().trim();
+
+        if (normalizedWorkspace === "ecosystem") {
+          router.push(`/${normalizedWorkspace}/${categoryRoute}`);
+        } else if (
+          normalizedWorkspace === "marketplace" &&
+          ["farmer", "seller"].includes(normalizedRole)
+        ) {
+          router.push(`/${normalizedWorkspace}/store`);
+        } else {
+          router.push(
+            `/${normalizedWorkspace}/${normalizedRole.replace(/\s+/g, "-")}`,
+          );
+        }
+      }
       router.refresh();
     } catch (error) {
       setErrors((prev) => ({ ...prev, general: error.message }));

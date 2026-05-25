@@ -43,12 +43,6 @@ export function HomePage({ marketPlace, error }) {
                 className="bg-(--background) rounded-md pl-10 py-3 focus:outline-none shadow-md w-full"
                 type="text"
               />
-              {/* <Button
-                        type="submit"
-                        className="bg-[var(--dark-green-color)] text-white rounded-r-lg py-3 px-6 cursor-pointer"
-                     >
-                        Search
-                     </Button> */}
             </div>
           </div>
         </div>
@@ -58,13 +52,7 @@ export function HomePage({ marketPlace, error }) {
         {/* <div className="overscroll-contain">A</div> */}
         <aside className="relative lg:sticky lg:top-20">
           {/* SIDE MENU */}
-          <ul
-            className={`${
-              activeParent
-                ? "hidden lg:block"
-                : "grid grid-cols-4 sm:grid-cols-5 lg:block"
-            } space-y-0.5`}
-          >
+          <ul className="grid grid-cols-4 sm:grid-cols-5 lg:block space-y-0.5">
             {menu.map((item, index) => (
               <li
                 key={item.href}
@@ -81,16 +69,6 @@ export function HomePage({ marketPlace, error }) {
                       ? "bg-blue-50 dark:bg-blue-900/10 text-blue-600 font-bold"
                       : ""
                   }`}
-                  onClick={(e) => {
-                    if (window.innerWidth < 1024) {
-                      e.preventDefault();
-                      if (index === 0) {
-                        window.location.href = "/onboarding";
-                      } else {
-                        setActiveParent(item.href);
-                      }
-                    }
-                  }}
                 >
                   <span className="flex items-center gap-2 lg:flex-row flex-col text-center lg:text-left">
                     <span
@@ -106,57 +84,9 @@ export function HomePage({ marketPlace, error }) {
                     </span>
                   )}
                 </Link>
-
-                {/* CHILDREN ON DESKTOP */}
-                {/*   <ul className="invisible opacity-0 group-hover:visible group-hover:opacity-100 absolute left-full top-0 z-5 w-64 lg:bg-(--white-fff) lg:dark:bg-neutral-700 rounded shadow-lg transition-opacity duration-200 hidden lg:block">
-                           {item.children.map((child) => (
-                              <li key={child.id} className="lg:p-1">
-                                 <Link
-                                    href={`/${child.id}`}
-                                    className="flex items-center gap-2 transition hover:bg-slate-200 lg:py-1 lg:px-2 lg:hover:bg-slate-200 lg:hover:text-orange-400 lg:hover:rounded text-sm"
-                                 >
-                                    {child.icon}
-                                    <span>{child.title}</span>
-                                 </Link>
-                              </li>
-                           ))}
-                        </ul> */}
               </li>
             ))}
           </ul>
-
-          {/* MOBILE FULL-SCREEN CHILDREN MENU */}
-          {/*  {activeParent && (
-                  <div className="fixed inset-0 bg-white dark:bg-(--background) z-50 p-4 overflow-y-auto transition-all duration-300">
-                     <button
-                        onClick={() => setActiveParent(null)}
-                        className="cursor-pointer flex items-center gap-2 mb-4 text-sm font-medium text-gray-600 dark:text-(--foreground)"
-                     >
-                        <ArrowLeft className="h-4 w-4" /> Back
-                     </button>
-
-                     <h2 className="text-lg font-semibold mb-3">
-                        {menu.find((item) => item.id === activeParent)?.title}
-                     </h2>
-
-                     <ul className="space-y-2">
-                        {menu
-                           .find((item) => item.id === activeParent)
-                           ?.children.map((child) => (
-                              <li key={child.id}>
-                                 <Link
-                                    href={`#${child.id}`}
-                                    className="flex items-center gap-3 py-3 px-4 border rounded-lg shadow-sm hover:bg-slate-100 dark:hover:bg-(--card-dark) transition"
-                                    onClick={() => setActiveParent(null)}
-                                 >
-                                    {child.icon}
-                                    <span>{child.title}</span>
-                                 </Link>
-                              </li>
-                           ))}
-                     </ul>
-                  </div>
-               )} */}
         </aside>
 
         {/* Marketplace Preview Right side */}

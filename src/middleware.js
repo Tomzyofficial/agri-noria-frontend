@@ -40,21 +40,24 @@ export default async function middleware(request) {
 
   try {
     // VENDOR PROTECTION
-    // if (pathname.startsWith("/dashboard")) {
-    //    const token = request.cookies.get("vendor-session")?.value;
+    if (
+      pathname.startsWith("/marketplace") ||
+      pathname.startsWith("/ecosystem")
+    ) {
+      const token = request.cookies.get("vendor-session")?.value;
 
-    //    if (!token) {
-    //       console.log("Middleware: No vendor session token found");
-    //       return NextResponse.redirect(new URL("/", request.url));
-    //    }
+      if (!token) {
+        console.log("Middleware: No vendor session token found");
+        return NextResponse.redirect(new URL("/", request.url));
+      }
 
-    //    try {
-    //       await jwtVerify(token, vendorKey);
-    //    } catch (jwtError) {
-    //       console.error("Middleware: JWT verification failed:", jwtError.message);
-    //       return NextResponse.redirect(new URL("/", request.url));
-    //    }
-    // }
+      try {
+        await jwtVerify(token, vendorKey);
+      } catch (jwtError) {
+        console.error("Middleware: JWT verification failed:", jwtError.message);
+        return NextResponse.redirect(new URL("/", request.url));
+      }
+    }
 
     // BUYER PROTECTION
     if (pathname.startsWith("/buyer")) {
@@ -85,7 +88,8 @@ export default async function middleware(request) {
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
+    "/marketplace/:path*",
+    "/ecosystem/:path*",
     "/buyer/:path*",
     "/((?!api|_next/static|_next/image|favicon.ico).*)",
   ],

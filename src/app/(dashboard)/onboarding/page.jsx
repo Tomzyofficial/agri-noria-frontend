@@ -18,6 +18,7 @@ import {
   FaLock,
   FaHandshake,
 } from "react-icons/fa";
+import { verifyVendorSession } from "@/actions/session";
 
 // Role icon & color mapping
 const roleConfig = {
@@ -137,7 +138,7 @@ const roleConfig = {
     color: "text-rose-400",
     category: "Buyer / Partner",
   },
-  storage_facility: {
+  "storage facility": {
     icon: <FaTruckMoving />,
     color: "text-red-400",
     category: "Buyer / Partner",
@@ -192,6 +193,7 @@ export default function OnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [role, setRole] = useState(null);
+  const [workspace, setWorkspace] = useState(null);
   const [userName, setUserName] = useState("");
   const [formData, setFormData] = useState({
     migrateFromOuter: false,
@@ -200,50 +202,52 @@ export default function OnboardingPage() {
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const response = await fetch("/api/proxy/auth/verify-vendor");
-        if (response.ok) {
-          const data = await response.json();
-          if (data.authenticated) {
-            setIsAuthenticated(true);
-            setRole(data.account_type);
-            setUserName(data.fname || "");
+        const session = await verifyVendorSession();
+        console.log("from onboarding page", session);
 
-            // 1. Redirect Admins immediately
-            if (
-              data.account_type?.toLowerCase() === "super admin" ||
-              data.account_type?.toLowerCase() === "admin"
-            ) {
-              router.replace("/dashboard/super-admin");
-              return;
-            }
-
-            // 2. Redirect if onboarding is already completed
-            if (
-              data.onboarding_status === "completed" ||
-              data.onboarding_status === "verified"
-            ) {
-              const category =
-                roleConfig[data.account_type?.toLowerCase()]?.category ||
-                "Store";
-              const categoryRoute = category
-                .toLowerCase()
-                .replace(/ \/ /g, "-")
-                .replace(/ /g, "-");
-              router.replace(`/dashboard/${categoryRoute}`);
-              return;
-            }
-          } else {
-            setIsAuthenticated(false);
-          }
-        } else {
+        if (!session?.authenticated) {
           setIsAuthenticated(false);
+          return;
         }
-      } catch {
+
+        setIsAuthenticated(true);
+        setRole(session.role || null);
+        setWorkspace(session.workspace || null);
+        console.log("workspace", workspace);
+        console.log("role", role);
+        setUserName(session.fname || "");
+
+        const normalizedRole = session.role?.toLowerCase().trim();
+
+        if (normalizedRole === "super admin" || normalizedRole === "admin") {
+          router.replace("/dashboard/super-admin");
+          return;
+        }
+
+        if (session.onboarding_status === "completed") {
+          const normalizedRole = session.role?.toLowerCase().trim();
+          const normalizedWorkspace = session.workspace?.toLowerCase().trim();
+
+          const category = roleConfig[normalizedRole]?.category;
+
+          const categoryRoute = category
+            .toLowerCase()
+            .replace(/\s*\/\s*/g, "-")
+            .replace(/\s+/g, "-");
+
+          if (normalizedWorkspace && categoryRoute) {
+            router.replace(`/${normalizedWorkspace}/${categoryRoute}`);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Failed to verify onboarding session:", err);
         setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
       }
     };
+
     fetchSession();
   }, [router]);
 
@@ -258,6 +262,9 @@ export default function OnboardingPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    const roleStr = role?.toLowerCase().trim();
+    const category = roleConfig[roleStr]?.category;
 
     try {
       if (roleStr === "farmer") {
@@ -293,10 +300,14 @@ export default function OnboardingPage() {
         method: "POST",
       });
 
-      const categoryRoute = config.category
-        ? config.category.toLowerCase().replace(/ \/ /g, "-").replace(/ /g, "-")
-        : "store";
-      router.replace(`/dashboard/${categoryRoute}`);
+      const categoryRoute = category
+        .toLowerCase()
+        .replace(/\s*\/\s*/g, "-")
+        .replace(/\s+/g, "-");
+
+      const workspaceRoute = workspace?.toLowerCase().trim();
+
+      router.replace(`/${workspaceRoute}/${categoryRoute}`);
     } catch (err) {
       toast.error(err.message || "An error occurred during onboarding");
     } finally {
