@@ -68,47 +68,47 @@ export default function FarmerLayout({ children }) {
   const navMenu = [
     {
       label: "Overview",
-      href: "/dashboard/farmer",
+      href: "/ecosystem/farmer",
       icon: <LayoutDashboard className="w-4 h-4" />,
     },
     {
       label: "Enrolled Programs",
-      href: "/dashboard/farmer/programs",
+      href: "/ecosystem/farmer/programs",
       icon: <Sprout className="w-4 h-4" />,
     },
     {
       label: "Training Center",
-      href: "/dashboard/farmer/training",
+      href: "/ecosystem/farmer/training",
       icon: <GraduationCap className="w-4 h-4" />,
     },
     {
       label: "My Farm",
-      href: "/dashboard/farmer/farm",
+      href: "/ecosystem/farmer/farm",
       icon: <Tractor className="w-4 h-4" />,
     },
     {
       label: "Marketplace",
-      href: "/dashboard/farmer/marketplace",
+      href: "/ecosystem/farmer/marketplace",
       icon: <Store className="w-4 h-4" />,
     },
     {
       label: "Storage & Logistics",
-      href: "/dashboard/farmer/logistics",
+      href: "/ecosystem/farmer/logistics",
       icon: <Truck className="w-4 h-4" />,
     },
     {
       label: "Financing",
-      href: "/dashboard/farmer/financing",
+      href: "/ecosystem/farmer/financing",
       icon: <CreditCard className="w-4 h-4" />,
     },
     {
       label: "My Wallet",
-      href: "/dashboard/farmer/wallet",
+      href: "/ecosystem/farmer/wallet",
       icon: <Wallet className="w-4 h-4" />,
     },
     {
       label: "Settings",
-      href: "/dashboard/farmer/settings",
+      href: "/ecosystem/farmer/settings",
       icon: <Settings className="w-4 h-4" />,
     },
   ];

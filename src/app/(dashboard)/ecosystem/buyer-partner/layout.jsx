@@ -48,37 +48,37 @@ export default function BuyerPartnerLayout({ children }) {
   const navMenu = [
     {
       label: "Overview",
-      href: "/dashboard/buyer-partner",
+      href: "/ecosystem/buyer-partner",
       icon: <LayoutDashboard className="w-4 h-4" />,
     },
     {
       label: "Market Matching",
-      href: "/dashboard/buyer-partner/matching",
+      href: "/ecosystem/buyer-partner/matching",
       icon: <Handshake className="w-4 h-4" />,
     },
     {
       label: "My Orders",
-      href: "/dashboard/buyer-partner/orders",
+      href: "/ecosystem/buyer-partner/orders",
       icon: <ShoppingCart className="w-4 h-4" />,
     },
     {
       label: "Inventory",
-      href: "/dashboard/buyer-partner/inventory",
+      href: "/ecosystem/buyer-partner/inventory",
       icon: <Package className="w-4 h-4" />,
     },
     {
       label: "Logistics",
-      href: "/dashboard/buyer-partner/logistics",
+      href: "/ecosystem/buyer-partner/logistics",
       icon: <Truck className="w-4 h-4" />,
     },
     {
       label: "Contracts",
-      href: "/dashboard/buyer-partner/contracts",
+      href: "/ecosystem/buyer-partner/contracts",
       icon: <FileText className="w-4 h-4" />,
     },
     {
       label: "Settings",
-      href: "/dashboard/buyer-partner/settings",
+      href: "/ecosystem/buyer-partner/settings",
       icon: <Settings className="w-4 h-4" />,
     },
   ];

@@ -135,11 +135,11 @@ export default function DashboardLayout({ children }) {
       href: "/marketplace/trainer/billing",
       icon: <CreditCard className="w-4 h-4" />,
     },
-    {
-      label: "Ads",
-      href: "/marketplace/ads",
-      icon: <Megaphone className="w-4 h-4" />,
-    },
+    //  {
+    //    label: "Ads",
+    //    href: "/marketplace/ads",
+    //    icon: <Megaphone className="w-4 h-4" />,
+    //  },
   ];
 
   const navLinksStyle = (path) => {

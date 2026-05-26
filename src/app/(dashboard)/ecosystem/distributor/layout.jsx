@@ -35,7 +35,7 @@ export default function DistributorLayout({ children }) {
   const navMenu = [
     {
       label: "Deliveries",
-      href: "/dashboard/distributor",
+      href: "/ecosytem/distributor",
       icon: <Truck className="w-4 h-4" />,
     },
   ];

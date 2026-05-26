@@ -54,7 +54,7 @@ export default function InstitutionLayout({ children }) {
         if (response.ok) {
           const data = await response.json();
           if (data?.authenticated) {
-            setAccountType(data.account_type?.toLowerCase() || "");
+            setAccountType(data.role?.toLowerCase() || "");
           } else {
             await handleSignout();
           }
@@ -73,32 +73,32 @@ export default function InstitutionLayout({ children }) {
   let navMenu = [
     {
       label: "Overview",
-      href: "/dashboard/institution",
+      href: "/ecosystem/institution",
       icon: <LayoutDashboard className="w-4 h-4" />,
     },
     {
       label: "Programs",
-      href: "/dashboard/institution/programs",
+      href: "/ecosystem/institution/programs",
       icon: <Landmark className="w-4 h-4" />,
     },
     {
       label: "Portfolio Monitoring",
-      href: "/dashboard/institution/portfolio",
+      href: "/ecosystem/institution/portfolio",
       icon: <Activity className="w-4 h-4" />,
     },
     {
       label: "Impact Tracking",
-      href: "/dashboard/institution/impact",
+      href: "/ecosystem/institution/impact",
       icon: <Activity className="w-4 h-4" />,
     },
     {
       label: "Risk Management",
-      href: "/dashboard/institution/risk",
+      href: "/ecosystem/institution/risk",
       icon: <ShieldAlert className="w-4 h-4" />,
     },
     {
       label: "My Wallet",
-      href: "/dashboard/institution/wallet",
+      href: "/ecosystem/institution/wallet",
       icon: <Wallet className="w-4 h-4" />,
     },
   ];
@@ -106,7 +106,7 @@ export default function InstitutionLayout({ children }) {
   if (accountType === "finance") {
     navMenu.splice(3, 0, {
       label: "Approvals",
-      href: "/dashboard/institution/approvals",
+      href: "/ecosystem/institution/approvals",
       icon: <Coins className="w-4 h-4" />,
     });
   }
@@ -114,7 +114,7 @@ export default function InstitutionLayout({ children }) {
   if (accountType === "distributor") {
     navMenu.splice(2, 0, {
       label: "Distributions",
-      href: "/dashboard/institution/distributions",
+      href: "/ecosystem/institution/distributions",
       icon: <Truck className="w-4 h-4" />,
     });
   }
@@ -123,14 +123,14 @@ export default function InstitutionLayout({ children }) {
   if (accountType === "finance") {
     navMenu.splice(4, 0, {
       label: "Platform Wallet",
-      href: "/dashboard/institution/platform-wallet",
+      href: "/ecosystem/institution/platform-wallet",
       icon: <Coins className="w-4 h-4 text-emerald-500" />,
     });
   }
 
   navMenu.push({
     label: "Settings",
-    href: "/dashboard/institution/settings",
+    href: "/ecosystem/institution/settings",
     icon: <Settings className="w-4 h-4" />,
   });
 

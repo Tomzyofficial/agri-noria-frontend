@@ -67,37 +67,37 @@ export default function FieldOperationsLayout({ children }) {
   const navMenu = [
     {
       label: "Overview",
-      href: "/dashboard/field-operations",
+      href: "/ecosystem/field-operations",
       icon: <LayoutDashboard className="w-4 h-4" />,
     },
     {
       label: "Farm Inspections",
-      href: "/dashboard/field-operations/inspections",
+      href: "/ecosystem/field-operations/inspections",
       icon: <MapPin className="w-4 h-4" />,
     },
     {
       label: "Verification Queue",
-      href: "/dashboard/field-operations/verifications",
+      href: "/ecosystem/field-operations/verifications",
       icon: <ShieldCheck className="w-4 h-4" />,
     },
     {
       label: "Agronomy Reports",
-      href: "/dashboard/field-operations/reports",
+      href: "/ecosystem/field-operations/reports",
       icon: <ClipboardList className="w-4 h-4" />,
     },
     {
       label: "Visit Schedule",
-      href: "/dashboard/field-operations/schedule",
+      href: "/ecosystem/field-operations/schedule",
       icon: <Calendar className="w-4 h-4" />,
     },
     {
       label: "My Wallet",
-      href: "/dashboard/field-operations/wallet",
+      href: "/ecosystem/field-operations/wallet",
       icon: <Wallet className="w-4 h-4" />,
     },
     {
       label: "Settings",
-      href: "/dashboard/field-operations/settings",
+      href: "/ecosystem/field-operations/settings",
       icon: <Settings className="w-4 h-4" />,
     },
   ];

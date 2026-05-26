@@ -69,42 +69,42 @@ export default function AggregatorLayout({ children }) {
   const sidebarNavMenu = [
     {
       label: "Overview",
-      href: "/dashboard/aggregator",
+      href: "/ecosystem/aggregator",
       icon: <LayoutDashboard className="w-4 h-4" />,
     },
     {
       label: "Buyer Management",
-      href: "/dashboard/aggregator/buyers",
+      href: "/ecosystem/aggregator/buyers",
       icon: <Users className="w-4 h-4" />,
     },
     {
       label: "Cluster Management",
-      href: "/dashboard/aggregator/clusters",
+      href: "/ecosystem/aggregator/clusters",
       icon: <Users className="w-4 h-4" />,
     },
     {
       label: "Financing & Escrow",
-      href: "/dashboard/aggregator/financing",
+      href: "/ecosystem/aggregator/financing",
       icon: <CreditCard className="w-4 h-4" />,
     },
     {
       label: "Intervention Requests",
-      href: "/dashboard/aggregator/inputs",
+      href: "/ecosystem/aggregator/inputs",
       icon: <Package className="w-4 h-4" />,
     },
     {
       label: "Marketplace Data",
-      href: "/dashboard/aggregator/marketplace",
+      href: "/ecosystem/aggregator/marketplace",
       icon: <BarChart3 className="w-4 h-4" />,
     },
     {
       label: "My Wallet",
-      href: "/dashboard/aggregator/wallet",
+      href: "/ecosystem/aggregator/wallet",
       icon: <Wallet className="w-4 h-4" />,
     },
     {
       label: "Settings",
-      href: "/dashboard/aggregator/settings",
+      href: "/ecosystem/aggregator/settings",
       icon: <Settings className="w-4 h-4" />,
     },
   ];

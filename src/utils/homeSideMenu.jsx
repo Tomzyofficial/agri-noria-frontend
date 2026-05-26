@@ -42,7 +42,7 @@ export const sidebarMenu = [
     icon: <FaWarehouse className="h-4 w-4 text-amber-600" />,
   },
   {
-    href: "/agri-logistics",
+    href: "/logistics-vehicles",
     title: "Agri Logistics",
     icon: <FaMotorcycle className="h-4 w-4 text-orange-600" />,
   },

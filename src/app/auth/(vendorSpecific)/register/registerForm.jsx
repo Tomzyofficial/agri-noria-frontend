@@ -27,53 +27,42 @@ const workspaceRoleCategories = {
         "Insurance Firm",
         "Commodity Board",
         "Finance",
+        "Distributor",
       ],
     },
-
     {
       name: "Program Management",
       roles: ["Program Director", "Regional Manager", "Cluster Supervisor"],
     },
-
     {
       name: "Field Operations",
+      roles: ["Field Officer", "Agronomist", "Inspector", "Enumerator"],
+    },
+    {
+      name: "Farmer",
+      roles: ["Farmer"],
+    },
+    {
+      name: "Buyer / Partner",
       roles: [
-        "Field Officer",
-        "Agronomist",
-        "Inspector",
-        "Enumerator",
-        "Field Auditor",
-        "Satellite Monitor",
+        "Exporter",
+        "Off-taker",
+        "Warehouse Buyer",
+        "Processor",
+        "Logistics Partner",
       ],
     },
-
     {
-      name: "Farm Development",
-      roles: [
-        "Farm Development Officer",
-        "Input Coordinator",
-        "Seed Distribution Officer",
-      ],
+      name: "Aggregator",
+      roles: ["Aggregator"],
     },
-
     {
-      name: "Production",
-      roles: ["Farmer", "Aggregator", "Cooperative Leader"],
+      name: "Sales & Distribution",
+      roles: ["Sales Manager", "Logistics Coordinator", "Warehouse Supervisor"],
     },
-
-    {
-      name: "Supply & Off-take",
-      roles: ["Off-taker", "Warehouse Buyer", "Processor", "Exporter"],
-    },
-
-    {
-      name: "Logistics & Storage",
-      roles: ["Logistics Partner", "Warehouse Operator", "Fleet Manager"],
-    },
-
     {
       name: "Intelligence & Monitoring",
-      roles: ["Data Analyst", "Monitoring Officer", "Compliance Officer"],
+      roles: ["Data Analyst", "Satellite Monitor", "Field Auditor"],
     },
   ],
 

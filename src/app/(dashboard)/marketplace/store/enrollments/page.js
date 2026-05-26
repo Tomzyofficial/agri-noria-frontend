@@ -111,9 +111,10 @@ export default function TrainingPartnerDashboard() {
                      trainingId: trainingId,
                      isHost: false,
                      uid: data.data.uid,
+                     trainingTitle: data.data.training?.title,
                   }),
                );
-               window.open(`/dashboard/training/live/${trainingId}`, "_blank");
+               window.open(`/marketplace/training/live/${trainingId}`, "_blank");
             } else {
                toast.error(data.error || "Failed to join session");
             }

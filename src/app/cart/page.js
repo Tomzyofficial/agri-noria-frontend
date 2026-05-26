@@ -1,5 +1,5 @@
 import { CartPage } from "@/app/cart/components/CartPage";
-import NavBar from "@/components/ui/NavBar/NavBar";
+import NavBar from "@/components/ui/NavBar/Navbar";
 
 // export const metadata = {
 //    title: "Cart",
@@ -7,10 +7,10 @@ import NavBar from "@/components/ui/NavBar/NavBar";
 // };
 
 export default async function Cart() {
-   return (
-      <>
-         <NavBar />
-         <CartPage />
-      </>
-   );
+  return (
+    <>
+      <NavBar />
+      <CartPage />
+    </>
+  );
 }

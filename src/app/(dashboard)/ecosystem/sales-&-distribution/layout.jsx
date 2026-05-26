@@ -69,37 +69,37 @@ export default function SalesLayout({ children }) {
   const sidebarNavMenu = [
     {
       label: "Overview",
-      href: "/dashboard/sales-&-distribution",
+      href: "/ecosystem/sales-&-distribution",
       icon: <LayoutDashboard className="w-4 h-4" />,
     },
     {
       label: "Shipments",
-      href: "/dashboard/sales-&-distribution/shipments",
+      href: "/ecosystem/sales-&-distribution/shipments",
       icon: <Truck className="w-4 h-4" />,
     },
     {
       label: "Warehouse",
-      href: "/dashboard/sales-&-distribution/warehouse",
+      href: "/ecosystem/sales-&-distribution/warehouse",
       icon: <Warehouse className="w-4 h-4" />,
     },
     // {
     //    label: "Platform Wallet",
-    //    href: "/dashboard/sales-&-distribution/platform-wallet",
+    //    href: "/ecosystem/sales-&-distribution/platform-wallet",
     //    icon: <Coins className="w-4 h-4 text-emerald-500" />,
     // },
     {
       label: "Sales Wallet",
-      href: "/dashboard/sales-&-distribution/wallet",
+      href: "/ecosystem/sales-&-distribution/wallet",
       icon: <Wallet className="w-4 h-4" />,
     },
     {
       label: "Sales Analytics",
-      href: "/dashboard/sales-&-distribution/analytics",
+      href: "/ecosystem/sales-&-distribution/analytics",
       icon: <BadgePercent className="w-4 h-4" />,
     },
     {
       label: "Settings",
-      href: "/dashboard/sales-&-distribution/settings",
+      href: "/ecosystem/sales-&-distribution/settings",
       icon: <Settings className="w-4 h-4" />,
     },
   ];

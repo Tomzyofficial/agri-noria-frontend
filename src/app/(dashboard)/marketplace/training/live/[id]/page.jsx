@@ -9,32 +9,77 @@ export default function LiveTrainingSession() {
    const params = useParams();
    const router = useRouter();
    const [sessionData, setSessionData] = useState(null);
+   const [loadingMessage, setLoadingMessage] = useState("Preparing live session...");
 
    useEffect(() => {
-      // Get session data from localStorage
-      const storedSession = localStorage.getItem(`agoraSession_${params.id}`);
-      if (storedSession) {
-         const session = JSON.parse(storedSession);
-         setSessionData(session);
-      } else {
-         toast.error("No session data found");
-         router.push("/dashboard/store/enrollment");
-      }
-   }, [params.id, router]);
+      let cancelled = false;
 
-   console.log("JOINING WITH UID:", sessionData?.uid);
+      const loadSession = async () => {
+         const storedSession = localStorage.getItem(`agoraSession_${params.id}`);
+         if (!storedSession) {
+            toast.error("No session data found");
+            router.push("/marketplace/store/enrollments");
+            return;
+         }
+
+         try {
+            const session = JSON.parse(storedSession);
+            const endpoint = session.isHost
+               ? `/api/proxy/vendor/training/${params.id}/start`
+               : `/api/proxy/vendor/training/${params.id}/join`;
+
+            setLoadingMessage(session.isHost ? "Opening host room..." : "Joining live room...");
+
+            const response = await fetch(endpoint, { method: "POST" });
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+               throw new Error(data.error || "Failed to load live session");
+            }
+
+            const freshSession = {
+               token: data.data.agoraToken,
+               channelName: data.data.channelName,
+               appId: data.data.appId,
+               trainingId: params.id,
+               isHost: session.isHost,
+               uid: data.data.uid,
+               trainingTitle: data.data.training?.title || session.trainingTitle,
+            };
+
+            localStorage.setItem(`agoraSession_${params.id}`, JSON.stringify(freshSession));
+
+            if (!cancelled) {
+               setSessionData(freshSession);
+            }
+         } catch (error) {
+            console.error("Error preparing live session:", error);
+            toast.error(error.message || "Failed to prepare live session");
+            router.push("/marketplace/store/enrollments");
+         }
+      };
+
+      loadSession();
+
+      return () => {
+         cancelled = true;
+      };
+   }, [params.id, router]);
 
    const handleEndSession = () => {
       localStorage.removeItem(`agoraSession_${params.id}`);
 
-      router.push("/dashboard/store/enrollment");
+      router.push(sessionData?.isHost ? "/marketplace/trainer" : "/marketplace/store/enrollments");
       router.refresh();
    };
 
    if (!sessionData) {
       return (
-         <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+         <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
+            <div className="flex flex-col items-center gap-4">
+               <div className="h-12 w-12 animate-spin rounded-full border-2 border-white/20 border-b-emerald-400"></div>
+               <p className="text-sm font-medium text-slate-300">{loadingMessage}</p>
+            </div>
          </div>
       );
    }
