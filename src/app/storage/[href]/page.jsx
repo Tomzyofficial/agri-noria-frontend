@@ -1,5 +1,5 @@
 import StorageDetail from "@/app/storage/[href]/storage-details";
-import NavBar from "@/components/ui/NavBar/Navbar";
+import NavBar from "@/components/ui/NavBar/NavBar";
 import { apiUrl } from "@/_lib/api";
 import { cookieStoreFnc } from "@/actions/session";
 

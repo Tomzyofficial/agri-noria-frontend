@@ -1,7 +1,7 @@
 import { getMarketplaceProducts } from "@/_lib/data";
 import { HomePage } from "@/app/HomePage.jsx";
 import { Footer } from "@/components/ui/Footer";
-import NavBar from "@/components/ui/NavBar/Navbar";
+import NavBar from "@/components/ui/NavBar/NavBar";
 import { verifyVendorSession } from "@/actions/session";
 import { redirect } from "next/navigation";
 

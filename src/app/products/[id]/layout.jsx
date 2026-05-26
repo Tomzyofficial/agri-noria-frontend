@@ -1,4 +1,4 @@
-import NavBar from "@/components/ui/NavBar/Navbar";
+import NavBar from "@/components/ui/NavBar/NavBar";
 import { apiUrl } from "@/_lib/api";
 
 export async function generateMetadata({ params }) {

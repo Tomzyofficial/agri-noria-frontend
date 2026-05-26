@@ -1,4 +1,4 @@
-import NavBar from "@/components/ui/NavBar/Navbar";
+import NavBar from "@/components/ui/NavBar/NavBar";
 
 export const metadata = {
   title: "Large-Scale Farming Services",

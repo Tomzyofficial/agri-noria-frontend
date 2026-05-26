@@ -11,7 +11,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { Footer } from "@/components/ui/Footer";
-import NavBar from "@/components/ui/NavBar/Navbar";
+import NavBar from "@/components/ui/NavBar/NavBar";
 import { getListedLogisticsVehicles } from "@/_lib/data";
 
 export const metadata = {

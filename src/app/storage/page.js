@@ -1,5 +1,5 @@
 import StoragePage from "@/app/storage/storage";
-import NavBar from "@/components/ui/NavBar/Navbar";
+import NavBar from "@/components/ui/NavBar/NavBar";
 import { getMarketplaceListedStorage } from "@/_lib/data";
 
 export const metadata = {
