@@ -1,14 +1,14 @@
 import { Suspense } from "react";
 import { verifyBuyerSession } from "@/actions/session";
 import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
-import { LogisticsOverview } from "./components/BuyerOverview";
+import { BuyerOverview } from "./components/BuyerOverview";
 
 export const metadata = {
-  title: "Logistics Dashboard",
-  description: "Overview of orders assigned to your logistics fleet",
+  title: "Buyer Dashboard",
+  description: "Overview of your buyer activities",
 };
 
-export default async function LogisticsDashboardPage() {
+export default async function BuyerDashboardPage() {
   const session = await verifyBuyerSession();
   if (!session?.authenticated || !session?.buyerId) {
     return <Unauthorized />;
@@ -20,7 +20,7 @@ export default async function LogisticsDashboardPage() {
         <p className="p-6 text-center text-gray-500">Loading overview...</p>
       }
     >
-      <LogisticsOverview />
+      <BuyerOverview />
     </Suspense>
   );
 }
