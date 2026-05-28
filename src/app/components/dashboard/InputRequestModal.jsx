@@ -16,7 +16,7 @@ const INPUTS = [
 
 const MAX_AMOUNT = 1_000_000;
 
-export default function InputRequestModal({ isOpen, onClose, farmerId = null, clusterId = null, isClusterRequest = false, requestId = null }) {
+export default function InputRequestModal({ isOpen, onClose, farmerId = null, clusterId = null, isClusterRequest = false, requestId = null, lockedFunds = null }) {
    const [selected, setSelected] = useState([]);
    const [submitting, setSubmitting] = useState(false);
    const [farmSize, setFarmSize] = useState(1);
@@ -65,6 +65,7 @@ export default function InputRequestModal({ isOpen, onClose, farmerId = null, cl
    }, 0);
    const totalAmount = Math.min(rawTotal, MAX_AMOUNT);
    const isCapped = rawTotal > MAX_AMOUNT;
+   const exceedsBudget = lockedFunds !== null && lockedFunds !== undefined && totalAmount > parseFloat(lockedFunds);
 
    const handleSubmit = async () => {
       if (selected.length === 0) {
@@ -134,6 +135,30 @@ export default function InputRequestModal({ isOpen, onClose, farmerId = null, cl
             </div>
 
             <div className="p-6 space-y-5">
+                {/* Locked Funds Budget Banner */}
+                {lockedFunds !== null && lockedFunds !== undefined && (
+                   <div className={`flex items-center justify-between p-4 rounded-xl border ${
+                      exceedsBudget 
+                         ? "bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800/30" 
+                         : "bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800/30"
+                   }`}>
+                      <div className="flex items-center gap-2">
+                         <span className="text-lg">🔒</span>
+                         <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-500">Available Budget (Locked Funds)</p>
+                            <p className={`text-xl font-black ${exceedsBudget ? "text-red-600" : "text-emerald-600"}`}>
+                               ₦{parseFloat(lockedFunds).toLocaleString()}
+                            </p>
+                         </div>
+                      </div>
+                      {exceedsBudget && (
+                         <span className="text-[10px] font-black text-red-600 bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded-full uppercase tracking-widest animate-pulse">
+                            Budget Exceeded
+                         </span>
+                      )}
+                   </div>
+                )}
+
                {/* Info banner */}
                <div className="flex items-start gap-3 p-3.5 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-800/30">
                   <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
@@ -219,8 +244,17 @@ export default function InputRequestModal({ isOpen, onClose, farmerId = null, cl
                            <p className="text-[9px] text-gray-400 line-through">Raw: ₦{rawTotal.toLocaleString()}</p>
                         )}
                      </div>
-                  </div>
-               </div>
+                </div>
+
+                {/* Budget exceeded warning */}
+                {exceedsBudget && (
+                   <div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-800/30">
+                      <span className="text-sm">⚠️</span>
+                      <p className="text-xs text-red-700 dark:text-red-300 font-bold">
+                         Selection exceeds locked funds by ₦{(totalAmount - parseFloat(lockedFunds)).toLocaleString()}. Remove some inputs or request additional funding.
+                      </p>
+                   </div>
+                )}               </div>
 
                {/* Actions */}
                <div className="flex gap-3">
@@ -233,10 +267,14 @@ export default function InputRequestModal({ isOpen, onClose, farmerId = null, cl
                   </Button>
                   <Button
                      onClick={handleSubmit}
-                     disabled={submitting || selected.length === 0 || loadingSize}
-                     className="flex-1 py-6 rounded-2xl font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
+                     disabled={submitting || selected.length === 0 || loadingSize || exceedsBudget}
+                     className={`flex-1 py-6 rounded-2xl font-black transition-all active:scale-95 ${
+                        exceedsBudget 
+                           ? "bg-red-400 cursor-not-allowed text-white opacity-70" 
+                           : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20"
+                     }`}
                   >
-                     {submitting ? "Processing..." : `Confirm Selection · ₦${totalAmount.toLocaleString()}`}
+                     {submitting ? "Processing..." : exceedsBudget ? "⚠ Exceeds Budget" : `Confirm Selection · ₦${totalAmount.toLocaleString()}`}
                   </Button>
                </div>
             </div>

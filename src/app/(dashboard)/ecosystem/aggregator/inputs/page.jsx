@@ -37,7 +37,7 @@ export default function InterventionRequestsPage() {
                     <h1 className="text-3xl font-black tracking-tight">Intervention Requests</h1>
                     <p className="text-gray-500 mt-1">Request and track bulk agricultural inputs for your clusters.</p>
                 </div>
-                <Button 
+                <Button
                     onClick={() => setShowInputModal(true)}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-all flex items-center gap-2"
                 >
@@ -77,10 +77,9 @@ export default function InterventionRequestsPage() {
                                         </td>
                                         <td className="px-6 py-4 font-black text-gray-900 dark:text-white">₦{parseFloat(req.total_amount).toLocaleString()}</td>
                                         <td className="px-6 py-4">
-                                            <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${
-                                                req.status === 'approved' ? 'bg-emerald-100 text-emerald-600' : 
-                                                req.status === 'pending' ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600'
-                                            }`}>
+                                            <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${req.status === 'approved' ? 'bg-emerald-100 text-emerald-600' :
+                                                    req.status === 'pending' ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600'
+                                                }`}>
                                                 {req.status}
                                             </span>
                                         </td>
@@ -93,8 +92,8 @@ export default function InterventionRequestsPage() {
                 </div>
             </Card>
 
-            <InputRequestModal 
-                isOpen={showInputModal} 
+            <InputRequestModal
+                isOpen={showInputModal}
                 onClose={() => {
                     setShowInputModal(false);
                     fetchData();

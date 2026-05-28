@@ -67,6 +67,7 @@ export async function registerBridge(credentials) {
 
     return { success: true };
   } catch (error) {
+    console.error("RegisterBridge error:", error);
     return { success: false, error: "Internal server error. Try again later." };
   }
 }

@@ -65,10 +65,10 @@ export default function AggregatorDashboard() {
                     </p>
                 </div>
                 <div className="flex gap-3">
-                    <Button onClick={() => window.location.href='/dashboard/aggregator/buyers'} className="bg-gray-900 text-white hover:bg-black px-6 py-6 rounded-2xl font-bold transition-all hover:scale-105">
+                    <Button onClick={() => window.location.href='/ecosystem/aggregator/buyers'} className="bg-gray-900 text-white hover:bg-black px-6 py-6 rounded-2xl font-bold transition-all hover:scale-105">
                         Manage Buyers
                     </Button>
-                    <Button onClick={() => window.location.href='/dashboard/aggregator/clusters'} className="bg-green-600 text-white hover:bg-green-700 px-6 py-6 rounded-2xl font-bold shadow-lg shadow-green-600/20 transition-all hover:scale-105">
+                    <Button onClick={() => window.location.href='/ecosystem/aggregator/clusters'} className="bg-green-600 text-white hover:bg-green-700 px-6 py-6 rounded-2xl font-bold shadow-lg shadow-green-600/20 transition-all hover:scale-105">
                         View Clusters
                     </Button>
                 </div>
@@ -111,7 +111,7 @@ export default function AggregatorDashboard() {
                 <Card className="lg:col-span-2 rounded-[2.5rem] border-none shadow-sm bg-white dark:bg-gray-900 p-8">
                     <div className="flex justify-between items-center mb-8">
                         <h3 className="text-2xl font-black">Recent Procurement</h3>
-                        <Button variant="ghost" onClick={() => window.location.href='/dashboard/aggregator/buyers'} className="text-green-600 font-bold hover:bg-green-50">View All</Button>
+                        <Button variant="ghost" onClick={() => window.location.href='/ecosystem/aggregator/buyers'} className="text-green-600 font-bold hover:bg-green-50">View All</Button>
                     </div>
                     <div className="space-y-4">
                         {agreements.length === 0 ? (

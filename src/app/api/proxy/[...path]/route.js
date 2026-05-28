@@ -111,9 +111,8 @@ async function handler(req, { params }) {
     });
 
     const contentType = backendRes.headers.get("content-type");
-    const data = await backendRes.text();
 
-    return new Response(data, {
+    return new Response(backendRes.body, {
       status: backendRes.status,
       headers: {
         "Content-Type": contentType || "application/json",

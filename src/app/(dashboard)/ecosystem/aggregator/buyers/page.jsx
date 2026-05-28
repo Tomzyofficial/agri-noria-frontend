@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
-import { FaUsers, FaPlus, FaRegFilePdf, FaExternalLinkAlt } from "react-icons/fa";
+import { FaUsers, FaPlus, FaRegFilePdf, FaExternalLinkAlt, FaCheckCircle } from "react-icons/fa";
 import { toast } from "react-toastify";
 
 export default function BuyerManagementPage() {
@@ -108,7 +108,14 @@ export default function BuyerManagementPage() {
                                     <CardContent className="p-8">
                                         <div className="flex justify-between items-start mb-6">
                                             <div>
-                                                <h3 className="font-black text-xl">{ag.buyer_name}</h3>
+                                                <h3 className="font-black text-xl flex items-center gap-2">
+                                                    {ag.buyer_name}
+                                                    {['accepted', 'stamped', 'approved', 'paid', 'completed'].includes(ag.status) && (
+                                                        <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-[10px] font-black uppercase flex items-center gap-1">
+                                                            <FaCheckCircle size={10} /> Verified
+                                                        </span>
+                                                    )}
+                                                </h3>
                                                 <p className="text-gray-500 font-bold text-xs uppercase tracking-widest">{ag.product_details.commodity}</p>
                                             </div>
                                             <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-black uppercase">Post-Harvest</span>
@@ -159,7 +166,14 @@ export default function BuyerManagementPage() {
                             {agreements.filter(a => a.is_pre_harvest).map(ag => (
                                 <div key={ag.id} className="space-y-4">
                                     <div className="flex items-center gap-3 px-4">
-                                        <h3 className="font-black text-lg">{ag.buyer_name}</h3>
+                                        <h3 className="font-black text-lg flex items-center gap-2">
+                                            {ag.buyer_name}
+                                            {['accepted', 'stamped', 'approved', 'paid', 'completed'].includes(ag.status) && (
+                                                <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-[10px] font-black uppercase flex items-center gap-1">
+                                                    <FaCheckCircle size={10} /> Verified
+                                                </span>
+                                            )}
+                                        </h3>
                                         <span className="h-1 flex-1 bg-gray-100 rounded-full"></span>
                                         <span className="text-[10px] font-black text-gray-400 uppercase">{ag.product_details.commodity}</span>
                                     </div>

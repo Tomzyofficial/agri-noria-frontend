@@ -65,10 +65,23 @@ export default function PlatformWalletPage() {
       
       setIsDisbursing(true);
       try {
+         const payload = {
+            target_wallet_id: disburseForm.targetWalletId,
+            amount: parseFloat(disburseForm.amount),
+            description: disburseForm.description
+         };
+
+         // Frontend validation
+         if (payload.amount > stats.totalBalance) {
+             toast.error("Insufficient funds. Your wallet balance is less than the requested amount.");
+             setIsDisbursing(false);
+             return;
+         }
+
          const res = await fetch("/api/proxy/admin/disburse", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(disburseForm)
+            body: JSON.stringify(payload)
          });
          
          const data = await res.json();

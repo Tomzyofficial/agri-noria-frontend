@@ -25,6 +25,7 @@ export default function ClusterManagementPage() {
     const [isRequestingFunding, setIsRequestingFunding] = useState(null);
     const [showRequestModal, setShowRequestModal] = useState(false);
     const [selectingForRequest, setSelectingForRequest] = useState(null);
+    const [selectedClusterFunds, setSelectedClusterFunds] = useState(null);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -49,7 +50,7 @@ export default function ClusterManagementPage() {
             }
             if (programsRes.ok) {
                 const data = await programsRes.json();
-                setPrograms(data || []);
+                setPrograms(data?.data || []);
             }
             if (sessionRes.ok) {
                 const data = await sessionRes.json();
@@ -193,7 +194,7 @@ export default function ClusterManagementPage() {
                     cluster_id: clusterId,
                     input_items: [],
                     is_cluster_request: true,
-                    requester_type: 'cluster_manager'
+                    requester_type: 'aggregator'
                 }),
             });
             if (res.ok) {
@@ -212,6 +213,9 @@ export default function ClusterManagementPage() {
         if (cluster.request_status === "approved" && cluster.request_items_status !== "pending") {
             return "completed";
         }
+        if (cluster.request_status === "items_selected") {
+            return "items_selected";
+        }
         if (cluster.request_funds_status === "approved" && cluster.request_items_status === "pending") {
             return "select_inputs";
         }
@@ -221,8 +225,7 @@ export default function ClusterManagementPage() {
         return "request_funding";
     };
 
-    // Check if user already owns a cluster
-    const userHasCluster = clusters.some(c => c.supervisor_id === currentUserId);
+    // Allow users to create multiple clusters
 
     if (loading && !clusters.length) return <div className="p-8 text-center animate-pulse">Loading clusters...</div>;
 
@@ -235,14 +238,9 @@ export default function ClusterManagementPage() {
                 </div>
                 <Button
                     onClick={() => setShowModal(true)}
-                    disabled={userHasCluster}
-                    className={`font-bold py-3 px-6 rounded-xl transition-all flex items-center gap-2 ${
-                        userHasCluster
-                            ? "bg-gray-400 cursor-not-allowed opacity-60"
-                            : "bg-emerald-600 hover:bg-emerald-700 text-white"
-                    }`}
+                    className="font-bold py-3 px-6 rounded-xl transition-all flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
-                    <FaPlus /> {userHasCluster ? "Cluster Created" : "Create New Cluster"}
+                    <FaPlus /> Create New Cluster
                 </Button>
             </div>
 
@@ -267,17 +265,18 @@ export default function ClusterManagementPage() {
                                         <div className="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-2xl">
                                             <FaUsers className="text-2xl text-emerald-600" />
                                         </div>
-                                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
-                                            btnState === "completed" ? "bg-green-100 text-green-700" :
-                                            btnState === "select_inputs" ? "bg-purple-100 text-purple-700" :
-                                            btnState === "awaiting_approval" ? "bg-blue-100 text-blue-700" :
-                                            "bg-green-100 text-green-700"
+                                        <div className={`px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase flex items-center gap-1.5 ${
+                                            btnState === "select_inputs" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300" :
+                                            btnState === "items_selected" ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300" :
+                                            btnState === "awaiting_approval" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" :
+                                            btnState === "completed" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" :
+                                            "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                                         }`}>
-                                            {btnState === "completed" ? "Inputs Submitted" :
-                                             btnState === "select_inputs" ? "Awaiting Selection" :
+                                            {btnState === "select_inputs" ? "Awaiting Selection" :
+                                             btnState === "items_selected" ? "Awaiting Distribution" :
                                              btnState === "awaiting_approval" ? "Funding Requested" :
-                                             cluster.status || "Active"}
-                                        </span>
+                                             btnState === "completed" ? "Active" : "No Request"}
+                                        </div>
                                     </div>
                                     <h3 className="text-xl font-bold mb-1">{cluster.name}</h3>
                                     <p className="text-gray-500 text-sm mb-2">{cluster.region}</p>
@@ -318,10 +317,17 @@ export default function ClusterManagementPage() {
                                     <div>
                                         {btnState === "select_inputs" ? (
                                             <Button
-                                                onClick={() => { setSelectingForRequest(cluster.pending_request_id); setShowRequestModal(true); }}
+                                                onClick={() => { setSelectingForRequest(cluster.pending_request_id); setSelectedClusterFunds(cluster.wallet_locked_balance || 0); setShowRequestModal(true); }}
                                                 className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-2.5 rounded-xl animate-pulse shadow-lg shadow-purple-500/20"
                                             >
                                                 Select Inputs
+                                            </Button>
+                                        ) : btnState === "items_selected" ? (
+                                            <Button
+                                                disabled
+                                                className="w-full bg-indigo-600 cursor-not-allowed text-white font-bold text-xs py-2.5 rounded-xl opacity-80"
+                                            >
+                                                Items Selected (Awaiting Distribution)
                                             </Button>
                                         ) : btnState === "awaiting_approval" ? (
                                             <Button
@@ -331,12 +337,16 @@ export default function ClusterManagementPage() {
                                                 Funding Awaiting Approval
                                             </Button>
                                         ) : btnState === "completed" ? (
-                                            <Button
-                                                disabled
-                                                className="w-full bg-green-600 cursor-not-allowed text-white font-bold text-xs py-2.5 rounded-xl opacity-80"
-                                            >
-                                                ✓ Inputs Submitted
-                                            </Button>
+                                            <div className="w-full bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800/30 rounded-xl p-3 flex flex-col gap-2">
+                                                <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-bold text-xs">
+                                                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                    Distribution Processing
+                                                </div>
+                                                <div className="text-[10px] text-gray-600 dark:text-gray-400">
+                                                    <p><span className="font-bold">Distributor:</span> {cluster.distributor_name || "Assigned Partner"}</p>
+                                                    <p><span className="font-bold">Contact:</span> {cluster.distributor_phone || "N/A"}</p>
+                                                </div>
+                                            </div>
                                         ) : (
                                             <Button
                                                 onClick={() => handleRequestFunding(cluster.id)}
@@ -358,9 +368,10 @@ export default function ClusterManagementPage() {
             {/* Input Request Modal */}
             <InputRequestModal
                 isOpen={showRequestModal}
-                onClose={() => { setShowRequestModal(false); setSelectingForRequest(null); fetchData(); }}
+                onClose={() => { setShowRequestModal(false); setSelectingForRequest(null); setSelectedClusterFunds(null); fetchData(); }}
                 requestId={selectingForRequest}
                 isClusterRequest={true}
+                lockedFunds={selectedClusterFunds}
             />
 
             {/* Create Cluster Modal */}
@@ -446,7 +457,7 @@ export default function ClusterManagementPage() {
                                 <div className="text-center py-12">
                                     <FaUserTie className="text-4xl text-gray-200 mx-auto mb-4" />
                                     <p className="text-gray-500 font-bold">No eligible farmers found</p>
-                                    <p className="text-xs text-gray-400 mt-1">Only verified farmers matching the cluster region and program are shown.</p>
+                                    <p className="text-xs text-gray-400 mt-1">All unassigned farmers in the system are shown.</p>
                                 </div>
                             ) : (
                                 <div className="grid gap-3">
