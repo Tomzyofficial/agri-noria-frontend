@@ -40,7 +40,7 @@ export async function signinBridge(credentials) {
 
     return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    return { success: false, error: "Internal server error. Try again later." };
   }
 }
 

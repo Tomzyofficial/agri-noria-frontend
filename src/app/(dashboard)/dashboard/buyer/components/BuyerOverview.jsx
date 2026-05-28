@@ -6,7 +6,7 @@ import { Package, Wallet, ArrowRight, DollarSign } from "lucide-react";
 import { ORDER_STATUS_CONFIG, logisticsFetcher } from "./BuyerOrderUtils";
 import { formatPrice } from "@/utils/formatPrice";
 
-export function LogisticsOverview() {
+export function BuyerOverview() {
   const { data, error, isLoading } = useSWR(
     "/api/proxy/buyer/orders/stats",
     logisticsFetcher,

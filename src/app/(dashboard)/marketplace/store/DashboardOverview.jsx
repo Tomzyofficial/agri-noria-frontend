@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import useSWR from "swr";
 import { CardSkeleton } from "@/components/ui/CardSkeleton";
+import { formatPrice } from "@/utils/formatPrice";
 
 export function DashboardOverview({ user }) {
   const fetcher = async (url) => {
@@ -33,6 +34,33 @@ export function DashboardOverview({ user }) {
     "/api/proxy/vendor/products/total",
     fetcher,
   );
+
+  const {
+    data: sellerStatsData,
+    error: sellerStatsError,
+    isLoading: sellerStatsLoading,
+  } = useSWR("/api/proxy/buyer/orders/seller/stats", fetcher);
+
+  // Calculate sales increase
+  const currentMonthSales = Number(
+    sellerStatsData?.data?.current_month_sales ?? 0,
+  );
+  const previousMonthSales = Number(
+    sellerStatsData?.data?.previous_month_sales ?? 0,
+  );
+
+  let salesText = "No sales yet";
+
+  if (previousMonthSales === 0 && currentMonthSales > 0) {
+    salesText = "New sales this month";
+  } else if (previousMonthSales > 0) {
+    const percentage =
+      ((currentMonthSales - previousMonthSales) / previousMonthSales) * 100;
+
+    salesText = `${
+      percentage > 0 ? "+" : ""
+    }${percentage.toFixed(2)}% from last month`;
+  }
 
   return (
     <div className="my-25 lg:my-5 dark:text-(--foreground)">
@@ -73,43 +101,80 @@ export function DashboardOverview({ user }) {
             </CardContent>
           </Card>
         )}
+
         {/* Revenue */}
-        <Card className="px-4 py-6">
-          <CardHeader className="flex items-center justify-between space-y-0 pb-2 px-2">
-            <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">
-              +15% from last month
-            </p>
-          </CardContent>
-        </Card>
+        {sellerStatsLoading ? (
+          <CardSkeleton />
+        ) : sellerStatsError ? (
+          <Card className="text-red-500 text-sm h-32 flex items-center justify-center">
+            {sellerStatsError.message}
+          </Card>
+        ) : (
+          <Card className="px-4 py-6">
+            <CardHeader className="flex items-center justify-between space-y-0 pb-2 px-2">
+              <CardTitle className="text-sm font-medium">Revenue</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {formatPrice(
+                  sellerStatsData?.data?.total_revenue ?? 0,
+                  sellerStatsData?.data?.country_code,
+                  sellerStatsData?.data?.currency,
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">{salesText}</p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Active buyers */}
-        <Card className="px-4 py-6">
-          <CardHeader className="flex flex-row items-center justify-between px-2 pb-2">
-            <CardTitle className="text-sm font-medium">Active Buyers</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">+7 new this week</p>
-          </CardContent>
-        </Card>
+        {sellerStatsLoading ? (
+          <CardSkeleton />
+        ) : sellerStatsError ? (
+          <Card className="text-red-500 text-sm h-32 flex items-center justify-center">
+            {sellerStatsError.message}
+          </Card>
+        ) : (
+          <Card className="px-4 py-6">
+            <CardHeader className="flex flex-row items-center justify-between px-2 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Active Buyers
+              </CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {sellerStatsData?.data?.active_buyers ?? 0}
+              </div>
+              <p className="text-xs text-muted-foreground">+7 new this week</p>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Growth */}
-        <Card className="px-4 py-6">
-          <CardHeader className="flex flex-row items-center justify-between px-2 pb-2">
-            <CardTitle className="text-sm font-medium">Growth</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+0%</div>
-            <p className="text-xs text-muted-foreground">vs last quarter</p>
-          </CardContent>
-        </Card>
+        {/* Total orders */}
+        {sellerStatsLoading ? (
+          <CardSkeleton />
+        ) : sellerStatsError ? (
+          <Card className="text-red-500 text-sm h-32 flex items-center justify-center">
+            {sellerStatsError.message}
+          </Card>
+        ) : (
+          <Card className="px-4 py-6">
+            <CardHeader className="flex flex-row items-center justify-between px-2 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total Orders
+              </CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {sellerStatsData?.data?.total_orders || 0}
+              </div>
+              <p className="text-xs text-muted-foreground"></p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <div className="grid md:grid-cols-2 gap-6 mb-8">
