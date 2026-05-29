@@ -66,9 +66,9 @@ export default function ProgramManagementOverview() {
                </CardHeader>
                <CardContent className="p-8">
                   <div className="space-y-6">
-                     <ProgressItem label="Seed Disbursement" value={65} color="bg-orange-500" />
-                     <ProgressItem label="Fertilizer Allocation" value={42} color="bg-green-500" />
-                     <ProgressItem label="Loan Repayments" value={12} color="bg-blue-500" />
+                     <ProgressItem label="Seed Disbursement" value={Math.round(stats.seedDisbursementPct || 0)} color="bg-orange-500" />
+                     <ProgressItem label="Fertilizer Allocation" value={Math.round(stats.fertilizerAllocationPct || 0)} color="bg-green-500" />
+                     <ProgressItem label="Loan Repayments" value={stats.repaymentsTotal ? Math.round((stats.repaymentsRecovered / stats.repaymentsTotal) * 100) : 0} color="bg-blue-500" />
                   </div>
                </CardContent>
             </Card>

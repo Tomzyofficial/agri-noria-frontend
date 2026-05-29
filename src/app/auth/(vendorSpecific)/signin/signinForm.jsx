@@ -224,15 +224,24 @@ export function SigninForm() {
 
       if (session.authenticated) {
         const { workspace, role } = session;
-        const categoryRoute = roleConfig[role]?.category
-          .toLowerCase()
-          .replace(/ \/ /g, "-")
-          .replace(/ /g, "-");
-        const normalizedWorkspace = workspace?.toLowerCase().trim();
         const normalizedRole = role?.toLowerCase().trim();
 
-        if (normalizedWorkspace === "ecosystem") {
-          router.push(`/${normalizedWorkspace}/${categoryRoute}`);
+        let normalizedWorkspace = workspace?.toLowerCase().trim();
+        if (!normalizedWorkspace && normalizedRole) {
+          const isMarketplace = ["seller", "logistics", "storage facility", "trainer", "farmer"].includes(normalizedRole);
+          normalizedWorkspace = isMarketplace ? "marketplace" : "ecosystem";
+        }
+
+        const categoryRoute = roleConfig[normalizedRole]?.category
+          ?.toLowerCase()
+          ?.replace(/ \/ /g, "-")
+          ?.replace(/ /g, "-");
+
+
+        if (normalizedRole === "super admin" || normalizedRole === "admin") {
+          router.push("/dashboard/super-admin");
+        } else if (normalizedWorkspace === "ecosystem") {
+          router.push(`/${normalizedWorkspace}/${categoryRoute || ""}`);
         } else if (
           normalizedWorkspace === "marketplace" &&
           ["farmer", "seller"].includes(normalizedRole)
@@ -240,7 +249,7 @@ export function SigninForm() {
           router.push(`/${normalizedWorkspace}/store`);
         } else {
           router.push(
-            `/${normalizedWorkspace}/${normalizedRole.replace(/\s+/g, "-")}`,
+            `/${normalizedWorkspace}/${normalizedRole?.replace(/\s+/g, "-") || ""}`,
           );
         }
       }
@@ -386,11 +395,10 @@ export function SigninForm() {
               <div className="mt-4 flex items-center justify-between gap-3">
                 <Button
                   type="button"
-                  className={`${
-                    isLoading
+                  className={`${isLoading
                       ? "opacity-50 cursor-not-allowed"
                       : "cursor-pointer"
-                  } bg-gray-200 dark:bg-gray-500 text-(--foreground) px-4 py-2 rounded-md`}
+                    } bg-gray-200 dark:bg-gray-500 text-(--foreground) px-4 py-2 rounded-md`}
                   onClick={handleBack}
                   disabled={isLoading || currentStep === 1}
                 >
@@ -400,11 +408,10 @@ export function SigninForm() {
                 {currentStep < totalSteps ? (
                   <Button
                     type="button"
-                    className={`${
-                      isLoading
+                    className={`${isLoading
                         ? "opacity-50 cursor-not-allowed"
                         : "cursor-pointer"
-                    } bg-(--greenish-color) text-(--white-fff) px-4 py-2 rounded-md`}
+                      } bg-(--greenish-color) text-(--white-fff) px-4 py-2 rounded-md`}
                     onClick={handleNext}
                     disabled={isLoading}
                   >
@@ -413,11 +420,10 @@ export function SigninForm() {
                 ) : (
                   <Button
                     type="submit"
-                    className={`${
-                      isLoading
+                    className={`${isLoading
                         ? "opacity-50 cursor-not-allowed"
                         : "cursor-pointer"
-                    } transition transition-background w-full bg-(--greenish-color) hover:bg-(--dark-green-color) text-(--white-fff) font-normal p-2 rounded-md`}
+                      } transition transition-background w-full bg-(--greenish-color) hover:bg-(--dark-green-color) text-(--white-fff) font-normal p-2 rounded-md`}
                     disabled={isLoading}
                   >
                     {isLoading ? (

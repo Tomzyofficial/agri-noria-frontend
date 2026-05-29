@@ -30,9 +30,8 @@ export default function EcosystemProgramsPage() {
                            <div className="p-3 bg-amber-100 dark:bg-amber-900/30 text-amber-600 rounded-2xl">
                               <Briefcase size={24} />
                            </div>
-                           <span className={`px-4 py-1.5 text-[10px] rounded-full font-black uppercase tracking-widest ${
-                              prog.status === "active" ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : "bg-gray-100 text-gray-500"
-                           }`}>
+                           <span className={`px-4 py-1.5 text-[10px] rounded-full font-black uppercase tracking-widest ${prog.status === "active" ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : "bg-gray-100 text-gray-500"
+                              }`}>
                               {prog.status}
                            </span>
                         </div>
@@ -45,10 +44,14 @@ export default function EcosystemProgramsPage() {
                         </div>
                      </CardHeader>
                      <CardContent className="p-6 pt-0 space-y-4">
-                        <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-2xl">
+                        <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-2xl">
                            <div>
-                              <p className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Target Farmers</p>
+                              <p className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Target</p>
                               <p className="font-bold text-sm">{prog.target_farmers}</p>
+                           </div>
+                           <div>
+                              <p className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Enrolled</p>
+                              <p className="font-bold text-sm">{prog.enrolled_farmers || 0}</p>
                            </div>
                            <div>
                               <p className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Creator</p>
