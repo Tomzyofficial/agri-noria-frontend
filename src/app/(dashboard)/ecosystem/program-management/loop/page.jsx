@@ -4,9 +4,23 @@ import { BarChart3, TrendingUp, CheckCircle2, ChevronRight } from "lucide-react"
 import { useProgramData } from "../useProgramData";
 
 export default function FullLoopPage() {
-   const { loading } = useProgramData();
+   const { loading, stats } = useProgramData();
 
    if (loading) return <div className="p-8 text-center animate-pulse font-bold text-gray-400">Loading Loop Metrics...</div>;
+
+   // Calculate real stats
+   const totalDisbursed = stats?.totalDeployed || 0;
+   const verifiedPlanting = stats?.activeFarmers > 0 ? Math.round((stats?.verifiedFarms / stats?.activeFarmers) * 100) : 0;
+   const repaymentRate = stats?.repaymentsTotal > 0 ? Math.round((stats?.repaymentsRecovered / stats?.repaymentsTotal) * 100) : 0;
+   // ROI = ((Sales - Deployed) / Deployed) * 100
+   const ecosystemROI = stats?.totalDeployed > 0 ? Math.round(((stats?.totalSalesValue - stats?.totalDeployed) / stats?.totalDeployed) * 100) : 0;
+
+   // Format Disbursed
+   const formatCurrency = (val) => {
+      if (val >= 1000000) return `₦${(val / 1000000).toFixed(1)}M`;
+      if (val >= 1000) return `₦${(val / 1000).toFixed(1)}K`;
+      return `₦${val.toLocaleString()}`;
+   };
 
    return (
       <div className="space-y-6">
@@ -16,10 +30,10 @@ export default function FullLoopPage() {
          </div>
 
          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <MetricCard title="Total Disbursed" value="₦4.2M" trend="+12%" color="amber" />
-            <MetricCard title="Verified Planting" value="85%" trend="+5%" color="emerald" />
-            <MetricCard title="Repayment Rate" value="92%" trend="+2%" color="blue" />
-            <MetricCard title="Ecosystem ROI" value="14.5%" trend="+1.2%" color="purple" />
+            <MetricCard title="Total Disbursed" value={formatCurrency(totalDisbursed)} trend="+0%" color="amber" />
+            <MetricCard title="Verified Planting" value={`${verifiedPlanting}%`} trend="+0%" color="emerald" />
+            <MetricCard title="Repayment Rate" value={`${repaymentRate}%`} trend="+0%" color="blue" />
+            <MetricCard title="Ecosystem ROI" value={`${ecosystemROI}%`} trend="+0%" color="purple" />
          </div>
 
          <Card className="border-none shadow-xl bg-white dark:bg-gray-950 overflow-hidden">

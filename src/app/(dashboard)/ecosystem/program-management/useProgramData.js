@@ -11,6 +11,7 @@ export function useProgramData() {
    const [pendingInputs, setPendingInputs] = useState([]);
    const [programs, setPrograms] = useState([]);
    const [currentUserId, setCurrentUserId] = useState(null);
+   const [currentUser, setCurrentUser] = useState(null);
    const [userRole, setUserRole] = useState(null);
    const [eligibleFarmers, setEligibleFarmers] = useState([]);
    const [clusterMembers, setClusterMembers] = useState([]);
@@ -45,6 +46,7 @@ export function useProgramData() {
             const d = await sessionRes.json();
             setCurrentUserId(d.userId);
             setUserRole(d.account_type?.toLowerCase());
+            setCurrentUser(d);
          }
       } catch (err) {
          console.error("Error fetching program data:", err);
@@ -84,7 +86,7 @@ export function useProgramData() {
 
    return {
       loading, clusters, stats, clusterWallet, clusterTransactions, pendingInputs, programs,
-      currentUserId, userRole, eligibleFarmers, clusterMembers,
+      currentUserId, currentUser, userRole, eligibleFarmers, clusterMembers,
       fetchData, fetchClusters, fetchClusterMembers, fetchEligibleFarmers,
       setClusters, setClusterWallet, setClusterTransactions, setPendingInputs, setPrograms
    };
