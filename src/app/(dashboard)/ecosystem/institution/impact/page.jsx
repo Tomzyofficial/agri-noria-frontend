@@ -1,8 +1,48 @@
 "use client";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
-import { TrendingUp, Leaf, Droplets, Sun, Activity } from "lucide-react";
+import { TrendingUp, Leaf, Droplets, Users, Activity, Loader2, BarChart3 } from "lucide-react";
 
 export default function ImpactTrackingPage() {
+   const [impact, setImpact] = useState({
+      totalHarvests: 0,
+      totalYield: 0,
+      totalVerifications: 0,
+      trainedFarmers: 0,
+      totalFarmerIncome: 0
+   });
+   const [loading, setLoading] = useState(true);
+
+   useEffect(() => {
+      const fetchImpact = async () => {
+         try {
+            const res = await fetch("/api/proxy/admin/institution/impact");
+            const json = await res.json();
+            if (json.success) {
+               setImpact(json.data);
+            }
+         } catch (error) {
+            console.error("Failed to fetch impact:", error);
+         } finally {
+            setLoading(false);
+         }
+      };
+      fetchImpact();
+   }, []);
+
+   const formatCurrency = (amount) => {
+      if (amount === 0) return "₦0";
+      return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(amount);
+   };
+
+   if (loading) {
+      return (
+         <div className="flex justify-center items-center min-h-[400px]">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+         </div>
+      );
+   }
+
    return (
       <div className="space-y-6 animate-in fade-in duration-500">
          <div>
@@ -10,14 +50,15 @@ export default function ImpactTrackingPage() {
             <p className="text-gray-500 mt-1 font-medium">Measuring the socio-economic and environmental footprint of your programs.</p>
          </div>
 
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {[
-               { label: "Yield Increase", value: "+34%", icon: <TrendingUp />, color: "emerald" },
-               { label: "Income Boost", value: "+22%", icon: <TrendingUp />, color: "blue" },
-               { label: "Carbon Offset", value: "450t", icon: <Leaf />, color: "green" },
-               { label: "Water Saved", value: "1.2M L", icon: <Droplets />, color: "cyan" },
+               { label: "Approved Harvests", value: impact.totalHarvests.toLocaleString(), icon: <BarChart3 />, color: "emerald" },
+               { label: "Total Yield (tons)", value: impact.totalYield.toLocaleString(), icon: <TrendingUp />, color: "blue" },
+               { label: "Verified Fields", value: impact.totalVerifications.toLocaleString(), icon: <Leaf />, color: "green" },
+               { label: "Trained Farmers", value: impact.trainedFarmers.toLocaleString(), icon: <Users />, color: "purple" },
+               { label: "Farmer Income", value: formatCurrency(impact.totalFarmerIncome), icon: <Droplets />, color: "cyan" },
             ].map((stat, i) => (
-               <Card key={i} className="border-none shadow-sm">
+               <Card key={i} className="border-none shadow-sm bg-white dark:bg-gray-950">
                   <CardContent className="p-6">
                      <div className={`w-10 h-10 rounded-xl bg-${stat.color}-50 text-${stat.color}-600 flex items-center justify-center mb-4`}>
                         {stat.icon}

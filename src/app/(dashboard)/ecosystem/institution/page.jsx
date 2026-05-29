@@ -188,7 +188,7 @@ export default function InstitutionDashboard() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-bold">
-                      {prog.target_farmers} Farmers
+                      {prog.enrolled_farmers} Farmers
                     </p>
                     <p className="text-[10px] text-gray-400 uppercase font-black">
                       {new Date(prog.created_at).toLocaleDateString()}

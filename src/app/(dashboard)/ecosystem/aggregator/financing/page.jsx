@@ -47,7 +47,7 @@ export default function FinancingEscrowPage() {
 
     if (loading) return <div className="p-8 text-center">Loading escrow data...</div>;
 
-    const escrowAgreements = agreements.filter(a => ['sent', 'signed', 'paid'].includes(a.status));
+    const escrowAgreements = agreements.filter(a => ['sent', 'signed', 'approved', 'stamped', 'paid'].includes(a.status));
     const completedAgreements = agreements.filter(a => ['completed', 'fulfilled'].includes(a.status));
 
     return (
