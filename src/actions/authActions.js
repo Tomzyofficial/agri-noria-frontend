@@ -46,10 +46,12 @@ export async function signinBridge(credentials) {
 
 export async function registerBridge(credentials) {
   try {
+    const { account_type, accountType, ...registrationPayload } = credentials;
+
     const res = await fetch(apiUrl("/api/auth/vendor/register"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(credentials),
+      body: JSON.stringify(registrationPayload),
     });
 
     const data = await res.json();
@@ -119,10 +121,12 @@ export async function buyerSigninBridge(credentials) {
 
 export async function buyerRegisterBridge(credentials) {
   try {
+    const { account_type, accountType, ...registrationPayload } = credentials;
+
     const res = await fetch(apiUrl("/api/auth/buyer/register"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(credentials),
+      body: JSON.stringify(registrationPayload),
     });
 
     const data = await res.json();

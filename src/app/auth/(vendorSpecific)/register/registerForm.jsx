@@ -672,30 +672,6 @@ export function RegisterForm() {
                   </div>
 
                   <div>
-                    <Label htmlFor="account_type" className="text-start block">
-                      Account Type
-                    </Label>
-                    <Input
-                      id="account_type"
-                      type="text"
-                      className={
-                        isLoading
-                          ? "opacity-50 bg-gray-100"
-                          : "bg-gray-100 cursor-not-allowed"
-                      }
-                      disabled={true}
-                      name="account_type"
-                      value={formData.account_type}
-                      readOnly
-                    />
-                    {errors.err?.account_type && (
-                      <p className="text-start text-red-400 dark:text-red-300 text-sm">
-                        {errors.err.account_type[0] || errors.err.account_type}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
                     <Label htmlFor="country_code">Country</Label>
                     <select
                       name="country_code"
