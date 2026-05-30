@@ -17,6 +17,7 @@ import {
   Tractor,
   CreditCard,
   Truck,
+  Users,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
@@ -77,25 +78,30 @@ export default function FarmerLayout({ children }) {
       icon: <Sprout className="w-4 h-4" />,
     },
     {
+      label: "My Cluster",
+      href: "/ecosystem/farmer/cluster",
+      icon: <Users className="w-4 h-4" />,
+    },
+    {
       label: "Training Center",
       href: "/ecosystem/farmer/training",
       icon: <GraduationCap className="w-4 h-4" />,
     },
+    // {
+    //   label: "My Farm",
+    //   href: "/ecosystem/farmer/farm",
+    //   icon: <Tractor className="w-4 h-4" />,
+    // },
     {
-      label: "My Farm",
-      href: "/ecosystem/farmer/farm",
-      icon: <Tractor className="w-4 h-4" />,
-    },
-    {
-      label: "Marketplace",
-      href: "/ecosystem/farmer/marketplace",
+      label: "Distributors",
+      href: "/ecosystem/farmer/distributors",
       icon: <Store className="w-4 h-4" />,
     },
-    {
-      label: "Storage & Logistics",
-      href: "/ecosystem/farmer/logistics",
-      icon: <Truck className="w-4 h-4" />,
-    },
+    // {
+    //   label: "Storage & Logistics",
+    //   href: "/ecosystem/farmer/logistics",
+    //   icon: <Truck className="w-4 h-4" />,
+    // },
     {
       label: "Financing",
       href: "/ecosystem/farmer/financing",
