@@ -64,7 +64,10 @@ export default function PendingApprovalsPage() {
                                  <User size={24} />
                               </div>
                               <div>
-                                 <h4 className="font-black text-(--foreground)">{input.fname} {input.lname}</h4>
+                                 <h4 className="font-black text-(--foreground)">
+                                    <span className="capitalize text-gray-500 mr-2">{input.requester_type?.replace('_', ' ') || 'Farmer'}</span>
+                                    {input.fname} {input.lname}
+                                 </h4>
                                  <div className="flex items-center gap-2 mt-1 text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">
                                     <span>{input.cluster_name || "Direct Request"}</span>
                                     <span className="w-1 h-1 rounded-full bg-gray-300"></span>

@@ -144,7 +144,7 @@ export default function FarmerOverview() {
                   </CardContent>
                </Card>
 
-               {profile?.program_id && !profile.cluster_id && (
+               {profile?.program_id && !myCluster && (
                   <Card className="border-none shadow-xl bg-blue-50/50 dark:bg-blue-950/20 rounded-3xl overflow-hidden">
                      <CardHeader className="p-8 pb-4 border-b border-blue-100 dark:border-blue-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
@@ -183,6 +183,34 @@ export default function FarmerOverview() {
                                  <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Scan to find nearby clusters</p>
                               </div>
                            )}
+                        </div>
+                     </CardContent>
+                  </Card>
+               )}
+
+               {myCluster && (
+                  <Card className="border-none shadow-xl bg-emerald-50/50 dark:bg-emerald-950/20 rounded-3xl overflow-hidden">
+                     <CardHeader className="p-8 pb-4 border-b border-emerald-100 dark:border-emerald-900/30">
+                        <CardTitle className="text-xl font-black">My Cluster</CardTitle>
+                        <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest mt-1">You are currently enrolled in this cluster</p>
+                     </CardHeader>
+                     <CardContent className="p-8">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-6 bg-white dark:bg-gray-900 rounded-2xl border border-emerald-100 dark:border-emerald-800 shadow-sm gap-4">
+                           <div className="flex items-center gap-4">
+                              <div className="w-16 h-16 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black text-2xl">
+                                 {myCluster.name ? myCluster.name[0].toUpperCase() : 'C'}
+                              </div>
+                              <div>
+                                 <p className="font-black text-xl">{myCluster.name}</p>
+                                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">
+                                    Created on {new Date(myCluster.created_at).toLocaleDateString()}
+                                 </p>
+                              </div>
+                           </div>
+                           <div className="flex flex-col items-start sm:items-end gap-1 mt-4 sm:mt-0 bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Farmers</span>
+                              <span className="text-3xl font-black text-emerald-600">{myCluster.farmer_count || 0}</span>
+                           </div>
                         </div>
                      </CardContent>
                   </Card>
