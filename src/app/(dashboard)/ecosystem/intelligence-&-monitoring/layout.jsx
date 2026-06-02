@@ -87,11 +87,11 @@ export default function IntelligenceLayout({ children }) {
       href: "/ecosystem/intelligence-&-monitoring/risk-reports",
       icon: <ShieldCheck className="w-4 h-4" />,
     },
-    {
-      label: "Data Explorer",
-      href: "/ecosystem/intelligence-&-monitoring/data-explorer",
-      icon: <LineChart className="w-4 h-4" />,
-    },
+    // {
+    //   label: "Data Explorer",
+    //   href: "/ecosystem/intelligence-&-monitoring/data-explorer",
+    //   icon: <LineChart className="w-4 h-4" />,
+    // },
     {
       label: "My Wallet",
       href: "/ecosystem/intelligence-&-monitoring/wallet",

@@ -1,17 +1,37 @@
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Search, Filter, ShoppingCart, Clock, CheckCircle, AlertCircle, Package, ShieldCheck } from "lucide-react";
 import { useBuyerData } from "../useBuyerData";
 import { Button } from "@/components/ui/Button";
+import { useSearchParams, useRouter } from "next/navigation";
 
 export default function OrdersPage() {
-   const { loading, buyerOrders, payForOrder } = useBuyerData();
+   return (
+      <Suspense fallback={<div className="text-center py-20 animate-pulse font-black text-gray-300">Loading Orders...</div>}>
+         <OrdersContent />
+      </Suspense>
+   );
+}
+
+function OrdersContent() {
+   const { loading, buyerOrders, payForOrder, verifyOrderPayment } = useBuyerData();
    const [filteredOrders, setFilteredOrders] = useState([]);
    const [searchTerm, setSearchTerm] = useState("");
    const [statusFilter, setStatusFilter] = useState("");
+   const searchParams = useSearchParams();
+   const router = useRouter();
 
-   const statuses = ["PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED"];
+   const statuses = ["PENDING", "PAYMENT_PROCESSING", "PAYMENT_PENDING_FINANCE", "READY_FOR_SALES", "PROCESSING", "DELIVERED", "CANCELLED"];
+
+   useEffect(() => {
+      const reference = searchParams.get("reference");
+      if (reference) {
+         verifyOrderPayment(reference).then(() => {
+            router.replace("/ecosystem/buyer-partner/orders", { scroll: false });
+         });
+      }
+   }, [searchParams, verifyOrderPayment, router]);
 
    useEffect(() => {
       setFilteredOrders(buyerOrders || []);
@@ -101,6 +121,14 @@ function OrderRow({ order, onPay }) {
       switch (s) {
          case "PENDING":
             return { icon: <Clock className="w-3 h-3" />, color: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" };
+         case "PAYMENT_PROCESSING":
+         case "PAYMENT_PENDING_FINANCE":
+            return { icon: <Clock className="w-3 h-3" />, color: "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400" };
+         case "READY_FOR_SALES":
+         case "PROCESSING":
+         case "PROCESSED":
+         case "IN_PROGRESS":
+            return { icon: <ShoppingCart className="w-3 h-3" />, color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400" };
          case "PAID":
          case "CONFIRMED":
             return { icon: <CheckCircle className="w-3 h-3" />, color: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400" };
@@ -119,9 +147,7 @@ function OrderRow({ order, onPay }) {
 
    const handlePayment = async () => {
       setPaying(true);
-      // Simulate payment gateway interaction
-      const mockPaymentRef = "ESCROW-" + Math.random().toString(36).substring(2, 10).toUpperCase();
-      await onPay(order.id, mockPaymentRef);
+      await onPay(order.id);
       setPaying(false);
    };
 
@@ -137,9 +163,9 @@ function OrderRow({ order, onPay }) {
             <div>
                <h3 className="text-lg font-black">{order.buyer_name || "Ecosystem Order"}</h3>
                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Order ID: {order.id.split('-')[0]} • {itemCount} items</p>
-               {order.escrow_status === "held" && (
+               {order.payment_status && order.payment_status !== "unpaid" && (
                   <span className="inline-flex items-center gap-1 mt-2 text-[9px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-md">
-                     <ShieldCheck size={10} /> Escrow Secured
+                     <ShieldCheck size={10} /> {order.payment_status.replaceAll("_", " ")}
                   </span>
                )}
             </div>
@@ -159,8 +185,13 @@ function OrderRow({ order, onPay }) {
                   disabled={paying}
                   className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-6 text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20"
                >
-                  {paying ? "Processing..." : "Pay to Escrow"}
+                  {paying ? "Processing..." : "Pay with Paystack"}
                </Button>
+            )}
+            {order.status === "payment_pending_finance" && (
+               <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-violet-600">
+                  Awaiting finance confirmation
+               </p>
             )}
          </div>
       </div>
