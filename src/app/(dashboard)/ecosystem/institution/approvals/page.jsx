@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
 
 const INPUT_CATALOG = {
   Mechanical: { price: 150000, unit: "unit", qty: 1, icon: "🚜" },
@@ -115,6 +116,7 @@ export default function FinanceApprovalsPage() {
   const [stage2, setStage2] = useState([]);
   const [history, setHistory] = useState([]);
   const [distributors, setDistributors] = useState([]);
+  const [marketplaceOrders, setMarketplaceOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState(null);
   const [selectedDistributor, setSelectedDistributor] = useState("");
@@ -131,17 +133,19 @@ export default function FinanceApprovalsPage() {
         router.replace("/ecosystem/institution");
         return;
       }
-      const [statsRes, pendingRes, distRes, allRes] = await Promise.all([
+      const [statsRes, pendingRes, distRes, allRes, ordersRes] = await Promise.all([
         fetch("/api/proxy/admin/institution/analytics"),
         fetch("/api/proxy/admin/institution/pending-requests"),
         fetch("/api/proxy/admin/institution/distributors"),
         fetch("/api/proxy/pipeline/inputs/all"),
+        fetch("/api/proxy/pipeline/buyer-orders/all"),
       ]);
-      const [statsJson, pendingJson, distJson, allJson] = await Promise.all([
+      const [statsJson, pendingJson, distJson, allJson, ordersJson] = await Promise.all([
         statsRes.json(),
         pendingRes.json(),
         distRes.json(),
         allRes.json(),
+        ordersRes.json(),
       ]);
       if (statsJson.success) setStats(statsJson.data.disbursements);
       if (distJson.success) setDistributors(distJson.data);
@@ -156,6 +160,16 @@ export default function FinanceApprovalsPage() {
       );
       const all = allJson.success ? allJson.data || [] : [];
       setHistory(all.filter((r) => r.status !== "pending"));
+
+      const allOrders = ordersJson.success ? ordersJson.data || [] : [];
+      setMarketplaceOrders(
+        allOrders.filter(
+          (o) =>
+            o.status === "payment_pending_finance" ||
+            o.payment_status === "paystack_verified" ||
+            o.status === "payment_processing"
+        )
+      );
     } catch (e) {
       console.error("Fetch error:", e);
       toast.error("Failed to load approval data");
@@ -167,6 +181,28 @@ export default function FinanceApprovalsPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleConfirmOrderPayment = async (orderId) => {
+    setProcessingId(`order-${orderId}`);
+    try {
+      const res = await fetch(`/api/proxy/pipeline/buyer-orders/${orderId}/payment/finance-confirm`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ finance_note: "Confirmed via Finance Dashboard" }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success("✅ Marketplace payment confirmed successfully!");
+        fetchData();
+      } else {
+        toast.error(json.error || "Failed to confirm payment");
+      }
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setProcessingId(null);
+    }
+  };
 
   const handleApproveFunds = async (req) => {
     setProcessingId(req.id);
@@ -308,8 +344,16 @@ export default function FinanceApprovalsPage() {
         ))}
       </div>
 
-      {/* STAGE 1 — Fund Authorization */}
-      <div>
+      <Tabs defaultValue="program_approvals" className="w-full mt-4">
+        <TabsList className="mb-6 grid w-full grid-cols-3 max-w-2xl bg-gray-100 dark:bg-gray-900 rounded-xl p-1">
+          <TabsTrigger value="program_approvals" className="rounded-lg font-bold text-xs">Program Approvals</TabsTrigger>
+          <TabsTrigger value="marketplace_orders" className="rounded-lg font-bold text-xs">Marketplace Orders</TabsTrigger>
+          <TabsTrigger value="history" className="rounded-lg font-bold text-xs">Approval History</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="program_approvals" className="space-y-8">
+          {/* STAGE 1 — Fund Authorization */}
+          <div>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-7 h-7 rounded-full bg-amber-500 text-white flex items-center justify-center font-black text-sm">
             1
@@ -533,8 +577,106 @@ export default function FinanceApprovalsPage() {
         )}
       </div>
 
-      {/* Distributor Assignment Modal */}
-      {assigning && (
+          {/* (End of STAGE 2) */}
+        </TabsContent>
+
+        <TabsContent value="marketplace_orders" className="space-y-8">
+          {/* MARKETPLACE ORDERS PAYMENT CONFIRMATION */}
+          <div>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-7 h-7 rounded-full bg-violet-500 text-white flex items-center justify-center font-black text-sm">
+            <Package className="w-4 h-4" />
+          </div>
+          <h2 className="text-lg font-black">Marketplace Orders (Payment Confirmation)</h2>
+          {marketplaceOrders.length > 0 && (
+            <span className="px-2.5 py-0.5 bg-violet-100 text-violet-700 text-[10px] font-black rounded-full uppercase tracking-wider">
+              {marketplaceOrders.length} Pending
+            </span>
+          )}
+        </div>
+
+        {marketplaceOrders.length === 0 ? (
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-12 text-center">
+              <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
+              <p className="font-bold text-gray-400">
+                No marketplace orders awaiting payment confirmation
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {marketplaceOrders.map((order) => (
+              <Card
+                key={order.id}
+                className="border-none shadow-sm overflow-hidden"
+              >
+                <CardContent className="p-0">
+                  <div className="p-6 flex flex-col lg:flex-row gap-6 justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-indigo-500 flex items-center justify-center text-white font-black text-lg shadow-lg flex-shrink-0">
+                        <Package size={24} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-black text-base">
+                            {order.buyer_name || "Buyer Ecosystem"}
+                          </p>
+                          <span className="text-[9px] font-black px-1.5 py-0.5 bg-violet-100 text-violet-600 rounded-full uppercase tracking-wider">
+                            Order {order.id.split('-')[0]}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500">{order.email}</p>
+                        <div className="flex items-center gap-3 mt-0.5 text-[10px] text-gray-400 font-bold uppercase">
+                          <span>{Array.isArray(order.items) ? order.items.length : 1} items</span>
+                          <span>·</span>
+                          <span>{order.status.replaceAll('_', ' ')}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-4 flex-1 max-w-md">
+                      <div className="flex-1 p-4 bg-gray-900 dark:bg-gray-950 rounded-2xl border border-violet-500/30 relative">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <p className="text-[10px] font-black text-violet-400 uppercase tracking-widest">
+                              Payment Status
+                            </p>
+                          </div>
+                          <span className="px-2 py-0.5 bg-violet-500/20 text-violet-400 text-[10px] font-black rounded-full border border-violet-500/30 uppercase">
+                            {order.payment_status?.replaceAll('_', ' ') || "PENDING"}
+                          </span>
+                        </div>
+                        <div className="mb-4">
+                          <p className="text-[10px] text-gray-400">
+                            Order Value
+                          </p>
+                          <p className="text-2xl font-black text-white">
+                            ₦{parseFloat(order.total_amount).toLocaleString()}
+                          </p>
+                        </div>
+                        <Button
+                          onClick={() => handleConfirmOrderPayment(order.id)}
+                          disabled={processingId === `order-${order.id}`}
+                          className="w-full bg-violet-500 hover:bg-violet-600 text-white font-black rounded-xl py-5 text-xs uppercase tracking-wider transition-all active:scale-95"
+                        >
+                          {processingId === `order-${order.id}`
+                            ? "Confirming..."
+                            : "Confirm Received Payment"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </TabsContent>
+
+    {/* Distributor Assignment Modal */}
+    {assigning && (
         <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <Card className="w-full max-w-lg border-none shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
@@ -646,8 +788,9 @@ export default function FinanceApprovalsPage() {
         </div>
       )}
 
-      {/* History Table */}
-      <div>
+      <TabsContent value="history">
+        {/* History Table */}
+        <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-black">Approval History</h2>
           <span className="px-2.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 text-[10px] font-black rounded-full uppercase">
@@ -751,7 +894,9 @@ export default function FinanceApprovalsPage() {
             </table>
           </div>
         </Card>
-      </div>
-    </div>
+        </div>
+      </TabsContent>
+    </Tabs>
+  </div>
   );
 }

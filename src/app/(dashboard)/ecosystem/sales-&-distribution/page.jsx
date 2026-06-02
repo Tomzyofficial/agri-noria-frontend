@@ -33,7 +33,9 @@ export default function SalesDistributionDashboard() {
   // Forms states
   const [warehouseForm, setWarehouseForm] = useState({
     commodity: "Maize",
-    quantity_tons: "",
+    quantity: "",
+    measuring_scale: "Tons",
+    price_per_unit: "",
     warehouse_name: "",
   });
 
@@ -49,7 +51,7 @@ export default function SalesDistributionDashboard() {
 
   const handleWarehouseSubmit = async (e) => {
     e.preventDefault();
-    if (!warehouseForm.quantity_tons || !warehouseForm.warehouse_name) {
+    if (!warehouseForm.quantity || !warehouseForm.warehouse_name || !warehouseForm.price_per_unit) {
       return toast.error("Please fill in all fields");
     }
     setSubmittingWarehouse(true);
@@ -65,7 +67,9 @@ export default function SalesDistributionDashboard() {
         setShowWarehouseModal(false);
         setWarehouseForm({
           commodity: "Maize",
-          quantity_tons: "",
+          quantity: "",
+          measuring_scale: "Tons",
+          price_per_unit: "",
           warehouse_name: "",
         });
         // Refresh stats
@@ -161,7 +165,12 @@ export default function SalesDistributionDashboard() {
       ]);
       if (ordersRes.ok) {
         const od = await ordersRes.json();
-        setEcosystemOrders(od.data || []);
+        const validStatuses = ['ready_for_sales', 'paid', 'assigned', 'processing', 'processed', 'in_progress', 'delivered', 'completed'];
+        const filteredOrders = (od.data || []).filter(o => 
+          validStatuses.includes(o.status) || 
+          o.payment_status === "finance_confirmed"
+        );
+        setEcosystemOrders(filteredOrders);
       }
       if (distRes.ok) {
         const dd = await distRes.json();
@@ -194,6 +203,25 @@ export default function SalesDistributionDashboard() {
         fetchEcosystemOrders();
       } else {
         toast.error(data.error || "Failed to assign");
+      }
+    } catch (err) {
+      toast.error("Network error");
+    }
+  };
+
+  const updateOrderStatus = async (orderId, newStatus) => {
+    try {
+      const res = await fetch(`/api/proxy/pipeline/buyer-orders/${orderId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(`Order status updated to ${newStatus}`);
+        fetchEcosystemOrders();
+      } else {
+        toast.error(data.error || "Failed to update status");
       }
     } catch (err) {
       toast.error("Network error");
@@ -341,32 +369,25 @@ export default function SalesDistributionDashboard() {
                     </div>
                   </div>
                 </div>
-
-                <div className="shrink-0">
+                <div className="shrink-0 space-y-3 flex flex-col items-end">
                   {order.escrow_status === "held" && !order.distributor_id ? (
-                    <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 p-4 rounded-3xl border border-gray-100 dark:border-gray-700">
+                    <div className="flex flex-col gap-2 w-full max-w-xs">
                       <select
-                        id={`dist-${order.id}`}
-                        className="bg-transparent border-none outline-none font-black text-sm px-4 pr-10 appearance-none cursor-pointer"
+                        className="bg-gray-50 border border-gray-100 dark:border-gray-800 rounded-xl px-4 py-2 text-xs font-bold w-full"
+                        onChange={(e) =>
+                          assignDistributor(order.id, e.target.value)
+                        }
+                        defaultValue=""
                       >
-                        <option value="">Select Logistics Agent...</option>
+                        <option value="" disabled>
+                          Assign Distributor
+                        </option>
                         {distributors.map((d) => (
                           <option key={d.id} value={d.id}>
-                            {d.name}
+                            {d.name || d.fname + ' ' + d.lname}
                           </option>
                         ))}
                       </select>
-                      <Button
-                        onClick={() =>
-                          assignDistributor(
-                            order.id,
-                            document.getElementById(`dist-${order.id}`).value,
-                          )
-                        }
-                        className="bg-slate-900 text-white font-black px-10 py-4 rounded-2xl shadow-2xl hover:bg-black uppercase tracking-widest text-[10px]"
-                      >
-                        Assign
-                      </Button>
                     </div>
                   ) : order.distributor_id ? (
                     <Link href="/ecosystem/sales-&-distribution/shipments">
@@ -383,6 +404,23 @@ export default function SalesDistributionDashboard() {
                       Awaiting Escrow
                     </div>
                   )}
+
+                  {/* Status Update Dropdown */}
+                  <div className="mt-4 pt-4 border-t border-gray-50 dark:border-gray-800 w-full text-right flex flex-col items-end gap-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Update Process Status</label>
+                    <select 
+                      className="bg-white border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 text-[10px] font-bold uppercase tracking-widest w-40"
+                      value={order.status}
+                      onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                    >
+                      <option value="paid">Paid</option>
+                      <option value="ready_for_sales">Ready For Sales</option>
+                      <option value="processing">Processing</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="delivered">Delivered</option>
+                      <option value="completed">Completed</option>
+                    </select>
+                  </div>
                 </div>
               </Card>
             ))}
@@ -444,19 +482,60 @@ export default function SalesDistributionDashboard() {
                 </select>
               </div>
 
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-1.5 col-span-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    Quantity
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g. 50"
+                    value={warehouseForm.quantity}
+                    onChange={(e) =>
+                      setWarehouseForm({
+                        ...warehouseForm,
+                        quantity: e.target.value,
+                      })
+                    }
+                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 text-sm font-bold focus:outline-none dark:text-white"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5 col-span-1">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    Scale
+                  </label>
+                  <select
+                    value={warehouseForm.measuring_scale}
+                    onChange={(e) =>
+                      setWarehouseForm({
+                        ...warehouseForm,
+                        measuring_scale: e.target.value,
+                      })
+                    }
+                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 text-sm font-bold focus:outline-none dark:text-white"
+                  >
+                    <option value="Tons">Tons</option>
+                    <option value="Kg">Kg</option>
+                    <option value="g">g</option>
+                  </select>
+                </div>
+              </div>
+
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                  Quantity (Tons)
+                  Price per unit (₦)
                 </label>
                 <input
                   type="number"
                   step="0.01"
-                  placeholder="e.g. 50"
-                  value={warehouseForm.quantity_tons}
+                  placeholder="e.g. 450000"
+                  value={warehouseForm.price_per_unit}
                   onChange={(e) =>
                     setWarehouseForm({
                       ...warehouseForm,
-                      quantity_tons: e.target.value,
+                      price_per_unit: e.target.value,
                     })
                   }
                   className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 text-sm font-bold focus:outline-none dark:text-white"

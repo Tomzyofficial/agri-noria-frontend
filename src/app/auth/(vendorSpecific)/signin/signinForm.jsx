@@ -237,16 +237,20 @@ export function SigninForm() {
           ?.replace(/ \/ /g, "-")
           ?.replace(/ /g, "-");
 
+        console.log("Routing Debug:", { normalizedRole, normalizedWorkspace, categoryRoute });
 
         if (normalizedRole === "super admin" || normalizedRole === "admin") {
           router.push("/dashboard/super-admin");
-        } else if (normalizedWorkspace === "ecosystem") {
-          router.push(`/${normalizedWorkspace}/${categoryRoute || ""}`);
+        } else if (normalizedWorkspace === "ecosystem" && categoryRoute) {
+          router.push(`/${normalizedWorkspace}/${categoryRoute}`);
         } else if (
           normalizedWorkspace === "marketplace" &&
           ["farmer", "seller"].includes(normalizedRole)
         ) {
           router.push(`/${normalizedWorkspace}/store`);
+        } else if (normalizedWorkspace === "ecosystem" && normalizedRole?.includes("field")) {
+           // Fallback for field officers if roleConfig fails
+           router.push(`/ecosystem/field-operations`);
         } else {
           router.push(
             `/${normalizedWorkspace}/${normalizedRole?.replace(/\s+/g, "-") || ""}`,

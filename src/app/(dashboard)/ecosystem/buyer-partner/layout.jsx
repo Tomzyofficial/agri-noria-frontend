@@ -66,16 +66,16 @@ export default function BuyerPartnerLayout({ children }) {
       href: "/ecosystem/buyer-partner/inventory",
       icon: <Package className="w-4 h-4" />,
     },
-    {
-      label: "Logistics",
-      href: "/ecosystem/buyer-partner/logistics",
-      icon: <Truck className="w-4 h-4" />,
-    },
-    {
-      label: "Contracts",
-      href: "/ecosystem/buyer-partner/contracts",
-      icon: <FileText className="w-4 h-4" />,
-    },
+    // {
+    //   label: "Logistics",
+    //   href: "/ecosystem/buyer-partner/logistics",
+    //   icon: <Truck className="w-4 h-4" />,
+    // },
+    // {
+    //   label: "Contracts",
+    //   href: "/ecosystem/buyer-partner/contracts",
+    //   icon: <FileText className="w-4 h-4" />,
+    // },
     {
       label: "Settings",
       href: "/ecosystem/buyer-partner/settings",

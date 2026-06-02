@@ -16,7 +16,7 @@ export function BuyerDataProvider({ children }) {
       setLoading(true);
       try {
          const [matchesRes, statsRes, clustersRes] = await Promise.all([
-            fetch("/api/proxy/pipeline/buyer-matches"),
+            fetch("/api/proxy/pipeline/warehouse/inventory"),
             fetch("/api/proxy/pipeline/stats"),
             fetch("/api/proxy/pipeline/clusters"),
          ]);
@@ -91,24 +91,40 @@ export function BuyerDataProvider({ children }) {
       }
    };
 
-   const payForOrder = async (orderId, paymentRef) => {
+   const payForOrder = async (orderId) => {
       try {
-         const res = await fetch("/api/proxy/pipeline/buyer-orders/escrow-pay", {
+         const res = await fetch(`/api/proxy/pipeline/buyer-orders/${orderId}/payment/initialize`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ order_id: orderId, payment_reference: paymentRef }),
          });
          const data = await res.json();
          if (res.ok) {
-            toast.success("Payment successful! Funds are held in escrow.");
-            fetchOrders();
+            toast.success("Redirecting to Paystack...");
+            window.location.href = data.data.authorization_url;
             return true;
          } else {
-            toast.error(data.error || "Payment failed");
+            toast.error(data.error || "Failed to initialize payment");
             return false;
          }
       } catch (err) {
-         toast.error("Network error during payment");
+         toast.error("Network error while initializing payment");
+         return false;
+      }
+   };
+
+   const verifyOrderPayment = async (reference) => {
+      try {
+         const res = await fetch(`/api/proxy/pipeline/buyer-orders/payment/verify?reference=${encodeURIComponent(reference)}`);
+         const data = await res.json();
+         if (res.ok) {
+            toast.success(data.message || "Payment verified. Finance will confirm shortly.");
+            fetchOrders();
+            return true;
+         }
+         toast.error(data.error || "Payment verification failed");
+         return false;
+      } catch (err) {
+         toast.error("Network error while verifying payment");
          return false;
       }
    };
@@ -133,7 +149,8 @@ export function BuyerDataProvider({ children }) {
          totalTons,
          refreshData,
          placeOrder,
-         payForOrder
+         payForOrder,
+         verifyOrderPayment
       }}>
          {children}
       </BuyerDataContext.Provider>

@@ -75,16 +75,16 @@ export default function FieldOperationsLayout({ children }) {
       href: "/ecosystem/field-operations/inspections",
       icon: <MapPin className="w-4 h-4" />,
     },
-    {
-      label: "Verification Queue",
-      href: "/ecosystem/field-operations/verifications",
-      icon: <ShieldCheck className="w-4 h-4" />,
-    },
-    {
-      label: "Agronomy Reports",
-      href: "/ecosystem/field-operations/reports",
-      icon: <ClipboardList className="w-4 h-4" />,
-    },
+    // {
+    //   label: "Verification Queue",
+    //   href: "/ecosystem/field-operations/verifications",
+    //   icon: <ShieldCheck className="w-4 h-4" />,
+    // },
+    // {
+    //   label: "Agronomy Reports",
+    //   href: "/ecosystem/field-operations/reports",
+    //   icon: <ClipboardList className="w-4 h-4" />,
+    // },
     {
       label: "Visit Schedule",
       href: "/ecosystem/field-operations/schedule",
