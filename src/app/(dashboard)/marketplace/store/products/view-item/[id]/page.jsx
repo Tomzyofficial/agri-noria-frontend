@@ -40,7 +40,7 @@ export default async function ViewPage({ params }) {
       throw new Error(data?.error || `Failed to fetch product details`);
     }
 
-    const prod = data?.product;
+    const result = data?.product;
     return (
       <div className="my-25 lg:my-5">
         <Breadcrumbs
@@ -53,7 +53,7 @@ export default async function ViewPage({ params }) {
             },
           ]}
         />
-        <ViewItem prod={prod} />
+        <ViewItem result={result} />
       </div>
     );
   } catch (error) {

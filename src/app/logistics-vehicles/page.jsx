@@ -1,21 +1,22 @@
 import Link from "next/link";
+import { formatLabel } from "@/utils/otherUtils";
 import {
-  ArrowRight,
-  Boxes,
   CheckCircle2,
   MapPin,
   PackageCheck,
   Route,
-  Scale,
   Truck,
   Wrench,
 } from "lucide-react";
 import { Footer } from "@/components/ui/Footer";
 import NavBar from "@/components/ui/NavBar/NavBar";
 import { getListedLogisticsVehicles } from "@/_lib/data";
+import { formatPrice } from "@/utils/formatPrice";
+import { Card } from "@/components/ui/Card";
+import Image from "next/image";
 
 export const metadata = {
-  title: "Logistics Vehicles | Agri-Noria",
+  title: "Logistics Vehicles",
   description:
     "Browse available agricultural logistics vehicles for produce delivery, cold-chain movement, and farm supply transport.",
 };
@@ -25,39 +26,6 @@ const statusStyles = {
   in_transit: "border-amber-200 bg-amber-50 text-amber-700",
   maintenance: "border-slate-200 bg-slate-100 text-slate-600",
 };
-
-function formatLabel(value) {
-  if (!value) return "Not specified";
-  return String(value)
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function formatMoney(amount, countryCode, currency) {
-  const numericAmount = Number(amount);
-  if (!Number.isFinite(numericAmount)) return "Rate on request";
-
-  try {
-    return new Intl.NumberFormat(`en-${countryCode || "NG"}`, {
-      style: "currency",
-      currency: currency || "NGN",
-      currencyDisplay: "narrowSymbol",
-      maximumFractionDigits: 0,
-    }).format(numericAmount);
-  } catch {
-    return `${currency || "NGN"} ${numericAmount.toLocaleString()}`;
-  }
-}
-
-function getProviderName(vehicle) {
-  return (
-    vehicle.logistics_business_name ||
-    [vehicle.logistics_provider_fname, vehicle.logistics_provider_lname]
-      .filter(Boolean)
-      .join(" ") ||
-    "Verified logistics partner"
-  );
-}
 
 function getImage(vehicle) {
   return Array.isArray(vehicle.images) && vehicle.images.length > 0
@@ -70,7 +38,9 @@ function VehicleImage({ vehicle }) {
 
   if (image) {
     return (
-      <img
+      <Image
+        width={150}
+        height={150}
         src={image}
         alt={vehicle.title || "Logistics vehicle"}
         className="h-full w-full object-cover"
@@ -93,93 +63,62 @@ function VehicleCard({ vehicle }) {
   const statusClass = statusStyles[status] || statusStyles.maintenance;
 
   return (
-    <article className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-      <div className="aspect-[16/10] overflow-hidden bg-slate-100">
-        <VehicleImage vehicle={vehicle} />
-      </div>
-
-      <div className="space-y-4 p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-              {formatLabel(vehicle.vehicle_type)}
-            </p>
-            <h2 className="mt-1 line-clamp-2 text-lg font-semibold text-slate-950">
-              {vehicle.title}
-            </h2>
-          </div>
-          <span
-            className={`shrink-0 rounded border px-2.5 py-1 text-xs font-semibold ${statusClass}`}
-          >
-            {formatLabel(status)}
-          </span>
+    <Link href={`/logistics-vehicles/${vehicle.id}`}>
+      <Card className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+        <div className="aspect-[16/10] overflow-hidden bg-slate-100">
+          <VehicleImage vehicle={vehicle} />
         </div>
 
-        <p className="text-sm font-medium text-slate-600">
-          {getProviderName(vehicle)}
-        </p>
-
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="rounded bg-slate-50 p-3">
-            <div className="flex items-center gap-2 text-slate-500">
-              <Scale className="h-4 w-4" />
-              Capacity
+        <div className="space-y-4 p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                {formatLabel(vehicle.vehicle_type)}
+              </p>
+              <h2 className="mt-1 line-clamp-2 text-lg font-semibold text-slate-950">
+                {vehicle.title}
+              </h2>
             </div>
-            <p className="mt-1 font-semibold text-slate-900">
-              {Number(vehicle.max_weight_kg).toLocaleString()} kg
-            </p>
-          </div>
-
-          <div className="rounded bg-slate-50 p-3">
-            <div className="flex items-center gap-2 text-slate-500">
-              <Boxes className="h-4 w-4" />
-              Cargo
-            </div>
-            <p className="mt-1 font-semibold text-slate-900">
-              {formatLabel(vehicle.cargo_type)}
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-2 text-sm text-slate-600">
-          <p className="flex items-start gap-2">
-            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
-            <span>{vehicle.base_location}</span>
-          </p>
-          <p className="flex items-start gap-2">
-            <Route className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
-            <span>
-              {regions.length > 0
-                ? regions.slice(0, 3).join(", ")
-                : "Operating regions not listed"}
-              {regions.length > 3 ? ` +${regions.length - 3} more` : ""}
+            <span
+              className={`shrink-0 rounded border px-2.5 py-1 text-xs font-semibold ${statusClass}`}
+            >
+              {formatLabel(status)}
             </span>
-          </p>
-        </div>
+          </div>
 
-        <div className="flex items-end justify-between border-t border-slate-100 pt-4">
-          <div>
-            <p className="text-xs text-slate-500">
-              {formatLabel(vehicle.pricing_model)}
+          <div className="space-y-2 text-sm text-slate-600">
+            <p className="flex items-start gap-2">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+              <span>{vehicle.base_location}</span>
             </p>
-            <p className="text-lg font-bold text-slate-950">
-              {formatMoney(
-                vehicle.rate_amount,
-                vehicle.country_code,
-                vehicle.currency,
-              )}
+            <p className="flex items-start gap-2">
+              <Route className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+              <span>
+                {regions.length > 0
+                  ? regions.slice(0, 3).join(", ")
+                  : "Operating regions not listed"}
+                {regions.length > 3 ? ` +${regions.length - 3} more` : ""}
+              </span>
             </p>
           </div>
-          <Link
-            href="#"
-            className="inline-flex items-center gap-2 rounded bg-slate-950 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
-          >
-            Use vehicle
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+
+          <div className="flex items-end justify-between border-t border-slate-100 pt-4">
+            <div>
+              <p className="text-xs text-slate-500">
+                {formatLabel(vehicle.pricing_model)}
+              </p>
+              <p className="text-lg font-bold text-slate-950">
+                {formatPrice(
+                  vehicle.rate_amount,
+                  vehicle.country_code,
+                  vehicle.currency,
+                )}
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
-    </article>
+      </Card>
+    </Link>
   );
 }
 
@@ -210,22 +149,21 @@ export default async function LogisticsVehiclesPage() {
       Array.isArray(vehicle.operating_regions) ? vehicle.operating_regions : [],
     ),
   );
-
   return (
     <>
       <NavBar />
-      <main className="bg-slate-50 text-slate-950">
-        <section className="border-b border-slate-200 bg-white">
+      <main className="">
+        <section>
           <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:px-8 lg:py-16">
             <div>
               <p className="inline-flex items-center gap-2 rounded border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700">
                 <PackageCheck className="h-4 w-4" />
                 Agricultural logistics marketplace
               </p>
-              <h1 className="mt-5 max-w-3xl text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
+              <h1 className="mt-5 max-w-3xl text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl dark:text-foreground">
                 Move farm produce with verified logistics vehicles.
               </h1>
-              <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600">
+              <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-400">
                 Browse fleet capacity, cargo type, service regions, and pricing
                 from logistics partners listed on Agri-Noria.
               </p>
@@ -283,7 +221,7 @@ export default async function LogisticsVehiclesPage() {
               shortly.
             </section>
           ) : vehicles.length > 0 ? (
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
               {vehicles.map((vehicle) => (
                 <VehicleCard key={vehicle.id} vehicle={vehicle} />
               ))}

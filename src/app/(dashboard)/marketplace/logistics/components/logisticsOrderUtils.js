@@ -83,15 +83,6 @@ export const ORDER_STATUS_CONFIG = [
   },
 ];
 
-export const logisticsFetcher = async (url) => {
-  const res = await fetch(url);
-  const data = await res.json();
-  if (!res.ok || !data.success) {
-    throw new Error(data.error || data.message || "Request failed");
-  }
-  return data;
-};
-
 export function getStatusBadgeClass(status) {
   const colors = {
     pending: "bg-yellow-100 text-yellow-800",

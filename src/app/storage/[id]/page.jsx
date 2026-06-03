@@ -1,4 +1,4 @@
-import StorageDetail from "@/app/storage/[href]/storage-details";
+import StorageDetail from "@/app/storage/[id]/storage-details";
 import NavBar from "@/components/ui/NavBar/NavBar";
 import { apiUrl } from "@/_lib/api";
 import { cookieStoreFnc } from "@/actions/session";
@@ -10,11 +10,11 @@ export const metadata = {
 
 export default async function Page({ params }) {
   const cookieHeader = await cookieStoreFnc();
-  const { href } = await params;
+  const { id } = await params;
   let data;
   let error;
   try {
-    const res = await fetch(apiUrl(`/api/marketplace/listed-storage/${href}`), {
+    const res = await fetch(apiUrl(`/api/marketplace/listed-storage/${id}`), {
       method: "GET",
       headers: {
         Cookie: cookieHeader,
@@ -28,7 +28,6 @@ export default async function Page({ params }) {
     data = await res.json();
   } catch {}
   const storage = data.storage;
-
   return (
     <>
       <NavBar />

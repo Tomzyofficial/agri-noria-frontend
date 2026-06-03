@@ -8,11 +8,11 @@ export const metadata = {
 };
 
 export default async function RegisterPage() {
-  // const session = await verifyVendorSession();
-  // const { workspace } = session;
-  // if (session.authenticated) {
-  //    redirect(`/${workspace}/dashboard`);
-  // }
+  //   const session = await verifyVendorSession();
+  //   const { workspace } = session;
+  //   if (session.authenticated) {
+  //      redirect(`/${workspace}/dashboard`);
+  //   }
   return (
     <div>
       <RegisterForm />

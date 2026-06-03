@@ -2,7 +2,6 @@ import "@/app/globals.css";
 import { CartProvider } from "@/hooks/useCartContext";
 import { ToastContainer } from "react-toastify";
 import { verifyBuyerSession } from "@/actions/session";
-import { GeoLocationProvider } from "@/hooks/GeolocationProvider.js";
 
 export const metadata = {
   title: {
@@ -32,9 +31,7 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="bg-(--background)">
-        <GeoLocationProvider>
-          <CartProvider buyerId={userId}>{children}</CartProvider>
-        </GeoLocationProvider>
+        <CartProvider buyerId={userId}>{children}</CartProvider>
         <ToastContainer />
       </body>
     </html>

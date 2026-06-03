@@ -1,7 +1,16 @@
 import { CreateTrainingForm } from "../components/CreateTrainingForm";
 import Breadcrumbs from "../../../dashboard/components/BreadCrumbs";
+import { verifyVendorSession } from "@/actions/session";
 
-export default function Page() {
+export default async function Page() {
+  const session = await verifyVendorSession();
+  if (
+    !session?.authenticated ||
+    session.role !== "trainer" ||
+    session.workspace !== "marketplace"
+  ) {
+    return <Unauthorized />;
+  }
   return (
     <>
       <Breadcrumbs

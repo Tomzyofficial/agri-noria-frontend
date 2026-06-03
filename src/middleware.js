@@ -6,37 +6,79 @@ const vendorKey = new TextEncoder().encode(
 );
 const buyerKey = new TextEncoder().encode(process.env.BUYER_SESSION_SECRET_KEY);
 
-/* async function getLocation() {
-   try {
-      const response = await fetch("https://api.ipinfo.io/lite/me?token=e9962c1b85a628", {
-         next: { revalidate: 3600 }, // Cache for 1 hour
-      });
+const LOCATION_COOKIE_NAME = "user_location";
 
-      if (!response.ok) {
-         console.log("Failed to fetch location data");
-         return null;
-      }
+const setLocationCookie = (response, location) => {
+  response.cookies.set(LOCATION_COOKIE_NAME, JSON.stringify(location), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7, // 7 days
+  });
+};
 
-      const data = await response.json();
-      return data;
-   } catch (error) {
-      console.error("Location lookup failed", error);
+const getLocationCookie = (request) => {
+  const cookie = request.cookies.get(LOCATION_COOKIE_NAME)?.value;
+  if (!cookie) return null;
+
+  try {
+    return JSON.parse(cookie);
+  } catch {
+    return null;
+  }
+};
+
+async function getLocation() {
+  if (!process.env.NEXT_PUBLIC_IPINFO_TOKEN) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.ipinfo.io/lite/me?token=${process.env.NEXT_PUBLIC_IPINFO_TOKEN}`,
+      {
+        next: { revalidate: 3600 }, // Cache for 1 hour
+      },
+    );
+
+    if (!response.ok) {
+      console.log("Failed to fetch location data");
       return null;
-   }
-} */
+    }
+
+    const data = await response.json();
+    if (!data?.country_code) return null;
+
+    return data;
+  } catch (error) {
+    console.error("Location lookup failed", error);
+    return null;
+  }
+}
 
 export default async function middleware(request) {
   const pathname = request.nextUrl.pathname;
+  const requestHeaders = new Headers(request.headers);
+  const existingLocation = getLocationCookie(request);
+  const shouldDetectLocation = pathname === "/" && !existingLocation;
+  const countryData =
+    existingLocation || (shouldDetectLocation ? await getLocation() : null);
 
-  // Get country data and add to response headers
-  // const countryData = await getLocation();
+  if (countryData) {
+    requestHeaders.set("x-user-location", JSON.stringify(countryData));
+    requestHeaders.set("x-user-country", countryData.country_code);
+  }
 
-  // const response = NextResponse.next();
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 
-  // // Add country data to response headers
-  // if (countryData) {
-  //    response.headers.set("X-User-Location", JSON.stringify(countryData));
-  // }
+  if (countryData && !existingLocation) {
+    setLocationCookie(response, countryData);
+  }
 
   try {
     // VENDOR PROTECTION
@@ -79,7 +121,7 @@ export default async function middleware(request) {
       }
     }
 
-    return NextResponse.next();
+    return response;
   } catch (error) {
     console.error("Middleware error:", error);
     return NextResponse.redirect(new URL("/", request.url));
