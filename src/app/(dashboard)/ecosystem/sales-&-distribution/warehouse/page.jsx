@@ -8,20 +8,73 @@ export default function WarehousePage() {
     const [inventory, setInventory] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchInventory = async () => {
-            try {
-                const res = await fetch("/api/proxy/pipeline/warehouse/inventory");
-                const data = await res.json();
-                if (data.success) setInventory(data.data || []);
-            } catch (error) {
-                console.error("Failed to fetch inventory", error);
-            } finally {
-                setLoading(false);
+    const [stats, setStats] = useState({ totalStock: 0, capacity: 100, inFlow: 0, outFlow: 0 });
+
+    const fetchInventory = async () => {
+        try {
+            const res = await fetch("/api/proxy/pipeline/warehouse/inventory");
+            const data = await res.json();
+            if (data.success) {
+                const items = data.data || [];
+                setInventory(items);
+                
+                // Calculate live stats
+                let totalTons = 0;
+                let inFlowToday = 0;
+                const today = new Date().toISOString().split('T')[0];
+                
+                items.forEach(item => {
+                    let qtyInTons = parseFloat(item.quantity) || 0;
+                    if (item.measuring_scale === 'Kg') qtyInTons /= 1000;
+                    if (item.measuring_scale === 'g') qtyInTons /= 1000000;
+                    
+                    totalTons += qtyInTons;
+                    
+                    const itemDate = new Date(item.created_at).toISOString().split('T')[0];
+                    if (itemDate === today) {
+                        inFlowToday += qtyInTons;
+                    }
+                });
+                
+                const maxCapacity = 1000; // 1000 Tons max capacity
+                const availableCapacity = Math.max(0, 100 - (totalTons / maxCapacity) * 100).toFixed(1);
+                
+                setStats({
+                    totalStock: totalTons.toFixed(2),
+                    capacity: availableCapacity,
+                    inFlow: inFlowToday.toFixed(2),
+                    outFlow: 0.0 // No outflow tracking yet for removed items
+                });
             }
-        };
+        } catch (error) {
+            console.error("Failed to fetch inventory", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchInventory();
     }, []);
+
+    const handleRemove = async (id) => {
+        if (!confirm("Are you sure you want to remove this item?")) return;
+        try {
+            const res = await fetch(`/api/proxy/pipeline/warehouse/inventory/${id}`, {
+                method: "DELETE"
+            });
+            const data = await res.json();
+            if (data.success) {
+                toast.success("Item removed from stock");
+                fetchInventory();
+            } else {
+                toast.error("Failed to remove item");
+            }
+        } catch (error) {
+            console.error("Error removing item", error);
+            toast.error("An error occurred");
+        }
+    };
 
     return (
         <div className="space-y-8 max-w-7xl mx-auto py-6">
@@ -33,19 +86,19 @@ export default function WarehousePage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <Card className="rounded-3xl border-none shadow-sm bg-white p-6">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Stock</p>
-                    <p className="text-2xl font-black mt-1">450 <span className="text-xs text-gray-300">Tons</span></p>
+                    <p className="text-2xl font-black mt-1">{stats.totalStock} <span className="text-xs text-gray-300">Tons</span></p>
                 </Card>
                 <Card className="rounded-3xl border-none shadow-sm bg-white p-6">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Available Capacity</p>
-                    <p className="text-2xl font-black mt-1 text-green-600">85%</p>
+                    <p className="text-2xl font-black mt-1 text-green-600">{stats.capacity}%</p>
                 </Card>
                 <Card className="rounded-3xl border-none shadow-sm bg-white p-6">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">In-Flow Today</p>
-                    <p className="text-2xl font-black mt-1 text-blue-600 font-black">+12.5 T</p>
+                    <p className="text-2xl font-black mt-1 text-blue-600 font-black">+{stats.inFlow} T</p>
                 </Card>
                 <Card className="rounded-3xl border-none shadow-sm bg-white p-6">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Out-Flow Today</p>
-                    <p className="text-2xl font-black mt-1 text-red-600 font-black">-4.0 T</p>
+                    <p className="text-2xl font-black mt-1 text-red-600 font-black">-{stats.outFlow} T</p>
                 </Card>
             </div>
 
@@ -64,15 +117,20 @@ export default function WarehousePage() {
                                 </div>
                                 <h3 className="text-2xl font-black text-slate-900 tracking-tight">{item.commodity}</h3>
                                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">{item.warehouse_name || 'AgriNoria Hub A'}</p>
+                                <p className="text-sm font-bold text-green-600 mt-2">₦{parseFloat(item.price_per_unit || 0).toLocaleString()}</p>
                                 
                                 <div className="mt-8 pt-8 border-t border-gray-50 flex justify-between items-end">
                                     <div>
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Quantity</p>
-                                        <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">{item.weight_tons} <span className="text-xs">Tons</span></p>
+                                        <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">{item.quantity} <span className="text-xs">{item.measuring_scale}</span></p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-[10px] font-black text-green-600 uppercase tracking-widest flex items-center gap-1 justify-end"><FaArrowUp /> Trending</p>
-                                        <p className="text-xs font-bold text-slate-400">Synced 2m ago</p>
+                                        <button 
+                                            onClick={() => handleRemove(item.id)}
+                                            className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all"
+                                        >
+                                            Remove
+                                        </button>
                                     </div>
                                 </div>
                             </CardContent>

@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 
 export default function InstitutionDashboard() {
+  const [userRole, setUserRole] = useState("");
   const [stats, setStats] = useState({
     overview: {
       activePrograms: 0,
@@ -34,13 +35,19 @@ export default function InstitutionDashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [analyticsRes, programsRes] = await Promise.all([
+        const [analyticsRes, programsRes, authRes] = await Promise.all([
           fetch("/api/proxy/admin/institution/analytics"),
           fetch("/api/proxy/programs"),
+          fetch("/api/proxy/auth/verify-vendor"),
         ]);
 
         const analyticsJson = await analyticsRes.json();
         const programsJson = await programsRes.json();
+        const authJson = await authRes.json();
+
+        if (authJson?.authenticated) {
+          setUserRole(authJson.role?.toLowerCase() || "");
+        }
 
         if (analyticsJson.success && programsJson.success) {
           setStats({
@@ -86,11 +93,13 @@ export default function InstitutionDashboard() {
           >
             <FileText className="w-4 h-4 mr-2 text-blue-500" /> Audit Logs
           </Button>
-          <Link href="/ecosystem/institution/programs">
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-6 rounded-2xl font-bold shadow-lg shadow-blue-200 dark:shadow-blue-900/20">
-              <Plus className="w-5 h-5 mr-2" /> Launch Program
-            </Button>
-          </Link>
+          {userRole !== "distributor" && (
+            <Link href="/ecosystem/institution/programs">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white h-12 px-6 rounded-2xl font-bold shadow-lg shadow-blue-200 dark:shadow-blue-900/20">
+                <Plus className="w-5 h-5 mr-2" /> Launch Program
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -188,7 +197,7 @@ export default function InstitutionDashboard() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-bold">
-                      {prog.target_farmers} Farmers
+                      {prog.enrolled_farmers} Farmers
                     </p>
                     <p className="text-[10px] text-gray-400 uppercase font-black">
                       {new Date(prog.created_at).toLocaleDateString()}

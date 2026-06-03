@@ -1,8 +1,47 @@
 "use client";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Activity, Search, Filter, ArrowUpRight, ArrowDownRight, Users, Map } from "lucide-react";
+import { Activity, Search, Filter, ArrowUpRight, ArrowDownRight, Users, Map, Loader2 } from "lucide-react";
 
 export default function PortfolioMonitoringPage() {
+   const [portfolio, setPortfolio] = useState({
+      activeLoans: 0,
+      repaymentRate: 0,
+      atRisk: 0,
+      enrolledFarmers: 0
+   });
+   const [loading, setLoading] = useState(true);
+
+   useEffect(() => {
+      const fetchPortfolio = async () => {
+         try {
+            const res = await fetch("/api/proxy/admin/institution/portfolio");
+            const json = await res.json();
+            if (json.success) {
+               setPortfolio(json.data);
+            }
+         } catch (error) {
+            console.error("Failed to fetch portfolio:", error);
+         } finally {
+            setLoading(false);
+         }
+      };
+      fetchPortfolio();
+   }, []);
+
+   const formatCurrency = (amount) => {
+      if (amount === 0) return "₦0";
+      return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(amount);
+   };
+
+   if (loading) {
+      return (
+         <div className="flex justify-center items-center min-h-[400px]">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+         </div>
+      );
+   }
+
    return (
       <div className="space-y-6 animate-in fade-in duration-500">
          <div>
@@ -12,21 +51,19 @@ export default function PortfolioMonitoringPage() {
 
          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[
-               { label: "Active Loans", value: "₦125.4M", trend: "+2.4%", icon: <Activity className="w-4 h-4" />, color: "blue" },
-               { label: "Repayment Rate", value: "94.2%", trend: "+0.5%", icon: <ArrowUpRight className="w-4 h-4" />, color: "emerald" },
-               { label: "At Risk", value: "₦4.1M", trend: "-1.2%", icon: <ArrowDownRight className="w-4 h-4" />, color: "rose" },
-               { label: "Enrolled Farmers", value: "1,240", trend: "+12%", icon: <Users className="w-4 h-4" />, color: "purple" },
+               { label: "Active Loans", value: formatCurrency(portfolio.activeLoans), icon: <Activity className="w-4 h-4" />, color: "blue" },
+               { label: "Repayment Rate", value: `${portfolio.repaymentRate}%`, icon: <ArrowUpRight className="w-4 h-4" />, color: "emerald" },
+               { label: "Outstanding Balance", value: formatCurrency(portfolio.atRisk), icon: <ArrowDownRight className="w-4 h-4" />, color: "rose" },
+               { label: "Enrolled Farmers", value: portfolio.enrolledFarmers.toLocaleString(), icon: <Users className="w-4 h-4" />, color: "purple" },
             ].map((stat, i) => (
-               <Card key={i} className="border-none shadow-sm">
+               <Card key={i} className="border-none shadow-sm bg-white dark:bg-gray-950">
                   <CardContent className="p-5">
                      <div className="flex justify-between items-start">
                         <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">{stat.label}</p>
                         <div className={`p-2 bg-${stat.color}-50 text-${stat.color}-600 rounded-lg`}>{stat.icon}</div>
                      </div>
                      <p className="text-2xl font-black mt-2">{stat.value}</p>
-                     <p className={`text-[10px] font-bold mt-1 ${stat.trend.startsWith('+') ? 'text-emerald-500' : 'text-rose-500'}`}>
-                        {stat.trend} <span className="text-gray-400 font-normal">vs last month</span>
-                     </p>
+                     <p className="text-[10px] font-bold mt-1 text-gray-400">From database records</p>
                   </CardContent>
                </Card>
             ))}

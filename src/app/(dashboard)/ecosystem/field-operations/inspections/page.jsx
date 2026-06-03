@@ -1,100 +1,61 @@
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useState, useEffect } from "react";
-import { Loader2, Search, Filter, MapPin, CheckCircle, AlertCircle, Clock } from "lucide-react";
+import { Loader2, Search, Filter, MapPin, CheckCircle, AlertCircle, Clock, Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { toast } from "react-toastify";
 
 export default function InspectionsPage() {
    const [inspections, setInspections] = useState([]);
    const [filteredInspections, setFilteredInspections] = useState([]);
+   const [farmers, setFarmers] = useState([]);
    const [loading, setLoading] = useState(true);
    const [searchTerm, setSearchTerm] = useState("");
    const [statusFilter, setStatusFilter] = useState("");
 
-   const statuses = ["SCHEDULED", "IN_PROGRESS", "COMPLETED", "PENDING_REVIEW"];
+   const [showForm, setShowForm] = useState(false);
+   const [formData, setFormData] = useState({
+      farmer_id: "",
+      status: "verified",
+      notes: ""
+   });
+   const [submitting, setSubmitting] = useState(false);
+
+   const statuses = ["SCHEDULED", "IN_PROGRESS", "COMPLETED", "PENDING_REVIEW", "verified", "failed", "pending"];
+
+   const fetchInspections = async () => {
+      try {
+         const res = await fetch("/api/proxy/field-operations/inspections");
+         if (res.ok) {
+            const json = await res.json();
+            if (json.success && json.data) {
+               setInspections(json.data);
+               setFilteredInspections(json.data);
+            }
+         }
+      } catch (err) {
+         console.error("Failed to fetch live inspections:", err);
+      }
+   };
+
+   const fetchFarmers = async () => {
+      try {
+         const res = await fetch("/api/proxy/field-operations/farmers");
+         if (res.ok) {
+            const json = await res.json();
+            if (json.success && json.data) {
+               setFarmers(json.data);
+            }
+         }
+      } catch (err) {
+         console.error("Failed to fetch farmers:", err);
+      }
+   }
 
    useEffect(() => {
-      const fetchInspections = async () => {
-         try {
-            const res = await fetch("/api/proxy/field-operations/inspections");
-            if (res.ok) {
-               const json = await res.json();
-               if (json.success && json.data && json.data.length > 0) {
-                  setInspections(json.data);
-                  setFilteredInspections(json.data);
-                  setLoading(false);
-                  return;
-               }
-            }
-         } catch (err) {
-            console.error("Failed to fetch live inspections:", err);
-         }
-
-         // Fallback to Mock data
-         const mockInspections = [
-            {
-               id: "INSP-001",
-               farmerName: "John Kipchoge",
-               farmLocation: "Uasin Gishu County",
-               cropType: "Maize",
-               areaSize: "5.2 Ha",
-               status: "COMPLETED",
-               date: new Date().toISOString(),
-               result: "PASS",
-            },
-            {
-               id: "INSP-002",
-               farmerName: "Mary Wambui",
-               farmLocation: "Nandi County",
-               cropType: "Wheat",
-               areaSize: "3.5 Ha",
-               status: "SCHEDULED",
-               date: new Date(Date.now() + 86400000).toISOString(),
-            },
-            {
-               id: "INSP-003",
-               farmerName: "David Okonkwo",
-               farmLocation: "Kano North",
-               cropType: "Rice",
-               areaSize: "12.0 Ha",
-               status: "IN_PROGRESS",
-               date: new Date().toISOString(),
-            },
-            {
-               id: "INSP-004",
-               farmerName: "Grace Aminu",
-               farmLocation: "Kaduna West",
-               cropType: "Ginger",
-               areaSize: "2.8 Ha",
-               status: "PENDING_REVIEW",
-               date: new Date(Date.now() - 172800000).toISOString(),
-               result: "PASS",
-            },
-            {
-               id: "INSP-005",
-               farmerName: "Ibrahim Yusuf",
-               farmLocation: "Jigawa Central",
-               cropType: "Sesame",
-               areaSize: "8.5 Ha",
-               status: "SCHEDULED",
-               date: new Date(Date.now() + 259200000).toISOString(),
-            },
-            {
-               id: "INSP-006",
-               farmerName: "Chioma Adeleke",
-               farmLocation: "Ogun State",
-               cropType: "Cassava",
-               areaSize: "4.0 Ha",
-               status: "COMPLETED",
-               date: new Date(Date.now() - 432000000).toISOString(),
-               result: "FAIL",
-            },
-         ];
-         setInspections(mockInspections);
-         setFilteredInspections(mockInspections);
+      Promise.all([fetchInspections(), fetchFarmers()]).finally(() => {
          setLoading(false);
-      };
-      fetchInspections();
+      });
    }, []);
 
    useEffect(() => {
@@ -115,11 +76,40 @@ export default function InspectionsPage() {
       setFilteredInspections(filtered);
    }, [searchTerm, statusFilter, inspections]);
 
+   const handleSubmit = async (e) => {
+      e.preventDefault();
+      setSubmitting(true);
+      try {
+         const res = await fetch("/api/proxy/field-operations/inspections", {
+            method: "POST",
+            headers: {
+               "Content-Type": "application/json"
+            },
+            body: JSON.stringify(formData)
+         });
+         if (res.ok) {
+            toast.success("Inspection recorded successfully");
+            setShowForm(false);
+            fetchInspections(); // Refresh data
+            setFormData({ farmer_id: "", status: "verified", notes: "" });
+         } else {
+            toast.error("Failed to record inspection");
+         }
+      } catch (err) {
+         console.error(err);
+         toast.error("An error occurred");
+      } finally {
+         setSubmitting(false);
+      }
+   };
+
    const getStatusIcon = (status) => {
       switch (status) {
          case "COMPLETED":
+         case "verified":
             return <CheckCircle className="w-4 h-4 text-green-500" />;
          case "IN_PROGRESS":
+         case "pending":
             return <Clock className="w-4 h-4 text-orange-500" />;
          case "SCHEDULED":
             return <Clock className="w-4 h-4 text-blue-500" />;
@@ -131,8 +121,10 @@ export default function InspectionsPage() {
    const getStatusColor = (status) => {
       switch (status) {
          case "COMPLETED":
+         case "verified":
             return "bg-green-100 text-green-700";
          case "IN_PROGRESS":
+         case "pending":
             return "bg-orange-100 text-orange-700";
          case "SCHEDULED":
             return "bg-blue-100 text-blue-700";
@@ -162,10 +154,75 @@ export default function InspectionsPage() {
 
    return (
       <div className="space-y-6">
-         <div>
-            <h1 className="text-3xl font-bold text-(--foreground)">Farm Inspections</h1>
-            <p className="text-gray-500 mt-1">Manage and track all farm inspection activities.</p>
+         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+               <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-emerald-400">Farm Inspections</h1>
+               <p className="text-gray-500 mt-1 text-lg">Manage and track all farm inspection activities</p>
+            </div>
+            <Button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white shadow-lg shadow-green-500/30 transition-all hover:-translate-y-0.5 active:translate-y-0 rounded-xl px-6 py-6 font-medium text-lg">
+               <Plus className="w-5 h-5" /> Record Inspection
+            </Button>
          </div>
+
+         {showForm && (
+            <Card className="border-0 shadow-2xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl overflow-hidden animate-in fade-in slide-in-from-top-4 duration-500 ring-1 ring-black/5 dark:ring-white/10">
+               <CardHeader className="bg-gradient-to-r from-green-50/50 to-emerald-50/50 dark:from-green-900/20 dark:to-emerald-900/20 border-b border-gray-100 dark:border-gray-800">
+                  <CardTitle className="text-xl font-bold text-gray-800 dark:text-gray-100">Record New Inspection</CardTitle>
+               </CardHeader>
+               <CardContent className="p-6">
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Farmer / Farm</label>
+                           <select
+                              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none shadow-sm"
+                              value={formData.farmer_id}
+                              onChange={(e) => setFormData({ ...formData, farmer_id: e.target.value })}
+                              required
+                           >
+                              <option value="">Select Farmer</option>
+                              {farmers.map(f => (
+                                 <option key={f.farmer_id} value={f.farmer_id}>{f.name}</option>
+                              ))}
+                           </select>
+                        </div>
+                        <div>
+                           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Status</label>
+                           <select
+                              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none shadow-sm"
+                              value={formData.status}
+                              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                              required
+                           >
+                              <option value="verified">Verified (Pass)</option>
+                              <option value="failed">Failed</option>
+                              <option value="pending">Pending</option>
+                           </select>
+                        </div>
+                        <div className="md:col-span-2">
+                           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Notes</label>
+                           <textarea
+                              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none shadow-sm resize-none"
+                              value={formData.notes}
+                              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                              rows={4}
+                              placeholder="Add inspection notes here..."
+                           />
+                        </div>
+                     </div>
+                     <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+                        <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="rounded-xl px-6">
+                           Cancel
+                        </Button>
+                        <Button type="submit" disabled={submitting} className="rounded-xl px-8 bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/20">
+                           {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                           Save Inspection
+                        </Button>
+                     </div>
+                  </form>
+               </CardContent>
+            </Card>
+         )}
 
          {/* Stats */}
          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -177,17 +234,17 @@ export default function InspectionsPage() {
             </Card>
             <Card>
                <CardContent className="p-6">
-                  <p className="text-gray-500 text-sm">Completed</p>
+                  <p className="text-gray-500 text-sm">Completed / Verified</p>
                   <p className="text-2xl font-bold mt-2 text-green-600">
-                     {inspections.filter((i) => i.status === "COMPLETED").length}
+                     {inspections.filter((i) => i.status === "COMPLETED" || i.status === "verified").length}
                   </p>
                </CardContent>
             </Card>
             <Card>
                <CardContent className="p-6">
-                  <p className="text-gray-500 text-sm">Scheduled</p>
-                  <p className="text-2xl font-bold mt-2 text-blue-600">
-                     {inspections.filter((i) => i.status === "SCHEDULED").length}
+                  <p className="text-gray-500 text-sm">Pending</p>
+                  <p className="text-2xl font-bold mt-2 text-orange-600">
+                     {inspections.filter((i) => i.status === "IN_PROGRESS" || i.status === "pending").length}
                   </p>
                </CardContent>
             </Card>
@@ -257,7 +314,7 @@ export default function InspectionsPage() {
                               key={insp.id}
                               className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
                            >
-                              <td className="py-3 px-4 font-medium">{insp.id}</td>
+                              <td className="py-3 px-4 font-medium">{insp.id.substring(0, 8)}...</td>
                               <td className="py-3 px-4">{insp.farmerName}</td>
                               <td className="py-3 px-4 text-sm flex items-center gap-1">
                                  <MapPin className="w-4 h-4" /> {insp.farmLocation}

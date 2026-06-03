@@ -163,7 +163,7 @@ export default function ProgramsPage() {
                <CardContent className="p-6">
                   <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Total Reach</p>
                   <p className="text-4xl font-black mt-1 text-emerald-900 dark:text-emerald-100">
-                     {programs.reduce((acc, p) => acc + (parseInt(p.target_farmers) || 0), 0).toLocaleString()}
+                     {programs.reduce((acc, p) => acc + (parseInt(p.enrolled_farmers) || 0), 0).toLocaleString()}
                   </p>
                </CardContent>
             </Card>
@@ -232,7 +232,7 @@ export default function ProgramsPage() {
                            </td>
                            <td className="px-6 py-5">
                               <div className="space-y-1">
-                                 <p className="text-sm font-bold">{program.target_farmers} <span className="text-[10px] text-gray-400 font-normal">Farmers</span></p>
+                                 <p className="text-sm font-bold">{program.enrolled_farmers} <span className="text-[10px] text-gray-400 font-normal">/ {program.target_farmers} Farmers</span></p>
                                  <p className="text-sm font-bold">{program.target_hectares} <span className="text-[10px] text-gray-400 font-normal">Hectares</span></p>
                               </div>
                            </td>

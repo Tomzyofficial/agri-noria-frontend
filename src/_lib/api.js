@@ -4,5 +4,9 @@ export function apiUrl(path) {
    if (!path) return;
    if (path.startsWith("http")) return path;
    const cleanPath = path.startsWith("/") ? path : `/${path}`;
-   return `${BACKEND_URL}${cleanPath}`;
+   let baseUrl = BACKEND_URL;
+   if (baseUrl && baseUrl.includes("localhost")) {
+       baseUrl = baseUrl.replace("localhost", "127.0.0.1");
+   }
+   return `${baseUrl}${cleanPath}`;
 }

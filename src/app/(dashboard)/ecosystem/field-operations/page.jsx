@@ -40,63 +40,68 @@ export default function FieldOperationsDashboard() {
             const d = await clustersRes.json();
             const cl = d.data || [];
             setClusters(cl);
+
+            let allVerifications = [];
+            let allFarmers = [];
+
             if (cl.length > 0) {
-               setSelectedCluster(cl[0]);
-               fetchClusterData(cl[0].id);
+               await Promise.all(cl.map(async (c) => {
+                  const [vRes, fRes] = await Promise.all([
+                     fetch(`/api/proxy/pipeline/verifications/cluster/${c.id}`),
+                     fetch(`/api/proxy/pipeline/clusters/${c.id}/members`),
+                  ]);
+                  if (vRes.ok) {
+                     const vd = await vRes.json();
+                     allVerifications.push(...(vd.data || []).map(v => ({ ...v, cluster_name: c.name })));
+                  }
+                  if (fRes.ok) {
+                     const fd = await fRes.json();
+                     allFarmers.push(...(fd.data || []).map(f => ({ ...f, cluster_name: c.name, cluster_id: c.id, cluster_region: c.region })));
+                  }
+               }));
             }
+
+            setVerifications(allVerifications);
+            setClusterFarmers(allFarmers);
          }
       } catch (err) {
+         console.error(err);
          toast.error("Failed to load dashboard data");
       } finally {
          setLoading(false);
       }
    };
 
-   const fetchClusterData = async (clusterId) => {
+   const handleSelectCluster = async (cluster) => {
+      setSelectedCluster(cluster);
       try {
-         const [vRes, fRes] = await Promise.all([
-            fetch(`/api/proxy/pipeline/verifications/cluster/${clusterId}`),
-            fetch(`/api/proxy/pipeline/clusters/${clusterId}/members`),
-         ]);
-         if (vRes.ok) { const vd = await vRes.json(); setVerifications(vd.data || []); }
-         if (fRes.ok) { const fd = await fRes.json(); setClusterFarmers(fd.data || []); }
-      } catch (err) {
-         console.error("Error fetching cluster data:", err);
-      }
-   };
-
-   const handleSelectFarmer = async (farmer) => {
-      setSelectedFarmer(farmer);
-      try {
-         const res = await fetch(`/api/proxy/pipeline/supervision/${farmer.farmer_id}`);
+         const res = await fetch(`/api/proxy/pipeline/supervision/cluster/${cluster.id}`);
          if (res.ok) {
             const d = await res.json();
             setSupervision(d.data || {
-               farmer_id: farmer.farmer_id,
-               program_id: farmer.program_id,
+               cluster_id: cluster.id,
                clearing_status: 'pending', irrigation_status: 'pending', ridging_status: 'pending', weeding_status: 'pending', harvesting_status: 'pending'
             });
          }
       } catch (err) {
-         toast.error("Failed to load supervision log");
+         toast.error("Failed to load cluster supervision");
       }
    };
 
    const handleUpdateSupervision = async () => {
-      if (!selectedFarmer || !supervision) return;
+      if (!selectedCluster || !supervision) return;
       setIsSaving(true);
       try {
-         const res = await fetch("/api/proxy/pipeline/supervision/update", {
+         const res = await fetch("/api/proxy/pipeline/supervision/cluster/update", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                ...supervision,
-               farmer_id: selectedFarmer.farmer_id,
-               program_id: selectedFarmer.program_id
+               cluster_id: selectedCluster.id
             })
          });
          if (res.ok) {
-            toast.success("Supervision log updated successfully");
+            toast.success("Cluster supervision updated successfully");
             const d = await res.json();
             setSupervision(d.data);
          } else {
@@ -139,33 +144,15 @@ export default function FieldOperationsDashboard() {
                <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Field <span className="text-teal-600">Operations</span></h1>
                <p className="text-gray-500 mt-1 font-medium">Manage visits, verify farms, and monitor agricultural progress.</p>
             </div>
-            {clusters.length > 0 && (
-               <div className="flex items-center gap-2 bg-white dark:bg-gray-800 p-1.5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                  <span className="text-xs font-bold text-gray-400 uppercase ml-2">Cluster:</span>
-                  <select
-                     className="bg-transparent border-none text-sm font-bold text-gray-900 dark:text-white focus:ring-0 cursor-pointer"
-                     value={selectedCluster?.id || ""}
-                     onChange={(e) => {
-                        const c = clusters.find(cl => cl.id === e.target.value);
-                        setSelectedCluster(c);
-                        fetchClusterData(c.id);
-                        setSelectedFarmer(null);
-                        setSupervision(null);
-                     }}
-                  >
-                     {clusters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-               </div>
-            )}
          </div>
 
          <div className="flex flex-wrap gap-2 p-1 bg-gray-100 dark:bg-gray-800/50 rounded-2xl w-fit">
             {[
                { key: "overview", label: "Overview" },
                { key: "supervision", label: "Farm Supervision" },
-               { key: "verification", label: "Field Verification" },
-               { key: "monitoring", label: "Crop Monitoring" },
-               { key: "harvest", label: "Harvest Approval" },
+               // { key: "verification", label: "Field Verification" },
+               // { key: "monitoring", label: "Crop Monitoring" },
+               // { key: "harvest", label: "Harvest Approval" },
             ].map(({ key, label }) => (
                <button
                   key={key}
@@ -211,7 +198,7 @@ export default function FieldOperationsDashboard() {
                               </div>
                            </CardContent>
                         </Card>
-                        <Card className="bg-white dark:bg-gray-800 border-none shadow-xl shadow-cyan-500/5 group hover:scale-[1.02] transition-transform">
+                        {/* <Card className="bg-white dark:bg-gray-800 border-none shadow-xl shadow-cyan-500/5 group hover:scale-[1.02] transition-transform">
                            <CardContent className="p-6 flex items-center gap-4">
                               <div className="p-4 bg-cyan-500 text-white rounded-2xl shadow-lg shadow-cyan-500/20"><FaCalendarDay size={24} /></div>
                               <div>
@@ -219,7 +206,7 @@ export default function FieldOperationsDashboard() {
                                  <p className="text-2xl font-black text-gray-900 dark:text-white leading-tight">{stats.totalSalesValue ? "₦" + (stats.totalSalesValue / 1000000).toFixed(1) + "M" : "Calculating..."}</p>
                               </div>
                            </CardContent>
-                        </Card>
+                        </Card> */}
                      </div>
 
                      <Card className="border-none shadow-2xl shadow-gray-200 dark:shadow-none overflow-hidden rounded-3xl">
@@ -259,49 +246,49 @@ export default function FieldOperationsDashboard() {
 
                {activeSection === "supervision" && (
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                     {/* Farmer List */}
+                     {/* Cluster List */}
                      <Card className="lg:col-span-1 border-none shadow-xl shadow-gray-200 dark:shadow-none rounded-3xl overflow-hidden h-fit">
                         <CardHeader className="bg-gray-50 dark:bg-gray-800/50 p-6 border-b border-gray-100 dark:border-gray-700">
-                           <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2"><FaUserAlt className="text-teal-500" /> Cluster Farmers</CardTitle>
+                           <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2"><FaSatelliteDish className="text-teal-500" /> Clusters</CardTitle>
                         </CardHeader>
                         <CardContent className="p-0 max-h-[600px] overflow-y-auto">
-                           {clusterFarmers.length > 0 ? (
+                           {clusters.length > 0 ? (
                               <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                                 {clusterFarmers.map((f) => (
+                                 {clusters.map((c) => (
                                     <button
-                                       key={f.id}
-                                       onClick={() => handleSelectFarmer(f)}
-                                       className={`w-full p-5 text-left transition-all flex items-center justify-between group ${selectedFarmer?.id === f.id ? "bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-500" : "hover:bg-gray-50 dark:hover:bg-gray-800/30"}`}
+                                       key={c.id}
+                                       onClick={() => handleSelectCluster(c)}
+                                       className={`w-full p-5 text-left transition-all flex items-center justify-between group ${selectedCluster?.id === c.id ? "bg-teal-50 dark:bg-teal-900/20 border-l-4 border-teal-500" : "hover:bg-gray-50 dark:hover:bg-gray-800/30"}`}
                                     >
                                        <div className="flex items-center gap-3">
-                                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm transition-colors ${selectedFarmer?.id === f.id ? "bg-teal-500 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-500 group-hover:bg-teal-100 dark:group-hover:bg-teal-900/30 group-hover:text-teal-600"}`}>
-                                             {f.fname[0]}{f.lname[0]}
+                                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm transition-colors ${selectedCluster?.id === c.id ? "bg-teal-500 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-500 group-hover:bg-teal-100 dark:group-hover:bg-teal-900/30 group-hover:text-teal-600"}`}>
+                                             {c.name?.[0]?.toUpperCase() || "C"}
                                           </div>
                                           <div>
-                                             <p className="font-bold text-sm text-gray-900 dark:text-white">{f.fname} {f.lname}</p>
-                                             <p className="text-[10px] text-gray-500 uppercase font-black tracking-tighter">{f.commodity || "Crop"} • {f.farm_size_hectares} Ha</p>
+                                             <p className="font-bold text-sm text-gray-900 dark:text-white">{c.name}</p>
+                                             <p className="text-[10px] text-gray-500 uppercase font-black tracking-tighter">{c.region || "Region"} • {c.farmer_count || 0} Farmers • {c.total_hectares || 0} Ha</p>
                                           </div>
                                        </div>
-                                       {selectedFarmer?.id === f.id && <FaEdit className="text-teal-500 animate-pulse" size={14} />}
+                                       {selectedCluster?.id === c.id && <FaEdit className="text-teal-500 animate-pulse" size={14} />}
                                     </button>
                                  ))}
                               </div>
                            ) : (
-                              <p className="p-10 text-center text-gray-400 font-bold text-xs uppercase italic">No farmers in this cluster</p>
+                              <p className="p-10 text-center text-gray-400 font-bold text-xs uppercase italic">No clusters found</p>
                            )}
                         </CardContent>
                      </Card>
 
                      {/* Supervision Log */}
                      <Card className="lg:col-span-2 border-none shadow-2xl shadow-teal-500/5 dark:shadow-none rounded-3xl overflow-hidden min-h-[500px]">
-                        {!selectedFarmer ? (
+                        {!selectedCluster ? (
                            <div className="h-full flex flex-col items-center justify-center text-center p-20 space-y-4">
                               <div className="w-20 h-20 bg-teal-50 dark:bg-teal-900/20 rounded-full flex items-center justify-center text-teal-600">
-                                 <FaUserAlt size={32} className="opacity-50" />
+                                 <FaSatelliteDish size={32} className="opacity-50" />
                               </div>
                               <div>
-                                 <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Select a Farmer</h3>
-                                 <p className="text-gray-500 font-medium max-w-xs mx-auto">Select a farmer from the list to update their field supervision log and track farming stages.</p>
+                                 <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Select a Cluster</h3>
+                                 <p className="text-gray-500 font-medium max-w-xs mx-auto">Select a cluster from the list to update the farm supervision log and track farming stages for the entire group.</p>
                               </div>
                            </div>
                         ) : (
@@ -310,12 +297,17 @@ export default function FieldOperationsDashboard() {
                                  <div className="flex justify-between items-center">
                                     <div className="space-y-1">
                                        <div className="flex items-center gap-3">
-                                          <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md"><FaUserAlt size={24} /></div>
+                                          <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md"><FaSatelliteDish size={24} /></div>
                                           <div>
-                                             <h2 className="text-2xl font-black leading-tight uppercase tracking-tight">{selectedFarmer.fname} {selectedFarmer.lname}</h2>
+                                             <h2 className="text-2xl font-black leading-tight uppercase tracking-tight">Cluster {selectedCluster.name}</h2>
                                              <p className="text-teal-100 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                                                <FaMapMarkerAlt /> {selectedCluster?.region || "Northern Region"} • Cluster {selectedCluster?.name}
+                                                <FaMapMarkerAlt /> {selectedCluster.region || "Region"} • {selectedCluster.farmer_count || 0} Farmers • {selectedCluster.total_hectares || 0} Ha
                                              </p>
+                                             {selectedCluster.supervisor_name && (
+                                                <p className="text-teal-200 text-[10px] font-bold uppercase tracking-widest mt-1">
+                                                   Supervisor: {selectedCluster.supervisor_name}
+                                                </p>
+                                             )}
                                           </div>
                                        </div>
                                     </div>
@@ -334,13 +326,11 @@ export default function FieldOperationsDashboard() {
                                  <div className="space-y-12">
                                     {stages.map((stage, idx) => (
                                        <div key={stage.id} className="relative">
-                                          {/* Step Line */}
                                           {idx !== stages.length - 1 && (
                                              <div className="absolute left-6 top-12 bottom-[-48px] w-0.5 bg-gray-100 dark:bg-gray-800 z-0"></div>
                                           )}
 
                                           <div className="flex gap-6 relative z-10">
-                                             {/* Icon Circle */}
                                              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-lg transition-all duration-500 ${getStatusColor(supervision?.[`${stage.id}_status`], true)
                                                 } ${supervision?.[`${stage.id}_status`] === 'in_progress' ? 'animate-pulse' : ''}`}>
                                                 {supervision?.[`${stage.id}_status`] === 'completed' ? <FaCheckCircle /> : stage.icon}
@@ -388,6 +378,8 @@ export default function FieldOperationsDashboard() {
                      </Card>
                   </div>
                )}
+
+
 
                {activeSection === "verification" && (
                   <Card className="border-none shadow-2xl shadow-gray-200 dark:shadow-none rounded-3xl overflow-hidden">

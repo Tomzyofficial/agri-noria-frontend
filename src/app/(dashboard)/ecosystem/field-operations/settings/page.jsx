@@ -1,6 +1,6 @@
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Save, Bell, Shield, User, Globe, MessageSquare, Smartphone, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { toast } from "react-toastify";
@@ -14,9 +14,30 @@ export default function FieldOfficerSettings() {
       emailNotifications: true,
       smsNotifications: true,
       twoFactorAuth: false,
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
       displayName: "Field Officer",
       profileVisibility: "private",
    });
+
+   useEffect(() => {
+      const fetchSettings = async () => {
+         try {
+            const res = await fetch("/api/proxy/field-operations/settings");
+            if (res.ok) {
+               const json = await res.json();
+               if (json.success && json.data) {
+                  setSettings(prev => ({ ...prev, ...json.data }));
+               }
+            }
+         } catch (err) {
+            console.error("Failed to fetch settings:", err);
+         }
+      };
+      fetchSettings();
+   }, []);
 
    const handleChange = (key, value) => {
       setSettings((prev) => ({ ...prev, [key]: value }));
@@ -51,10 +72,10 @@ export default function FieldOfficerSettings() {
                   <CardContent className="p-8 space-y-6">
                      <div className="flex items-center gap-6 pb-6 border-b border-gray-100 dark:border-gray-800">
                         <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-3xl flex items-center justify-center text-blue-600 text-3xl font-black">
-                           FO
+                           {`${settings.firstName?.charAt(0) || ''}${settings.lastName?.charAt(0) || ''}`.toUpperCase() || "FO"}
                         </div>
                         <div>
-                           <h3 className="text-xl font-black">{settings.displayName}</h3>
+                           <h3 className="text-xl font-black">{settings.firstName} {settings.lastName}</h3>
                            <p className="text-sm text-gray-500 font-medium">Field Operations Officer</p>
                            <button className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-2 hover:underline">Change Avatar</button>
                         </div>
@@ -62,10 +83,22 @@ export default function FieldOfficerSettings() {
 
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                           <label className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest block mb-2">Display Name</label>
-                           <input type="text" value={settings.displayName} onChange={e => handleChange("displayName", e.target.value)} className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-4 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500 transition-all" />
+                           <label className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest block mb-2">First Name</label>
+                           <input type="text" value={settings.firstName} onChange={e => handleChange("firstName", e.target.value)} className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-4 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500 transition-all" />
                         </div>
                         <div>
+                           <label className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest block mb-2">Last Name</label>
+                           <input type="text" value={settings.lastName} onChange={e => handleChange("lastName", e.target.value)} className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-4 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500 transition-all" />
+                        </div>
+                        <div>
+                           <label className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest block mb-2">Email Address</label>
+                           <input type="email" value={settings.email} onChange={e => handleChange("email", e.target.value)} className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-4 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500 transition-all" />
+                        </div>
+                        <div>
+                           <label className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest block mb-2">Phone Number</label>
+                           <input type="tel" value={settings.phone} onChange={e => handleChange("phone", e.target.value)} className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-4 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500 transition-all" />
+                        </div>
+                        <div className="md:col-span-2">
                            <label className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest block mb-2">Profile Visibility</label>
                            <select value={settings.profileVisibility} onChange={e => handleChange("profileVisibility", e.target.value)} className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-4 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500 transition-all">
                               <option value="private">Private</option>

@@ -87,11 +87,11 @@ export default function AggregatorLayout({ children }) {
       href: "/ecosystem/aggregator/financing",
       icon: <CreditCard className="w-4 h-4" />,
     },
-    {
-      label: "Intervention Requests",
-      href: "/ecosystem/aggregator/inputs",
-      icon: <Package className="w-4 h-4" />,
-    },
+    // {
+    //   label: "Intervention Requests",
+    //   href: "/ecosystem/aggregator/inputs",
+    //   icon: <Package className="w-4 h-4" />,
+    // },
     {
       label: "Marketplace Data",
       href: "/ecosystem/aggregator/marketplace",
