@@ -17,7 +17,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { signoutBridge } from "@/action/authActions";
+import { signoutBridge } from "@/actions/authActions";
 
 export default function SuperAdminLayout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
