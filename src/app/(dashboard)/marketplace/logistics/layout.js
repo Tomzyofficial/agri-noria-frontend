@@ -14,8 +14,7 @@ import {
   Package,
   Users,
   LayoutDashboard,
-  MapPinned,
-  BarChart3,
+  MessageSquareMore,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { VerifyNotiBanner } from "@/app/(dashboard)/dashboard/components/VerifyNotiBanner";
@@ -121,20 +120,15 @@ export default function DashboardLayout({ children }) {
       icon: <Users className="w-4 h-4" />,
     },
     {
+      label: "Quote Requests",
+      href: "/marketplace/logistics/quote-requests",
+      icon: <MessageSquareMore className="w-4 h-4" />,
+    },
+    {
       label: "Vehicles",
       href: "/marketplace/logistics/vehicles",
       icon: <Truck className="w-4 h-4" />,
     },
-    //  {
-    //    label: "Tracking",
-    //    href: "/dashboard/logistics/tracking",
-    //    icon: <MapPinned className="w-4 h-4" />,
-    //  },
-    //  {
-    //    label: "Analytics",
-    //    href: "/dashboard/logistics/analytics",
-    //    icon: <BarChart3 className="w-4 h-4" />,
-    //  },
     {
       label: "Profile",
       href: "/marketplace/store/profile",

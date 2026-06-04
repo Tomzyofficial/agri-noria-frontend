@@ -1,150 +1,308 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { fetcher, formatDate } from "@/utils/otherUtils";
 import Link from "next/link";
-import { Plus, TrendingUp, Package, Users, ArrowRight } from "lucide-react";
-import { FaNairaSign } from "react-icons/fa6";
 import useSWR from "swr";
 import { CardSkeleton } from "@/components/ui/CardSkeleton";
+import { LuMessageCircleMore } from "react-icons/lu";
+import { useState } from "react";
+import { Modal } from "@/components/ui/Modal";
+import { quoteRequestDetails } from "./components/QuoteRequestDetails";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { Package, EyeIcon } from "lucide-react";
+import { TbHandClick } from "react-icons/tb";
+import BarChartLoading from "@/components/ui/BarChartLoadingSkeleton";
+import { TableSkeleton } from "@/components/ui/TableLoadingSkeleton";
+
+function StatCard({ isLoading, error, title, value, icon: Icon }) {
+  return (
+    <div>
+      {isLoading ? (
+        <CardSkeleton />
+      ) : error ? (
+        <Card className="text-red-500 text-sm h-32 flex items-center justify-center">
+          {error.message}
+        </Card>
+      ) : (
+        <Card className="px-4 py-6">
+          <CardHeader className="flex items-center justify-between pb-2 px-2">
+            <CardTitle className="text-sm font-medium">{title}</CardTitle>
+            <Icon className="h-4 w-4" />
+          </CardHeader>
+          <CardContent>
+            <span className="text-2xl font-bold">{value}</span>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
 
 export function DashboardOverview({ user }) {
-  const fetcher = async (url) => {
-    const res = await fetch(url, {
-      method: "GET",
-    });
-
-    const data = await res.json();
-    if (!res.ok || !data.success) {
-      const error = new Error(
-        data.error || "An error occurred while fetching the data.",
-      );
-      throw error;
-    }
-
-    return data;
-  };
+  const [showModal, setShowModal] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
 
   const { data, error, isLoading } = useSWR(
-    "/api/proxy/vendor/storage/get-total-storage",
+    "/api/proxy/vendor/storage/stats",
     fetcher,
   );
 
+  const {
+    data: quoteData,
+    error: quoteError,
+    isLoading: quoteIsLoading,
+  } = useSWR("/api/proxy/vendor/storage/quote-requests", fetcher);
+
+  const STATUS_BADGES = {
+    pending: "bg-yellow-100 text-yellow-800",
+    contacted: "bg-green-100 text-green-800",
+  };
+
+  const overviewData = [
+    { name: "Views", value: data?.view_count ?? 0 },
+    { name: "Clicks", value: data?.booking_click_count ?? 0 },
+    { name: "Requests", value: data?.quote_requests_count ?? 0 },
+  ];
+
   return (
     <div className="my-25 lg:my-5 dark:text-(--foreground)">
-      <div className="flex flex-row items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-(--foreground)">
-            Storage Dashboard
-          </h1>
-          <p className="">Welcome back, {user}!</p>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold">Welcome back, {user}!</h1>
+        <p className="">Monitor your storage performance and leads</p>
       </div>
 
       <div className="grid md:grid-cols-4 gap-6 mb-8">
-        {/* Total listings */}
+        <StatCard
+          isLoading={isLoading}
+          error={error}
+          title="Total Facilities"
+          value={data?.total ?? 0}
+          icon={Package}
+        />
+        <StatCard
+          isLoading={isLoading}
+          error={error}
+          title="Views"
+          value={data?.view_count ?? 0}
+          icon={EyeIcon}
+        />
+        <StatCard
+          isLoading={isLoading}
+          error={error}
+          title="Booking Clicks"
+          value={data?.booking_click_count ?? 0}
+          icon={TbHandClick}
+        />
+        <StatCard
+          isLoading={isLoading}
+          error={error}
+          title="Total Requests"
+          value={data?.quote_requests_count ?? 0}
+          icon={LuMessageCircleMore}
+        />
+      </div>
+
+      <section className="grid lg:grid-cols-3 gap-6 my-10">
         {isLoading ? (
-          <CardSkeleton />
+          <BarChartLoading />
         ) : error ? (
-          <Card className="text-red-500 text-sm h-32 flex items-center justify-center">
+          <Card className="text-red-500 text-sm h-64 flex items-center justify-center">
             {error.message}
           </Card>
         ) : (
-          <Card className="px-4 py-6">
-            <CardHeader className="flex items-center justify-between pb-2 px-2">
-              <CardTitle className="text-sm font-medium">
-                Total Facilities
-              </CardTitle>
-              <Package className="h-4 w-4" />
-            </CardHeader>
-
-            <CardContent>
-              <div>
-                <p className="text-2xl font-bold">{[data.total ?? 0]}</p>
-                <p className="text-xs text-(--foreground)">
-                  {[data.total ?? 0]} active
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="lg:col-span-2">
+            <Card className="rounded-2xl">
+              <CardHeader>
+                <CardTitle>Performance Overview</CardTitle>
+              </CardHeader>
+              <CardContent className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={overviewData}>
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="value" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
         )}
-        {/* Revenue */}
-        <Card className="px-4 py-6">
-          <CardHeader className="flex items-center justify-between space-y-0 pb-2 px-2">
-            <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-            <FaNairaSign className="h-4 w-4" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs">+15% from last month</p>
-          </CardContent>
-        </Card>
 
-        {/* Active buyers */}
-        <Card className="px-4 py-6">
-          <CardHeader className="flex flex-row items-center justify-between px-2 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Active Clients
+        <Card className="rounded-2xl py-2">
+          <CardHeader>
+            <CardTitle className="underline underline-offset-4 mb-2">
+              Quick Actions
             </CardTitle>
-            <Users className="h-4 w-4" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs">+7 new this week</p>
-          </CardContent>
-        </Card>
-
-        {/* Growth */}
-        <Card className="px-4 py-6">
-          <CardHeader className="flex flex-row items-center justify-between px-2 pb-2">
-            <CardTitle className="text-sm font-medium">Growth</CardTitle>
-            <TrendingUp className="h-4 w-4" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+0%</div>
-            <p className="text-xs">vs last quarter</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-6 mb-8">
-        <Card className="px-4 py-6">
-          <CardHeader>
-            <CardTitle>Storage Management</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-4">
-              Manage your storage facilities, inventory, and pricing all in one
-              place.
-            </p>
+          <CardContent className="space-y-3 flex flex-col">
+            {/* <Button className="w-full rounded-xl" variant="outline">
+              View All Leads
+            </Button> */}
             <Link
+              className="hover:underline"
               href="/marketplace/storage-facility/storage-facilities"
-              className="flex items-center justify-center group hover:bg-(--dark-green-color) focus:bg-(--dark-green-color) bg-(--greenish-color) transition transition-background text-(--gray-color) rounded-md p-2"
             >
-              Manage Storage Facilities
-              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-2 transition" />
+              Manage Listings
             </Link>
-          </CardContent>
-        </Card>
-
-        <Card className="px-4 py-6">
-          <CardHeader>
-            <CardTitle>Quick Add Facility</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-4">
-              Do you have new storage facilities to add? Add them to your
-              dashboard quickly.
-            </p>
+            {/* <Button className="w-full rounded-xl" variant="outline">
+              Update Availability
+            </Button> */}
             <Link
               href="/marketplace/storage-facility/storage-facilities/add-new"
-              className="flex items-center justify-center hover:bg-(--dark-green-color) hover:text-(--white-fff) bg-gray-200 focus:bg-(--dark-green-color) transition transition-background text-black rounded-md p-2"
+              className="hover:underline "
+              variant="outline"
             >
-              <Plus className="mr-2 h-4 w-4" />
-              Add New Facility
+              Create New Listing
+            </Link>
+            <Link
+              href="/marketplace/storage-facility/quote-requests"
+              className="hover:underline "
+              variant="outline"
+            >
+              View All Quote Requests
             </Link>
           </CardContent>
         </Card>
-      </div>
+      </section>
+
+      {/* Leads Section */}
+      <section className="my-10">
+        <table className="w-full text-left border-collapse rounded-lg">
+          <caption className="py-5">Recent Quote Requests</caption>
+          <thead>
+            <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-(--gray-color">
+              {[
+                "Customer",
+                "Storage Facility",
+                "Location",
+                "Request Date",
+                "Status",
+                "Action",
+              ].map((h) => (
+                <th
+                  key={h}
+                  className="px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          {quoteIsLoading ? (
+            <TableSkeleton rows={5} />
+          ) : quoteError ? (
+            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
+              <tr>
+                <td
+                  colSpan={6}
+                  className="px-4 py-8 text-center text-sm text-red-500"
+                >
+                  {quoteError.message}
+                </td>
+              </tr>
+            </tbody>
+          ) : (
+            <tbody className="bg-white dark:bg-(--card-dark) divide-y divide-gray-100 dark:divide-gray-800">
+              {quoteData?.quoteRequests?.length > 0 ? (
+                quoteData?.quoteRequests?.map((req) => {
+                  const initials = req.full_name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase();
+
+                  return (
+                    <tr
+                      key={req.quote_request_id}
+                      className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    >
+                      {/* Customer */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                            {initials}
+                          </div>
+                          <span className="font-medium text-gray-900 dark:text-gray-100 text-sm whitespace-nowrap">
+                            {req.full_name}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Storage Facility */}
+                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                        {req.storage_name}
+                      </td>
+
+                      {/* Location */}
+                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                        {req.location}
+                      </td>
+
+                      {/* Request Date */}
+                      <td className="px-4 py-3 text-sm font-mono text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                        {formatDate(req.created_at)}
+                      </td>
+
+                      {/* Status */}
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGES[req.status]}`}
+                        >
+                          {req.status.charAt(0).toUpperCase() +
+                            req.status.slice(1)}
+                        </span>
+                      </td>
+
+                      <td className="px-4 py-3 text-sm font-mono text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                        <Button
+                          onClick={() => {
+                            setSelectedRequest(req);
+                            setShowModal(true);
+                          }}
+                          className="bg-green-100 text-green-900 hover:bg-green-300 px-1 py-1 rounded-lg"
+                        >
+                          View Details
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-4 py-8 text-center text-sm text-slate-500"
+                  >
+                    No quote requests yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          )}
+        </table>
+      </section>
+      {/* section for modals */}
+      <Modal
+        isOpen={showModal}
+        onClick={() => {
+          setShowModal(false);
+          setSelectedRequest(null);
+        }}
+        title="Quote Request Details"
+      >
+        {selectedRequest && quoteRequestDetails(selectedRequest)}
+      </Modal>
     </div>
   );
 }

@@ -3,20 +3,23 @@ import { HomePage } from "@/app/HomePage.jsx";
 import { Footer } from "@/components/ui/Footer";
 import NavBar from "@/components/ui/NavBar/NavBar";
 import { verifyVendorSession } from "@/actions/session";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 export default async function Page() {
   // If vendor is already logged in, send them straight to their dashboard
-  const vendorSession = await verifyVendorSession();
-  if (vendorSession?.authenticated) {
-    redirect("/dashboard");
-  }
+  //   const vendorSession = await verifyVendorSession();
+  //   if (vendorSession?.authenticated) {
+  //     redirect("/dashboard");
+  //   }
 
   let marketplace = [];
   let error = null;
 
   try {
-    const data = await getMarketplaceProducts();
+    const headerStore = await headers();
+    const countryCode = headerStore.get("x-user-country");
+    const data = await getMarketplaceProducts(countryCode);
     if (data?.error) {
       // API returned an error — treat as empty marketplace
       marketplace = [];

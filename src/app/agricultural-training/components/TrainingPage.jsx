@@ -1,32 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useMaterials } from "./lib/useMaterials";
-import MaterialCard from "./components/MaterialCard";
-import SkeletonCard from "./components/SkeletonCard";
-import {
-  IconSearch,
-  IconFilter,
-  IconX,
-  IconVideo,
-  IconDocument,
-  IconImage,
-} from "./components/Icons";
+import MaterialCard from "./MaterialCard";
+import { Search, Funnel, X, Video, Image, FileText } from "lucide-react";
+import { ErrorUi } from "@/components/ui/Error";
 
 const FILE_TYPES = [
   { value: "all", label: "All Types" },
-  { value: "video", label: "Video", Icon: IconVideo },
-  { value: "pdf", label: "PDF", Icon: IconDocument },
-  { value: "image", label: "Image", Icon: IconImage },
-];
-
-const CATEGORIES = [
-  "all",
-  "Cloud",
-  "Security",
-  "Engineering",
-  "Management",
-  "Compliance",
+  { value: "video", label: "Video", Icon: Video },
+  { value: "pdf", label: "PDF", Icon: FileText },
+  { value: "image", label: "Image", Icon: Image },
 ];
 
 const STAT_CARDS = [
@@ -36,17 +19,39 @@ const STAT_CARDS = [
   { key: "image", label: "Visual Diagrams" },
 ];
 
-export default function TrainingPage() {
+export function TrainingPage({ materials, error }) {
   const [typeFilter, setTypeFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { materials, loading, error, stats, refetch } = useMaterials({
-    type: typeFilter,
-    category: categoryFilter,
-    search: searchQuery,
+  //  const materials = materials ?? [];
+  const filteredMaterials = materials.filter((material) => {
+    const matchesType =
+      typeFilter === "all" ||
+      material.file_type?.toLowerCase().includes(typeFilter);
+
+    const matchesCategory =
+      categoryFilter === "all" || material.category === categoryFilter;
+
+    const matchesSearch =
+      !searchQuery ||
+      material.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      material.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesType && matchesCategory && matchesSearch;
   });
+
+  const all = materials ?? [];
+  const uniqueCategory = [...new Set(all.map((item) => item.category))];
+  const CATEGORIES = ["all", ...uniqueCategory];
+
+  const stats = {
+    total: all.length,
+    video: all.filter((m) => m.file_type.includes("video")).length,
+    pdf: all.filter((m) => m.file_type.includes("pdf")).length,
+    image: all.filter((m) => m.file_type.includes("image")).length,
+  };
 
   const handleSearchChange = (e) => {
     const val = e.target.value;
@@ -70,10 +75,7 @@ export default function TrainingPage() {
     typeFilter !== "all" || categoryFilter !== "all" || searchQuery;
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ background: "#F6F4EF", fontFamily: "'DM Sans', sans-serif" }}
-    >
+    <div className="min-h-screen bg-background">
       {/* Hero */}
       <section
         className="relative overflow-hidden"
@@ -143,11 +145,11 @@ export default function TrainingPage() {
       </section>
 
       {/* Controls */}
-      <div className="sticky top-16 z-40 border-b border-stone-200 bg-white/95 backdrop-blur-md">
+      <div className="sticky top-20 z-40 border-b border-stone-200 bg-white/95 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 py-3 flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[200px] max-w-xs">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">
-              <IconSearch size={16} />
+              <Search size={16} />
             </span>
             <input
               type="text"
@@ -161,7 +163,7 @@ export default function TrainingPage() {
                 onClick={clearSearch}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
               >
-                <IconX size={14} />
+                <X size={14} />
               </button>
             )}
           </div>
@@ -185,7 +187,7 @@ export default function TrainingPage() {
           </div>
 
           <div className="flex items-center gap-1.5 text-stone-500">
-            <IconFilter size={14} />
+            <Funnel size={14} />
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
@@ -205,15 +207,9 @@ export default function TrainingPage() {
               className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors hover:opacity-80"
               style={{ background: "#FFF3E8", color: "#B84A2E" }}
             >
-              <IconX size={12} />
+              <X size={12} />
               Clear filters
             </button>
-          )}
-
-          {!loading && (
-            <span className="ml-auto text-xs text-stone-400 font-medium hidden sm:block">
-              {materials.length} {materials.length === 1 ? "result" : "results"}
-            </span>
           )}
         </div>
       </div>
@@ -222,41 +218,17 @@ export default function TrainingPage() {
       <main className="max-w-7xl mx-auto px-6 py-10">
         {error && (
           <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-            <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center"
-              style={{ background: "#FFF3E8" }}
-            >
-              <span className="text-2xl">⚠️</span>
-            </div>
-            <p className="font-semibold text-stone-800">
-              Failed to load materials
-            </p>
-            <p className="text-sm text-stone-500">{error}</p>
-            <button
-              onClick={() => refetch()}
-              className="px-5 py-2 rounded-full text-sm font-semibold text-white hover:opacity-80"
-              style={{ background: "#2D4A3E" }}
-            >
-              Try again
-            </button>
+            <ErrorUi />
           </div>
         )}
 
-        {loading && !error && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <SkeletonCard key={i} />
-            ))}
-          </div>
-        )}
-
-        {!loading && !error && materials.length === 0 && (
+        {!error && filteredMaterials.length === 0 && (
           <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
               style={{ background: "#E8F0EC" }}
             >
-              🔍
+              <Search />
             </div>
             <p
               className="font-semibold text-stone-800"
@@ -280,9 +252,9 @@ export default function TrainingPage() {
           </div>
         )}
 
-        {!loading && !error && materials.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {materials.map((material) => (
+        {filteredMaterials.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 bg-background lg:grid-cols-3 gap-6">
+            {filteredMaterials.map((material) => (
               <MaterialCard key={material.id} material={material} />
             ))}
           </div>
@@ -292,7 +264,8 @@ export default function TrainingPage() {
       <footer className="border-t border-stone-200 mt-10">
         <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-3">
           <span className="text-sm text-stone-400">
-            © {new Date().getFullYear()} Training Hub. All rights reserved.
+            © {new Date().getFullYear()} Training Hub. Agri-Noria. All rights
+            reserved.
           </span>
           <span className="text-xs text-stone-400">
             Content provided by certified vendor partners

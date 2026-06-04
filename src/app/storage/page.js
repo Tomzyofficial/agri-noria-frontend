@@ -9,12 +9,12 @@ export const metadata = {
 };
 export default async function Page() {
   const response = await getMarketplaceListedStorage();
-  const storage = response?.error ? [] : response || [];
+  const result = response?.error ? [] : response || [];
   const error = response?.error || null;
   return (
     <>
       <NavBar />
-      <StoragePage storage={storage} error={error} />
+      <StoragePage result={result} error={error} />
     </>
   );
 }

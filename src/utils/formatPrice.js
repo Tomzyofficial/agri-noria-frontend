@@ -1,12 +1,14 @@
 export function formatPrice(price, countryIsoCode, currency) {
+  if (!Number.isFinite(Number(price))) return "Rate on request";
+
   if (price || countryIsoCode || currency) {
     return new Intl.NumberFormat(`en-${countryIsoCode}`, {
       style: "currency",
       currency: currency,
       currencyDisplay: "narrowSymbol",
+      maximumFractionDigits: 2,
     }).format(price);
   }
-  return "₦0.00";
 }
 
 // Used in the cart page

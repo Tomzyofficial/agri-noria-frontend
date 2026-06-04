@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useGeoLocation } from "@/hooks/useGeolocations";
+import { useGeoLocation } from "@/hooks/useGeolocation";
 import { State, City } from "country-state-city";
 import { setLocation } from "./LocationLocalStorage-not-in-use";
 

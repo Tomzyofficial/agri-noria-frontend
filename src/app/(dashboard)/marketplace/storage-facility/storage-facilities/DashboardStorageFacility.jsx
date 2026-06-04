@@ -108,7 +108,7 @@ export function StorageFacility() {
     <div className="my-25 lg:my-5">
       <div className="mb-8">
         <h1 className="text-lg md:text-2xl lg:text-3xl font-bold text-(--foreground)">
-          Storage Facility
+          Storage Facilities
         </h1>
         <p className="text-(--foreground)">
           Manage your storage facilities and inventory
@@ -116,14 +116,24 @@ export function StorageFacility() {
       </div>
 
       {/* Filters and Search */}
-      <div className="relative mb-6 w-full">
-        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none" />
-        <Input
-          placeholder="Search products..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-8 pr-4 bg-gray-100 shadow-sm dark:bg-(--card-dark) outline-none rounded-md w-full h-10 lg:w-2/5 border-2 border-transparent focus:border-(--greenish-color) dark:focus:border-gray-700 transition transition-border"
-        />
+      <div className="flex flex-col lg:flex-row w-full items-start lg:items-center mb-6 gap-4">
+        <div className="relative w-full lg:w-1/2">
+          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500 pointer-events-none" />
+          <Input
+            placeholder="Search products..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8 pr-4 bg-gray-100 shadow-sm dark:bg-(--card-dark) outline-none rounded-md w-full h-10 border-2 border-transparent focus:border-(--greenish-color) dark:focus:border-gray-700 transition transition-border"
+          />
+        </div>
+        <Button>
+          <Link
+            href="/marketplace/storage-facility/storage-facilities/add-new"
+            className="bg-(--greenish-color) text-white dark:text-gray-200 hover:bg-(--darker-green-color) transition transition-background text-sm py-2 px-2 rounded"
+          >
+            Add New Storage
+          </Link>
+        </Button>
       </div>
 
       {/* Products List */}

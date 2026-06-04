@@ -47,7 +47,9 @@ export default async function Summary() {
     return (
       <>
         <NavBar />
-        <Suspense fallback={<p className="p-6 text-center">Loading checkout...</p>}>
+        <Suspense
+          fallback={<p className="p-6 text-center">Loading checkout...</p>}
+        >
           <CheckoutSummaryPage buyer={buyer} cart={items} vendors={vendors} />
         </Suspense>
       </>

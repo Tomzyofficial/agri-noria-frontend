@@ -11,25 +11,14 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { FaSpinner } from "react-icons/fa";
+import { fetcher } from "@/utils/otherUtils";
+import { formatDate } from "@/utils/otherUtils";
 
 export function TrainingPartnerDashboard() {
   const [activeTab, setActiveTab] = useState("trainings");
   const [activeSession, setActiveSession] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
   const { refresh } = useRouter();
-
-  const fetcher = async (url) => {
-    const res = await fetch(url, {
-      method: "GET",
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error("An error occurred.");
-    }
-
-    return data;
-  };
 
   const {
     error: trainingsError,
@@ -38,27 +27,11 @@ export function TrainingPartnerDashboard() {
     mutate,
   } = useSWR("/api/proxy/vendor/training/overview", fetcher);
 
-  //   const {
-  //     error: totalEnrollmentError,
-  //     data: totalEnrollmentData,
-  //     isLoading: totalEnrollmentLoading,
-  //   } = useSWR("/api/proxy/vendor/training/total-enrollments", fetcher);
-
   const {
     error: trainingMaterialError,
     data: trainingMaterialData,
     isLoading: trainingMaterialLoading,
   } = useSWR("/api/proxy/vendor/vendor-materials", fetcher);
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
 
   const formatDuration = (minutes) => {
     const hours = Math.floor(minutes / 60);
@@ -71,14 +44,12 @@ export function TrainingPartnerDashboard() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "UPCOMING":
+      case "Upcoming":
         return "bg-blue-100 text-blue-800";
-      case "LIVE":
+      case "Live":
         return "bg-red-100 text-red-800";
-      case "COMPLETED":
+      case "Completed":
         return "bg-gray-100 text-gray-800";
-      case "CANCELLED":
-        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -386,8 +357,8 @@ export function TrainingPartnerDashboard() {
                         <Users className="h-4 w-4 mr-1" />
                         {Number(training["enrolled_count"]) || 0}{" "}
                         {Number(training["enrolled_count"]) === 1
-                          ? "farmer"
-                          : "farmers"}{" "}
+                          ? "Person"
+                          : "People"}{" "}
                         out of {training.max_participants} enrolled
                       </div>
                     </div>
@@ -396,7 +367,7 @@ export function TrainingPartnerDashboard() {
                         {training.title}
                       </h3>
                       <Badge
-                        className={`${getStatusColor(training.status)} py-1 px-2 rounded-md text-sm`}
+                        className={`${getStatusColor(training.status)} shrink-0 p-1 rounded-md text-sm`}
                       >
                         {training.status}
                       </Badge>
@@ -432,7 +403,7 @@ export function TrainingPartnerDashboard() {
                           Delete
                         </Button>
                       </div>
-                      {training.status === "UPCOMING" && (
+                      {training.status === "Upcoming" && (
                         <Button
                           type="button"
                           disabled={pendingAction !== null}
@@ -446,7 +417,7 @@ export function TrainingPartnerDashboard() {
                             : "Start Session"}
                         </Button>
                       )}
-                      {training.status === "LIVE" && (
+                      {training.status === "Live" && (
                         <Button
                           type="button"
                           disabled={pendingAction !== null}
@@ -593,10 +564,6 @@ export function TrainingPartnerDashboard() {
                             {fileType}
                           </p>
                         </div>
-
-                        <Badge className="bg-green-100 text-green-700 border border-green-200">
-                          {material.is_active ? "Active" : "Inactive"}
-                        </Badge>
                       </div>
 
                       <p className="text-gray-600 text-sm mt-3 line-clamp-3">
@@ -616,7 +583,7 @@ export function TrainingPartnerDashboard() {
                           onClick={(event) =>
                             handleDeleteTrainingMaterial(event, material.id)
                           }
-                          className="cursor-pointer flex items-center bg-red-500 hover:bg-red-600 text-white py-1 px-2"
+                          className="cursor-pointer rounded flex items-center bg-red-500 hover:bg-red-600 text-white py-1 px-2"
                         >
                           {pendingAction ===
                           `delete-material-${material.id}` ? (

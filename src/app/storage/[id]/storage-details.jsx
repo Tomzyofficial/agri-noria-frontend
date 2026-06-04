@@ -14,9 +14,9 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { useState } from "react";
-import BookingsForm from "@/app/storage/components/BookingsForm";
+import { useState, useEffect } from "react";
 import { formatPrice } from "@/utils/formatPrice";
+import StorageForm from "@/components/quoteRequest/StorageForm";
 
 export default function StorageDetail({ storage, error }) {
   const [openModal, setOpenModal] = useState(false);
@@ -44,6 +44,37 @@ export default function StorageDetail({ storage, error }) {
 
   // Ensure features is an array
   const features = Array.isArray(storage.features) ? storage.features : [];
+
+  const id = storage?.id;
+
+  useEffect(() => {
+    if (!id) return;
+
+    const trackView = async () => {
+      try {
+        await fetch(`/api/proxy/marketplace/listed-storage/${id}/track-view`, {
+          method: "POST",
+        });
+      } catch (error) {
+        console.error("Failed to track storage view", error);
+      }
+    };
+
+    trackView();
+  }, [id]);
+
+  const handleQuoteRequest = async () => {
+    setOpenModal(true);
+    try {
+      if (id) {
+        await fetch(`/api/proxy/marketplace/listed-storage/${id}/track-click`, {
+          method: "POST",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to track booking click", error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-(--card-dark)">
@@ -103,20 +134,18 @@ export default function StorageDetail({ storage, error }) {
               </div>
 
               <Button
-                onClick={() => setOpenModal(true)}
+                onClick={handleQuoteRequest}
                 className="cursor-pointer bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition inline-flex items-center gap-2"
               >
-                Book Now <ArrowRight size={18} />
+                Request Quote <ArrowRight size={18} />
               </Button>
 
-              <Modal
-                onClick={() => setOpenModal(false)}
-                isOpen={openModal}
-                title={`Book ${storage.storage_name}`}
-              >
-                <BookingsForm
+              {/* Quote request form */}
+              <Modal onClick={() => setOpenModal(false)} isOpen={openModal}>
+                <StorageForm
                   onClose={() => setOpenModal(false)}
-                  storageName={storage.storage_name}
+                  targetId={storage}
+                  quoteType="storage"
                 />
               </Modal>
             </div>
@@ -230,15 +259,15 @@ export default function StorageDetail({ storage, error }) {
                     <strong>Vendor:</strong> {storage.fname} {storage.lname}
                   </p>
                 )}
-                {storage.phone && (
-                  <a
+                {/* {storage.phone && (
+                  <Link
                     href={`tel:${storage.phone}`}
                     className="inline-flex items-center text-green-700 hover:text-green-900 font-medium"
                   >
                     <Phone className="h-4 w-4 mr-2" />
                     {storage.phone}
-                  </a>
-                )}
+                  </Link>
+                )} */}
               </div>
             )}
 
@@ -250,13 +279,13 @@ export default function StorageDetail({ storage, error }) {
                 Our storage experts are available to help you choose the perfect
                 storage solution for your needs.
               </p>
-              <a
+              {/* <Link
                 href="tel:+2348139262626"
                 className="inline-flex items-center text-green-700 hover:text-green-900 font-medium"
               >
                 <Phone className="h-4 w-4 mr-2" />
                 +234 813 926 2626
-              </a>
+              </Link> */}
             </div>
           </div>
         </div>
@@ -272,8 +301,12 @@ export default function StorageDetail({ storage, error }) {
             Reserve your storage space today and experience premium agricultural
             storage solutions.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <a
+          <p>
+            Send your enquiry today and we'll get back to you as soon as
+            possible.
+          </p>
+          {/* <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <Link
               href="https://wa.me/2348139262626"
               target="_blank"
               rel="noopener noreferrer"
@@ -281,15 +314,15 @@ export default function StorageDetail({ storage, error }) {
             >
               <FaWhatsapp />
               Chat on WhatsApp
-            </a>
-            <a
+            </Link>
+            <Link
               href="tel:+2348139262626"
               className="border-2 border-green-600 text-green-600 px-8 py-3 rounded-lg font-semibold hover:bg-green-50 transition inline-flex items-center justify-center gap-2"
             >
               <Phone size={20} />
               Call Us Now
-            </a>
-          </div>
+            </Link>
+          </div> */}
         </div>
       </div>
     </div>

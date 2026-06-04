@@ -1,15 +1,17 @@
-import { unstable_cache } from "next/cache";
 import { apiUrl } from "@/_lib/api";
 import { cookieStoreFnc } from "@/actions/session";
 // Farmer and seller products marketplace
-export const getMarketplaceProducts = async () => {
+export const getMarketplaceProducts = async (countryCode) => {
   const cookieHeader = await cookieStoreFnc();
-  // const cookieStr = typeof cookieHeader === "string" ? cookieHeader : "";
+  const cookieStr = typeof cookieHeader === "string" ? cookieHeader : "";
+  const query = countryCode
+    ? `?country=${encodeURIComponent(countryCode)}`
+    : "";
   try {
-    const res = await fetch(apiUrl("/api/marketplace"), {
+    const res = await fetch(apiUrl(`/api/marketplace${query}`), {
       method: "GET",
       headers: {
-        Cookie: cookieHeader,
+        Cookie: cookieStr,
       },
       next: { revalidate: 60 },
     });

@@ -1,19 +1,20 @@
 @import "tailwindcss";
 
 /* Custom Font Declarations */
-@font-face {
+/* @font-face {
   font-family: "Epunda Sans";
-  src: url("/fonts/Epunda_Sans,Mozilla_Text/Epunda_Sans/EpundaSans-VariableFont_wght.ttf")
+  src: url("/frontend/public/fonts/web_font/Mozilla_Text/MozillaText-VariableFont_wght.ttf")
+    format("truetype-variations");
+  src: url("../../../frontend/public/fonts/web_font/Epunda_Sans/EpundaSans-Italic-VariableFont_wght.ttf")
     format("truetype-variations");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
-
 @font-face {
   font-family: "Epunda Sans";
-  src: url("/fonts/Epunda_Sans,Mozilla_Text/Epunda_Sans/EpundaSans-Italic-VariableFont_wght.ttf")
-    format("truetype-variations");
+  src: url("/frontend/public/fonts/web_font/Mozilla_Text/MozillaText-VariableFont_wght_ital.ttf")
+  format("truetype-variations");
   font-weight: 100 900;
   font-style: italic;
   font-display: swap;
@@ -21,12 +22,12 @@
 
 @font-face {
   font-family: "Mozilla Text";
-  src: url("/fonts/Epunda_Sans,Mozilla_Text/Mozilla_Text/MozillaText-VariableFont_wght.ttf")
+  src: url("/frontend/public/fonts/web_font/Mozilla_Text/MozillaText-VariableFont_wght.ttf")
     format("truetype-variations");
   font-weight: 200 700;
   font-style: normal;
   font-display: swap;
-}
+}  */
 
 :root {
   --background: #f2f2f2;
@@ -57,6 +58,72 @@ h3,
 h4 {
   font-family: "Playfair Display", serif;
   font-weight: 700;
+}
+
+/* .PhoneInput {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.PhoneInputCountry {
+  margin-right: 8px;
+  width: 15px;
+  height: 15px;
+}
+
+.PhoneInputInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  outline: none;
+  background: white;
+}
+
+.PhoneInputInput:focus {
+  border-color: #16a34a;
+} */
+
+.PhoneInput {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* Barchart loading effect */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.PhoneInputInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  outline: none;
+  background: white;
 }
 
 .display-font {
@@ -156,8 +223,7 @@ header.sticky {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 10;
-  box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.08);
+  z-index: 1;
   transform: translateY(-4px) scale(1.01);
   transition:
     background 0.5s cubic-bezier(0.4, 0, 0.2, 1),

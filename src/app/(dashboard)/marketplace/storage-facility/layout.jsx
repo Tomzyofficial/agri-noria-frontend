@@ -10,11 +10,9 @@ import {
   Menu,
   LayoutDashboard,
   CreditCard,
-  BarChart3,
   UserPen,
   Warehouse,
-  HandCoins,
-  Globe,
+  MessageSquareMore,
 } from "lucide-react";
 import { VerifyNotiBanner } from "@/app/(dashboard)/dashboard/components/VerifyNotiBanner";
 import { toast } from "react-toastify";
@@ -116,24 +114,19 @@ export default function DashboardLayout({ children }) {
       icon: <LayoutDashboard className="w-4 h-4" />,
     },
     {
-      label: "Analytics",
-      href: "/marketplace/storage-facility/analytics",
-      icon: <BarChart3 className="w-4 h-4" />,
-    },
-    {
       label: "Storage Facilities",
       href: "/marketplace/storage-facility/storage-facilities",
       icon: <Warehouse className="w-4 h-4" />,
     },
     {
+      label: "Quote Requests",
+      href: "/marketplace/storage-facility/quote-requests",
+      icon: <MessageSquareMore className="w-4 h-4" />,
+    },
+    {
       label: "Profile",
       href: "/marketplace/storage-facility/profile",
       icon: <UserPen className="w-4 h-4" />,
-    },
-    {
-      label: "Loan Management",
-      href: "/marketplace/storage-facility/loan",
-      icon: <HandCoins className="w-4 h-4" />,
     },
     {
       label: "Billing",
@@ -167,8 +160,9 @@ export default function DashboardLayout({ children }) {
 
         <div
           className={`${
-            menuOpen && "left-0 w-64 h-full bg-(--gray-color) shadow shadow-md"
-          } transition-all duration-300 fixed z-1 -left-64 top-0 lg:left-0 lg:w-64 lg:h-screen dark:bg-(--card-dark) dark:text-(--foreground) lg:bg-(--gray-color) lg:shadow lg:shadow-md p-2`}
+            menuOpen &&
+            "left-0 w-64 h-full bg-(--gray-color) dark:bg-black shadow shadow-md"
+          } transition-all duration-300 fixed z-1 -left-64 top-0 lg:left-0 lg:w-64 lg:h-screen dark:text-(--foreground) lg:bg-(--gray-color) lg:dark:bg-(--card-dark) lg:shadow lg:shadow-md p-2`}
         >
           <nav
             className={`
