@@ -6,11 +6,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { Truck, MapPin, ArrowLeft, Play, CheckCircle } from "lucide-react";
-import {
-  logisticsFetcher,
-  getStatusBadgeClass,
-  formatStatusLabel,
-} from "./logisticsOrderUtils";
+import { getStatusBadgeClass, formatStatusLabel } from "./logisticsOrderUtils";
+import { fetcher } from "@/utils/otherUtils";
 import { LogisticsOrderDetailModal } from "./LogisticsOrderDetailModal";
 import { ShipmentStartModal } from "./ShipmentStartModal";
 import { OTPVerificationModal } from "./OTPVerificationModal";
@@ -26,7 +23,7 @@ export function LogisticsShipmentsList() {
 
   const { data, error, isLoading, mutate } = useSWR(
     "/api/proxy/vendor/logistics/shipments",
-    logisticsFetcher,
+    fetcher,
   );
 
   const shipments = data?.data ?? [];

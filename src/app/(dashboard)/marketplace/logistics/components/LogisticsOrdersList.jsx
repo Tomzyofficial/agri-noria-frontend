@@ -11,10 +11,10 @@ import { Button } from "@/components/ui/Button";
 import React from "react";
 import {
   ORDER_STATUS_CONFIG,
-  logisticsFetcher,
   getStatusBadgeClass,
   formatStatusLabel,
 } from "./logisticsOrderUtils";
+import { fetcher } from "@/utils/otherUtils";
 import { LogisticsOrderDetailModal } from "./LogisticsOrderDetailModal";
 
 export function LogisticsOrdersList() {
@@ -31,10 +31,7 @@ export function LogisticsOrdersList() {
     return `/api/proxy/vendor/logistics/orders${qs ? `?${qs}` : ""}`;
   }, [statusFilter]);
 
-  const { data, error, isLoading, mutate } = useSWR(
-    ordersUrl,
-    logisticsFetcher,
-  );
+  const { data, error, isLoading, mutate } = useSWR(ordersUrl, fetcher);
   const orders = data?.data ?? [];
 
   const handleAccept = async (orderId) => {
