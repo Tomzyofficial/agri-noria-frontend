@@ -61,7 +61,7 @@ const roleConfig = {
   distributor: {
     icon: <FaTruckMoving />,
     color: "text-amber-500",
-    category: "Institution",
+    category: "Distributor",
   },
   // Program Management
   "program director": {
@@ -187,6 +187,81 @@ const selectClass =
   "w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-(--foreground) rounded-lg p-3 outline-none focus:ring-2 focus:ring-(--greenish-color) transition";
 const inputClass = "!rounded-lg !p-3";
 
+const getDefaultWorkspace = (role) => {
+  const normalizedRole = role?.toLowerCase().trim();
+  const marketplaceRoles = [
+    "seller",
+    "logistics",
+    "storage facility",
+    "trainer",
+    "farmer",
+  ];
+  return marketplaceRoles.includes(normalizedRole)
+    ? "marketplace"
+    : "ecosystem";
+};
+
+const toRouteSegment = (value) =>
+  value
+    ?.toLowerCase()
+    .trim()
+    .replace(/\s*\/\s*/g, "-")
+    .replace(/\s+/g, "-") || "";
+
+const ecosystemRoleRoutes = {
+  distributor: "distributor",
+  "program director": "program-management",
+  "regional manager": "program-management",
+  "cluster supervisor": "program-management",
+  "field officer": "field-operations",
+  agronomist: "field-operations",
+  inspector: "field-operations",
+  enumerator: "field-operations",
+  farmer: "farmer",
+  exporter: "buyer-partner",
+  "off-taker": "buyer-partner",
+  "warehouse buyer": "buyer-partner",
+  processor: "buyer-partner",
+  "logistics partner": "logistics",
+  logistics: "logistics",
+  aggregator: "aggregator",
+  "sales manager": "sales-&-distribution",
+  "logistics coordinator": "sales-&-distribution",
+  "warehouse supervisor": "sales-&-distribution",
+  "data analyst": "intelligence-&-monitoring",
+  "satellite monitor": "intelligence-&-monitoring",
+  "field auditor": "intelligence-&-monitoring",
+};
+
+const marketplaceRoleRoutes = {
+  seller: "store",
+  farmer: "store",
+  logistics: "logistics",
+  "logistics partner": "logistics",
+  "storage facility": "storage-facility",
+  trainer: "trainer",
+};
+
+const resolveRedirectPath = (role, workspace) => {
+  const normalizedRole = role?.toLowerCase().trim();
+  const normalizedWorkspace =
+    workspace?.toLowerCase().trim() || getDefaultWorkspace(normalizedRole);
+
+  if (normalizedWorkspace === "ecosystem") {
+    const rolePath = ecosystemRoleRoutes[normalizedRole];
+    if (rolePath) return `/${normalizedWorkspace}/${rolePath}`;
+    const category = roleConfig[normalizedRole]?.category;
+    return `/${normalizedWorkspace}/${toRouteSegment(category) || toRouteSegment(normalizedRole) || "other"}`;
+  }
+
+  if (normalizedWorkspace === "marketplace") {
+    const rolePath = marketplaceRoleRoutes[normalizedRole];
+    return `/${normalizedWorkspace}/${rolePath || "store"}`;
+  }
+
+  return `/${normalizedWorkspace}/${toRouteSegment(normalizedRole) || "dashboard"}`;
+};
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -225,20 +300,8 @@ export default function OnboardingPage() {
         }
 
         if (session.onboarding_status === "completed") {
-          const normalizedRole = session.role?.toLowerCase().trim();
-          const normalizedWorkspace = session.workspace?.toLowerCase().trim();
-
-          const category = roleConfig[normalizedRole]?.category;
-
-          const categoryRoute = category
-            .toLowerCase()
-            .replace(/\s*\/\s*/g, "-")
-            .replace(/\s+/g, "-");
-
-          if (normalizedWorkspace && categoryRoute) {
-            router.replace(`/${normalizedWorkspace}/${categoryRoute}`);
-            return;
-          }
+          router.replace(resolveRedirectPath(session.role, session.workspace));
+          return;
         }
       } catch (err) {
         console.error("Failed to verify onboarding session:", err);
@@ -300,14 +363,7 @@ export default function OnboardingPage() {
         method: "POST",
       });
 
-      const categoryRoute = category
-        .toLowerCase()
-        .replace(/\s*\/\s*/g, "-")
-        .replace(/\s+/g, "-");
-
-      const workspaceRoute = workspace?.toLowerCase().trim();
-
-      router.replace(`/${workspaceRoute}/${categoryRoute}`);
+      router.replace(resolveRedirectPath(role, workspace));
     } catch (err) {
       toast.error(err.message || "An error occurred during onboarding");
     } finally {

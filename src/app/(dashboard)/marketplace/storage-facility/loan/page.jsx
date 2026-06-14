@@ -11,7 +11,7 @@ export const metadata = {
 
 export default async function LoanManagement() {
   const session = await verifyVendorSession();
-  if (!session?.authenticated || session.account_type !== "Storage_Facility") {
+  if (!session?.authenticated || session.role !== "Storage_Facility") {
     return <Unauthorized />;
   }
   let loans = [];

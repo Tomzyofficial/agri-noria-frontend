@@ -55,7 +55,7 @@ export function SigninForm() {
       category: "Institution",
     },
     distributor: {
-      category: "Institution",
+      category: "Distributor",
     },
     // Program Management
     "program director": {
@@ -133,6 +133,81 @@ export function SigninForm() {
     "field auditor": {
       category: "Intelligence & Monitoring",
     },
+  };
+
+  const ecosystemRoleRoutes = {
+    distributor: "distributor",
+    "program director": "program-management",
+    "regional manager": "program-management",
+    "cluster supervisor": "program-management",
+    "field officer": "field-operations",
+    agronomist: "field-operations",
+    inspector: "field-operations",
+    enumerator: "field-operations",
+    farmer: "farmer",
+    exporter: "buyer-partner",
+    "off-taker": "buyer-partner",
+    "warehouse buyer": "buyer-partner",
+    processor: "buyer-partner",
+    "logistics partner": "logistics",
+    logistics: "logistics",
+    aggregator: "aggregator",
+    "sales manager": "sales-&-distribution",
+    "logistics coordinator": "sales-&-distribution",
+    "warehouse supervisor": "sales-&-distribution",
+    "data analyst": "intelligence-&-monitoring",
+    "satellite monitor": "intelligence-&-monitoring",
+    "field auditor": "intelligence-&-monitoring",
+  };
+
+  const marketplaceRoleRoutes = {
+    seller: "store",
+    farmer: "store",
+    logistics: "logistics",
+    "logistics partner": "logistics",
+    "storage facility": "storage-facility",
+    trainer: "trainer",
+  };
+
+  const toRouteSegment = (value) =>
+    value
+      ?.toLowerCase()
+      .trim()
+      .replace(/\s*\/\s*/g, "-")
+      .replace(/\s+/g, "-") || "";
+
+  const getDefaultWorkspace = (role) => {
+    const normalizedRole = role?.toLowerCase().trim();
+    const marketplaceRoles = [
+      "seller",
+      "logistics",
+      "storage facility",
+      "trainer",
+      "farmer",
+    ];
+    return marketplaceRoles.includes(normalizedRole)
+      ? "marketplace"
+      : "ecosystem";
+  };
+
+  const resolveRedirectPath = (role, workspace) => {
+    const normalizedRole = role?.toLowerCase().trim();
+    const normalizedWorkspace =
+      workspace?.toLowerCase().trim() || getDefaultWorkspace(normalizedRole);
+
+    if (normalizedWorkspace === "ecosystem") {
+      const rolePath = ecosystemRoleRoutes[normalizedRole];
+      if (rolePath) return `/${normalizedWorkspace}/${rolePath}`;
+      const category = roleConfig[normalizedRole]?.category;
+      return `/${normalizedWorkspace}/${toRouteSegment(category) || toRouteSegment(normalizedRole) || "other"}`;
+    }
+
+    if (normalizedWorkspace === "marketplace") {
+      const rolePath = marketplaceRoleRoutes[normalizedRole];
+      return `/${normalizedWorkspace}/${rolePath || "store"}`;
+    }
+
+    return `/${normalizedWorkspace}/${toRouteSegment(normalizedRole) || "dashboard"}`;
   };
 
   // Handle input field change
@@ -224,38 +299,7 @@ export function SigninForm() {
 
       if (session.authenticated) {
         const { workspace, role } = session;
-        const normalizedRole = role?.toLowerCase().trim();
-
-        let normalizedWorkspace = workspace?.toLowerCase().trim();
-        if (!normalizedWorkspace && normalizedRole) {
-          const isMarketplace = ["seller", "logistics", "storage facility", "trainer", "farmer"].includes(normalizedRole);
-          normalizedWorkspace = isMarketplace ? "marketplace" : "ecosystem";
-        }
-
-        const categoryRoute = roleConfig[normalizedRole]?.category
-          ?.toLowerCase()
-          ?.replace(/ \/ /g, "-")
-          ?.replace(/ /g, "-");
-
-        console.log("Routing Debug:", { normalizedRole, normalizedWorkspace, categoryRoute });
-
-        if (normalizedRole === "super admin" || normalizedRole === "admin") {
-          router.push("/dashboard/super-admin");
-        } else if (normalizedWorkspace === "ecosystem" && categoryRoute) {
-          router.push(`/${normalizedWorkspace}/${categoryRoute}`);
-        } else if (
-          normalizedWorkspace === "marketplace" &&
-          ["farmer", "seller"].includes(normalizedRole)
-        ) {
-          router.push(`/${normalizedWorkspace}/store`);
-        } else if (normalizedWorkspace === "ecosystem" && normalizedRole?.includes("field")) {
-           // Fallback for field officers if roleConfig fails
-           router.push(`/ecosystem/field-operations`);
-        } else {
-          router.push(
-            `/${normalizedWorkspace}/${normalizedRole?.replace(/\s+/g, "-") || ""}`,
-          );
-        }
+        router.push(resolveRedirectPath(role, workspace));
       }
       router.refresh();
     } catch (error) {
@@ -399,10 +443,11 @@ export function SigninForm() {
               <div className="mt-4 flex items-center justify-between gap-3">
                 <Button
                   type="button"
-                  className={`${isLoading
+                  className={`${
+                    isLoading
                       ? "opacity-50 cursor-not-allowed"
                       : "cursor-pointer"
-                    } bg-gray-200 dark:bg-gray-500 text-(--foreground) px-4 py-2 rounded-md`}
+                  } bg-gray-200 dark:bg-gray-500 text-(--foreground) px-4 py-2 rounded-md`}
                   onClick={handleBack}
                   disabled={isLoading || currentStep === 1}
                 >
@@ -412,10 +457,11 @@ export function SigninForm() {
                 {currentStep < totalSteps ? (
                   <Button
                     type="button"
-                    className={`${isLoading
+                    className={`${
+                      isLoading
                         ? "opacity-50 cursor-not-allowed"
                         : "cursor-pointer"
-                      } bg-(--greenish-color) text-(--white-fff) px-4 py-2 rounded-md`}
+                    } bg-(--greenish-color) text-(--white-fff) px-4 py-2 rounded-md`}
                     onClick={handleNext}
                     disabled={isLoading}
                   >
@@ -424,10 +470,11 @@ export function SigninForm() {
                 ) : (
                   <Button
                     type="submit"
-                    className={`${isLoading
+                    className={`${
+                      isLoading
                         ? "opacity-50 cursor-not-allowed"
                         : "cursor-pointer"
-                      } transition transition-background w-full bg-(--greenish-color) hover:bg-(--dark-green-color) text-(--white-fff) font-normal p-2 rounded-md`}
+                    } transition transition-background w-full bg-(--greenish-color) hover:bg-(--dark-green-color) text-(--white-fff) font-normal p-2 rounded-md`}
                     disabled={isLoading}
                   >
                     {isLoading ? (

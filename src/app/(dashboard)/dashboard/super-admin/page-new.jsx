@@ -93,9 +93,9 @@ export default function SuperAdminDashboard() {
          u.fname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
          u.lname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
          u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-         u.account_type?.toLowerCase().includes(searchTerm.toLowerCase());
+         u.role?.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesRole = !selectedRole || u.account_type?.toLowerCase() === selectedRole.toLowerCase();
+      const matchesRole = !selectedRole || u.role?.toLowerCase() === selectedRole.toLowerCase();
       return matchesSearch && matchesRole;
    });
 
@@ -286,10 +286,10 @@ export default function SuperAdminDashboard() {
                      {roleCounts.map((r, i) => (
                         <button
                            key={i}
-                           onClick={() => setSelectedRole(selectedRole === r.account_type ? null : r.account_type)}
-                           className={`px-4 py-2 rounded-full text-sm font-medium ${getRoleBadgeColor(r.account_type)}`}
+                           onClick={() => setSelectedRole(selectedRole === r.role ? null : r.role)}
+                           className={`px-4 py-2 rounded-full text-sm font-medium ${getRoleBadgeColor(r.role)}`}
                         >
-                           {r.account_type} ({r.count})
+                           {r.role} ({r.count})
                         </button>
                      ))}
                   </div>
@@ -315,9 +315,9 @@ export default function SuperAdminDashboard() {
                                  <td className="p-3 text-xs">{u.email}</td>
                                  <td className="p-3">
                                     <span
-                                       className={`px-2 py-1 rounded text-xs font-bold ${getRoleBadgeColor(u.account_type)}`}
+                                       className={`px-2 py-1 rounded text-xs font-bold ${getRoleBadgeColor(u.role)}`}
                                     >
-                                       {u.account_type}
+                                       {u.role}
                                     </span>
                                  </td>
                                  <td className="p-3">

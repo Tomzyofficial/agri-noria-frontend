@@ -46,7 +46,7 @@ export async function signinBridge(credentials) {
 
 export async function registerBridge(credentials) {
   try {
-    const { account_type, accountType, ...registrationPayload } = credentials;
+    const { accountType, ...registrationPayload } = credentials;
 
     const res = await fetch(apiUrl("/api/auth/vendor/register"), {
       method: "POST",
@@ -121,7 +121,7 @@ export async function buyerSigninBridge(credentials) {
 
 export async function buyerRegisterBridge(credentials) {
   try {
-    const { account_type, accountType, ...registrationPayload } = credentials;
+    const { accountType, ...registrationPayload } = credentials;
 
     const res = await fetch(apiUrl("/api/auth/buyer/register"), {
       method: "POST",

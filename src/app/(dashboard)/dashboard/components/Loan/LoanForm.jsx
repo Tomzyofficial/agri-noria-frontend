@@ -71,7 +71,7 @@ export function LoanForm({ loans, session }) {
    return (
       <>
          {isOpen && (
-            <LoanFormModal isOpen={isOpen} setIsOpen={setIsOpen} account_type={session?.account_type} loans={loans} />
+            <LoanFormModal isOpen={isOpen} setIsOpen={setIsOpen} role={session?.role} loans={loans} />
          )}
          {repayModal && (
             <RepayFormModal

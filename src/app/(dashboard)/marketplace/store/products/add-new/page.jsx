@@ -31,7 +31,7 @@ export default async function AddProducePage() {
           },
         ]}
       />
-      <AddProductForm user={{ account_type: session.account_type }} />
+      <AddProductForm user={{ role: session.role }} />
     </div>
   );
 }

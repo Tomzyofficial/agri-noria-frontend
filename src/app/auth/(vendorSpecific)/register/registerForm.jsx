@@ -24,11 +24,25 @@ const workspaceRoleCategories = {
         "Bank",
         "NGO",
         "DFI",
-        "Insurance Firm",
         "Commodity Board",
         "Finance",
-        "Distributor",
       ],
+    },
+    {
+      name: "Insurance",
+      roles: ["Insurance"],
+    },
+    {
+      name: "Storage",
+      roles: ["Storage"],
+    },
+    {
+      name: "Logistics",
+      roles: ["Logistics"],
+    },
+    {
+      name: "Distributor",
+      roles: ["Distributor"],
     },
     {
       name: "Program Management",
@@ -177,7 +191,7 @@ export function RegisterForm() {
     lname: "",
     email: "",
     phone: "",
-    //  account_type: "",
+    //  role: "",
     pword: "",
     confirmPword: "",
     terms_of_service: false,
@@ -206,7 +220,7 @@ export function RegisterForm() {
       ...prev,
       workspace: workspaceId,
       role: "",
-      // account_type: "",
+      // role: "",
     }));
     setExpandedCategory(null);
     setCurrentStep(1);
@@ -216,7 +230,7 @@ export function RegisterForm() {
     setFormData((prev) => ({
       ...prev,
       role,
-      // account_type: role,
+      // role: role,
     }));
     setCurrentStep(2);
   };
@@ -230,7 +244,7 @@ export function RegisterForm() {
         lname: true,
         email: true,
         phone: true,
-        //   account_type: true,
+        //   role: true,
         country_code: true,
         state_code: true,
       });
@@ -304,7 +318,7 @@ export function RegisterForm() {
   //     } else if (step === 2) {
   //       schemaForStep = registerFormSchema.pick({
   //         phone: true,
-  //         account_type: true,
+  //         role: true,
   //         country_code: true,
   //         state_code: true,
   //       });

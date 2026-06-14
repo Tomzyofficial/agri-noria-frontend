@@ -127,7 +127,7 @@ export default function FinanceApprovalsPage() {
     try {
       const authRes = await fetch("/api/proxy/auth/verify-vendor");
       const authData = await authRes.json();
-      const role = authData.account_type?.toLowerCase();
+      const role = authData.role?.toLowerCase();
       if (role !== "finance" && role !== "super admin" && role !== "admin") {
         toast.error("Access Denied: Finance role required");
         router.replace("/ecosystem/institution");

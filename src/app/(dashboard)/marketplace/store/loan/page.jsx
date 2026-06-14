@@ -13,7 +13,7 @@ export default async function LoanManagement() {
   const session = await verifyVendorSession();
   if (
     !session?.authenticated ||
-    (session.account_type !== "Farmer" && session.account_type !== "Seller")
+    (session.role !== "Farmer" && session.role !== "Seller")
   ) {
     return <Unauthorized />;
   }

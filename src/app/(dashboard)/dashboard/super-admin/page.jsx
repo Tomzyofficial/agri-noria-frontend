@@ -42,9 +42,9 @@ export default function SuperAdminDashboard() {
          u.fname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
          u.lname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
          u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-         u.account_type?.toLowerCase().includes(searchTerm.toLowerCase());
+         u.role?.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesRole = !selectedRole || u.account_type?.toLowerCase() === selectedRole.toLowerCase();
+      const matchesRole = !selectedRole || u.role?.toLowerCase() === selectedRole.toLowerCase();
 
       return matchesSearch && matchesRole;
    });
@@ -156,10 +156,10 @@ export default function SuperAdminDashboard() {
                         {roleCounts.map((r, i) => (
                            <button
                               key={i}
-                              onClick={() => setSelectedRole(selectedRole === r.account_type ? null : r.account_type)}
-                              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${getRoleBadgeColor(r.account_type)} ${selectedRole === r.account_type ? "ring-2 ring-offset-2 dark:ring-offset-gray-900 ring-current scale-105" : "opacity-70 hover:opacity-100"}`}
+                              onClick={() => setSelectedRole(selectedRole === r.role ? null : r.role)}
+                              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${getRoleBadgeColor(r.role)} ${selectedRole === r.role ? "ring-2 ring-offset-2 dark:ring-offset-gray-900 ring-current scale-105" : "opacity-70 hover:opacity-100"}`}
                            >
-                              <span className="capitalize">{r.account_type}</span>
+                              <span className="capitalize">{r.role}</span>
                               <span className="font-bold">({r.count})</span>
                            </button>
                         ))}
@@ -239,8 +239,8 @@ export default function SuperAdminDashboard() {
                                     <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{user.email}</td>
                                     <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{user.phone || "—"}</td>
                                     <td className="py-3 px-4">
-                                       <span className={`px-3 py-1 text-xs rounded-full font-medium capitalize ${getRoleBadgeColor(user.account_type)}`}>
-                                          {user.account_type}
+                                       <span className={`px-3 py-1 text-xs rounded-full font-medium capitalize ${getRoleBadgeColor(user.role)}`}>
+                                          {user.role}
                                        </span>
                                     </td>
                                     <td className="py-3 px-4">

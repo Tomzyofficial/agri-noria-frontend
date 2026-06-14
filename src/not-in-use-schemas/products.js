@@ -3,7 +3,7 @@
 import { z } from "zod";
 
 export const BaseProductSchema = z.object({
-   account_type: z.enum(["Farmer", "Seller"]),
+   role: z.enum(["Farmer", "Seller"]),
    product_image: z.any(),
    listing_name: z.string().min(1),
    description: z.string().min(1),
@@ -30,11 +30,11 @@ export const SellerSchema = z.object({
    warranty: z.string().optional(),
 });
 
-export const ProductFormSchema = z.discriminatedUnion("account_type", [
+export const ProductFormSchema = z.discriminatedUnion("role", [
    BaseProductSchema.extend(FarmerSchema.shape).extend({
-      account_type: z.literal("Farmer"),
+      role: z.literal("Farmer"),
    }),
    BaseProductSchema.extend(SellerSchema.shape).extend({
-      account_type: z.literal("Seller"),
+      role: z.literal("Seller"),
    }),
 ]);

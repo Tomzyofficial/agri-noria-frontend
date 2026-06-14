@@ -98,6 +98,11 @@ export default function AggregatorLayout({ children }) {
       icon: <BarChart3 className="w-4 h-4" />,
     },
     {
+      label: "Harvest & Operations",
+      href: "/ecosystem/aggregator/harvest",
+      icon: <Package className="w-4 h-4" />,
+    },
+    {
       label: "My Wallet",
       href: "/ecosystem/aggregator/wallet",
       icon: <Wallet className="w-4 h-4" />,
