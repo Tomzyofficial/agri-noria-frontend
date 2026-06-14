@@ -90,7 +90,7 @@ export default function InstitutionSettingsPage() {
                         <div>
                            <h3 className="font-bold text-xl">{profile?.company_name || "Institutional Node"}</h3>
                            <p className="text-sm text-gray-500">{profile?.email}</p>
-                           <p className="text-xs font-bold text-blue-600 mt-1 uppercase tracking-widest">{profile?.account_type}</p>
+                           <p className="text-xs font-bold text-blue-600 mt-1 uppercase tracking-widest">{profile?.role}</p>
                         </div>
                      </div>
                   </CardContent>

@@ -9,7 +9,7 @@ export const metadata = {
 
 export default async function ProductsPage() {
   const session = await verifyVendorSession();
-  if (!session?.authenticated && session.account_type !== "Logistics_Partner") {
+  if (!session?.authenticated && session.role !== "Logistics_Partner") {
     return <Unauthorized />;
   }
 

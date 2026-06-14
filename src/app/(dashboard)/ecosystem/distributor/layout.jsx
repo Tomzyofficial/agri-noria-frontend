@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { LogOut, X, Menu, LayoutDashboard, Truck, Globe } from "lucide-react";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
+import { FaChartLine, FaWallet } from "react-icons/fa6";
 
 export default function DistributorLayout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -35,8 +36,18 @@ export default function DistributorLayout({ children }) {
   const navMenu = [
     {
       label: "Deliveries",
-      href: "/ecosytem/distributor",
+      href: "/ecosystem/distributor",
       icon: <Truck className="w-4 h-4" />,
+    },
+    {
+      label: "Wallet",
+      href: "/ecosystem/distributor/wallet",
+      icon: <FaWallet className="w-4 h-4" />,
+    },
+    {
+      label: "Analytics",
+      href: "/ecosystem/distributor/analytics",
+      icon: <FaChartLine className="w-4 h-4" />,
     },
   ];
 

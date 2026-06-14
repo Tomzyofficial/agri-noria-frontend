@@ -73,6 +73,11 @@ export default function FarmerLayout({ children }) {
       icon: <LayoutDashboard className="w-4 h-4" />,
     },
     {
+      label: "Harvest & Operations",
+      href: "/ecosystem/farmer/harvest",
+      icon: <Sprout className="w-4 h-4" />,
+    },
+    {
       label: "Enrolled Programs",
       href: "/ecosystem/farmer/programs",
       icon: <Sprout className="w-4 h-4" />,

@@ -17,7 +17,7 @@ export default async function NavBar() {
       buyerId: vendorUser.userId,
       name: `${vendorUser.fname || ""} ${vendorUser.lname || ""}`.trim(),
       email: vendorUser.email,
-      account_type: vendorUser.account_type,
+      role: vendorUser.role,
       isVendor: true,
     };
   } else {

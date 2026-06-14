@@ -26,7 +26,7 @@ export const registerFormSchema = z.object({
     .max(11, { message: "Phone number must be 11 characters long" }),
   country_code: z.string().trim().min(2, { message: "Country is required" }),
   state_code: z.string().trim().min(2, { message: "State is required" }),
-  // account_type: z.string().trim().min(2, { message: "Account type is required" }),
+  // role: z.string().trim().min(2, { message: "Account type is required" }),
   pword: z
     .string()
     .trim()

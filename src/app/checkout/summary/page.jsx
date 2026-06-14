@@ -31,7 +31,7 @@ async function getBuyerCheckoutData(buyerId) {
 export default async function Summary() {
   const user = await verifyBuyerSession();
 
-  if (!user?.authenticated && user.account_type !== "Buyer") {
+  if (!user?.authenticated && user.role !== "Buyer") {
     redirect("/auth/identification/signin?return=/checkout/summary");
   }
 

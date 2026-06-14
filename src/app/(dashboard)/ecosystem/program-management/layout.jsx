@@ -15,6 +15,7 @@ import {
   Globe,
   Briefcase,
   Wallet,
+  Package,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
@@ -89,6 +90,11 @@ export default function ProgramManagementLayout({ children }) {
       label: "Full Loop",
       href: "/ecosystem/program-management/loop",
       icon: <BarChart3 className="w-4 h-4" />,
+    },
+    {
+      label: "Harvest & Operations",
+      href: "/ecosystem/program-management/harvest",
+      icon: <Package className="w-4 h-4" />,
     },
     {
       label: "My Wallet",

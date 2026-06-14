@@ -28,7 +28,8 @@ const ecosystemRoleRoutes = {
   "off-taker": "/ecosystem/buyer-partner",
   "warehouse buyer": "/ecosystem/buyer-partner",
   processor: "/ecosystem/buyer-partner",
-  "logistics partner": "/ecosystem/buyer-partner",
+  "logistics partner": "/ecosystem/logistics",
+  logistics: "/ecosystem/logistics",
 
   aggregator: "/ecosystem/aggregator",
 
@@ -63,7 +64,7 @@ export default async function DashboardRouterPage() {
   }
 
   const workspace = session.workspace?.toLowerCase();
-  const role = session.role?.toLowerCase() || session.account_type?.toLowerCase();
+  const role = session.role?.toLowerCase() || session.role?.toLowerCase();
 
   if (workspace === "marketplace") {
     redirect(marketplaceRoleRoutes[role] || "/marketplace/store");

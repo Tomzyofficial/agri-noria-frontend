@@ -11,7 +11,7 @@ import { FarmerLoanForm } from "./FarmerLoanForm";
 import { EquipmentSellerLoanForm } from "./EquipmentSellerLoanForm";
 import { toast } from "react-toastify";
 
-export function LoanFormModal({ isOpen, setIsOpen, account_type, loans }) {
+export function LoanFormModal({ isOpen, setIsOpen, role, loans }) {
    const { formData, handleChange, handleSubmit, loading } = UseLoanForm();
    const [currentStep, setCurrentStep] = useState(1);
    const totalSteps = 3;
@@ -33,9 +33,9 @@ export function LoanFormModal({ isOpen, setIsOpen, account_type, loans }) {
             return false;
          }
       } else if (step === 2) {
-         if (account_type === "Farmer") requiredFields = ["farmSize", "crop"];
-         if (account_type === "Seller") requiredFields = ["inv_type"];
-         if (account_type === "Storage_Facility")
+         if (role === "Farmer") requiredFields = ["farmSize", "crop"];
+         if (role === "Seller") requiredFields = ["inv_type"];
+         if (role === "Storage_Facility")
             requiredFields = ["total_capacity", "current_utilization", "storage_type", "farmers_served"];
       } else if (step === 3) {
          const fileInputs = document.querySelectorAll("input[type='file']");
@@ -205,11 +205,11 @@ export function LoanFormModal({ isOpen, setIsOpen, account_type, loans }) {
 
             {currentStep === 2 && (
                <section>
-                  {account_type === "Farmer" && <FarmerLoanForm formData={formData} handleChange={handleChange} />}
-                  {account_type === "Seller" && (
+                  {role === "Farmer" && <FarmerLoanForm formData={formData} handleChange={handleChange} />}
+                  {role === "Seller" && (
                      <EquipmentSellerLoanForm formData={formData} handleChange={handleChange} />
                   )}
-                  {account_type === "Storage_Facility" && (
+                  {role === "Storage_Facility" && (
                      <StorageFacilityLoanForm formData={formData} handleChange={handleChange} />
                   )}
                </section>

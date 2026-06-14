@@ -45,7 +45,7 @@ export function useProgramData() {
          if (sessionRes.ok) {
             const d = await sessionRes.json();
             setCurrentUserId(d.userId);
-            setUserRole(d.account_type?.toLowerCase());
+            setUserRole(d.role?.toLowerCase());
             setCurrentUser(d);
          }
       } catch (err) {

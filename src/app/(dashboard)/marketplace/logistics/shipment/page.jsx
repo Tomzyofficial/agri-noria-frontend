@@ -11,7 +11,7 @@ export const metadata = {
 export default async function ShipmentPage() {
   const session = await verifyVendorSession();
 
-  if (!session?.authenticated || session.account_type !== "Logistics_Partner") {
+  if (!session?.authenticated || session.role !== "Logistics_Partner") {
     return <Unauthorized />;
   }
 

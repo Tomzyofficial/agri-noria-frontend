@@ -48,7 +48,7 @@ export default function UserManagementPage() {
       }
 
       if (selectedRole) {
-         filtered = filtered.filter((u) => u.account_type?.toLowerCase() === selectedRole.toLowerCase());
+         filtered = filtered.filter((u) => u.role?.toLowerCase() === selectedRole.toLowerCase());
       }
 
       if (suspendedOnly) {
@@ -182,9 +182,9 @@ export default function UserManagementPage() {
                               <td className="py-3 px-4">{user.email}</td>
                               <td className="py-3 px-4">
                                  <span
-                                    className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(user.account_type)}`}
+                                    className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}
                                  >
-                                    {user.account_type}
+                                    {user.role}
                                  </span>
                               </td>
                               <td className="py-3 px-4">
