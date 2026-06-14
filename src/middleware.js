@@ -94,7 +94,58 @@ export default async function middleware(request) {
       }
 
       try {
-        await jwtVerify(token, vendorKey);
+        const { payload } = await jwtVerify(token, vendorKey);
+
+        // Role-Based Protection for Ecosystem Routes
+        if (pathname.startsWith("/ecosystem")) {
+          const ecosystemRoleRoutes = {
+            government: "/ecosystem/institution",
+            bank: "/ecosystem/institution",
+            ngo: "/ecosystem/institution",
+            dfi: "/ecosystem/institution",
+            "insurance firm": "/ecosystem/institution",
+            "commodity board": "/ecosystem/institution",
+            finance: "/ecosystem/institution",
+            distributor: "/ecosystem/distributor",
+            "program director": "/ecosystem/program-management",
+            "regional manager": "/ecosystem/program-management",
+            "cluster supervisor": "/ecosystem/program-management",
+            "field officer": "/ecosystem/field-operations",
+            agronomist: "/ecosystem/field-operations",
+            inspector: "/ecosystem/field-operations",
+            enumerator: "/ecosystem/field-operations",
+            farmer: "/ecosystem/farmer",
+            exporter: "/ecosystem/buyer-partner",
+            "off-taker": "/ecosystem/buyer-partner",
+            "warehouse buyer": "/ecosystem/buyer-partner",
+            processor: "/ecosystem/buyer-partner",
+            "logistics partner": "/ecosystem/logistics",
+            logistics: "/ecosystem/logistics",
+            aggregator: "/ecosystem/aggregator",
+            "sales manager": "/ecosystem/sales-&-distribution",
+            "logistics coordinator": "/ecosystem/sales-&-distribution",
+            "warehouse supervisor": "/ecosystem/sales-&-distribution",
+            "data analyst": "/ecosystem/intelligence-&-monitoring",
+            "satellite monitor": "/ecosystem/intelligence-&-monitoring",
+            "field auditor": "/ecosystem/intelligence-&-monitoring",
+            storage: "/ecosystem/storage",
+            "storage facility": "/ecosystem/storage",
+          };
+
+          const userRole = payload.role?.toLowerCase();
+          const allowedBaseRoute = ecosystemRoleRoutes[userRole];
+
+          if (allowedBaseRoute) {
+            // Redirect root /ecosystem to their specific dashboard
+            if (pathname === "/ecosystem" || pathname === "/ecosystem/") {
+              return NextResponse.redirect(new URL(allowedBaseRoute, request.url));
+            } 
+            // Block access to other ecosystem routes
+            else if (!pathname.startsWith(allowedBaseRoute)) {
+              return NextResponse.redirect(new URL(allowedBaseRoute, request.url));
+            }
+          }
+        }
       } catch (jwtError) {
         console.error("Middleware: JWT verification failed:", jwtError.message);
         return NextResponse.redirect(new URL("/", request.url));
