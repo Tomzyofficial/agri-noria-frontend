@@ -28,8 +28,7 @@ export default function StorageForm({ onClose, targetId, quoteType }) {
     quote_type: quoteType,
   });
 
-  const inputStyle =
-    "rounded-r border-1 border-transparent ring ring-(--greenish-color) dark:ring-gray-700 outline-none bg-(--gray-color) dark:bg-(--background) focus:border-(--dark-green-color) dark:focus:border-gray-500 p-2 w-full bookings";
+  const inputStyle = "rounded-r border-1 border-transparent ring ring-(--greenish-color) dark:ring-gray-700 outline-none bg-(--gray-color) dark:bg-(--background) focus:border-(--dark-green-color) dark:focus:border-gray-500 p-2 w-full bookings";
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -37,12 +36,7 @@ export default function StorageForm({ onClose, targetId, quoteType }) {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]:
-        type === "checkbox"
-          ? checked
-          : type === "number"
-            ? Number(value)
-            : value,
+      [name]: type === "checkbox" ? checked : type === "number" ? Number(value) : value,
     }));
   };
 
@@ -66,17 +60,13 @@ export default function StorageForm({ onClose, targetId, quoteType }) {
       // Simulate API call
       // await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      const response = await fetch(
-        `/api/proxy/marketplace/listed-storage/${targetId.id}/booking`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify(formData),
+      const response = await fetch(`/api/proxy/marketplace/booking-request/${targetId.id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify(formData),
+      });
 
       const result = await response.json();
       if (!response.ok || !result.success) {
@@ -89,9 +79,7 @@ export default function StorageForm({ onClose, targetId, quoteType }) {
         onClose();
       }, 5000);
     } catch (error) {
-      toast.error(
-        error.message || "An error occurred while submitting your request.",
-      );
+      toast.error(error.message || "An error occurred while submitting your request.");
       return;
     } finally {
       setIsSubmitting(false);
@@ -106,18 +94,9 @@ export default function StorageForm({ onClose, targetId, quoteType }) {
             <CheckCircle className="h-10 w-10 text-green-600" />
           </div>
         </div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
-          Storage Quote Request Sent!
-        </h3>
-        <p className="text-gray-600 mb-6">
-          We've received your storage quote request. You'll be contacted shortly
-          by the storage provider with further information. Thank you for using
-          our marketplace!
-        </p>
-        <Button
-          onClick={onClose}
-          className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
-        >
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">Storage Quote Request Sent!</h3>
+        <p className="text-gray-600 mb-6">We've received your storage quote request. You'll be contacted shortly by the storage provider with further information. Thank you for using our marketplace!</p>
+        <Button onClick={onClose} className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">
           Close
         </Button>
       </div>
@@ -126,9 +105,7 @@ export default function StorageForm({ onClose, targetId, quoteType }) {
 
   return (
     <div className="p-3">
-      <h3 className="sm:text-lg md:text-2xl font-semibold md:font-bold text-gray-900 mb-4 md:mb-6">
-        Request Storage Quote
-      </h3>
+      <h3 className="sm:text-lg md:text-2xl font-semibold md:font-bold text-gray-900 mb-4 md:mb-6">Request Storage Quote</h3>
       {/* <p className="text-gray-600 mb-6">
         Fill in your details to request a storage quote for {storageName}.
       </p> */}
@@ -142,15 +119,7 @@ export default function StorageForm({ onClose, targetId, quoteType }) {
               <div className="hidden md:block pointer-events-none p-3 bg-background ring ring-(--greenish-color) dark:ring-gray-700 rounded-l">
                 <User className="h-4.5 w-5 text-gray-400" />
               </div>
-              <Input
-                type="text"
-                name="full_name"
-                required
-                value={formData.full_name}
-                onChange={handleChange}
-                placeholder="John Doe"
-                autoComplete="on"
-              />
+              <Input type="text" name="full_name" required value={formData.full_name} onChange={handleChange} placeholder="John Doe" autoComplete="on" />
             </div>
           </div>
 
@@ -189,13 +158,7 @@ export default function StorageForm({ onClose, targetId, quoteType }) {
 
           <div>
             <Label htmlFor="commodity">Commodity Type</Label>
-            <select
-              id="commodity"
-              name="commodity"
-              required
-              value={formData.commodity}
-              onChange={handleChange}
-            >
+            <select id="commodity" name="commodity" required value={formData.commodity} onChange={handleChange}>
               <option value="">Select Commodity Type *</option>
               <option value="Maize">Maize</option>
               <option value="Rice">Rice</option>
@@ -211,26 +174,12 @@ export default function StorageForm({ onClose, targetId, quoteType }) {
 
           <div>
             <Label htmlFor="quantity">Quantity</Label>
-            <Input
-              type="number"
-              id="quantity"
-              name="quantity"
-              placeholder="Enter quantity"
-              required
-              value={formData.quantity}
-              onChange={handleChange}
-            />
+            <Input type="number" id="quantity" name="quantity" placeholder="Enter quantity" required value={formData.quantity} onChange={handleChange} />
           </div>
 
           <div>
             <Label htmlFor="unit">Unit</Label>
-            <select
-              id="unit"
-              name="unit"
-              required
-              value={formData.unit}
-              onChange={handleChange}
-            >
+            <select id="unit" name="unit" required value={formData.unit} onChange={handleChange}>
               <option value="">Select Unit *</option>
               <option value="Kg">Kg</option>
               <option value="Tons">Tons</option>
@@ -241,13 +190,7 @@ export default function StorageForm({ onClose, targetId, quoteType }) {
 
           <div>
             <Label htmlFor="storage_type">Storage Type</Label>
-            <select
-              id="storage_type"
-              name="storage_type"
-              required
-              value={formData.storage_type}
-              onChange={handleChange}
-            >
+            <select id="storage_type" name="storage_type" required value={formData.storage_type} onChange={handleChange}>
               <option value="">Select Storage Type *</option>
               <option value="Dry">Dry Storage</option>
               <option value="Cold">Cold Storage</option>
@@ -263,27 +206,13 @@ export default function StorageForm({ onClose, targetId, quoteType }) {
               <div className="pointer-events-none p-3 bg-background ring ring-(--greenish-color) dark:ring-gray-700 rounded-l">
                 <Calendar className="h-4.5 w-5 text-gray-400" />
               </div>
-              <Input
-                type="date"
-                id="start_date"
-                name="start_date"
-                required
-                min={new Date().toISOString().split("T")[0]}
-                value={formData.start_date}
-                onChange={handleChange}
-              />
+              <Input type="date" id="start_date" name="start_date" required min={new Date().toISOString().split("T")[0]} value={formData.start_date} onChange={handleChange} />
             </div>
           </div>
 
           <div>
             <Label htmlFor="duration">Storage Duration</Label>
-            <select
-              id="duration"
-              name="duration"
-              required
-              value={formData.duration}
-              onChange={handleChange}
-            >
+            <select id="duration" name="duration" required value={formData.duration} onChange={handleChange}>
               <option value="">Select Storage Duration *</option>
               <option value="1 month">Less than 1 month</option>
               <option value="1-3 months">1 - 3 months</option>
@@ -294,32 +223,15 @@ export default function StorageForm({ onClose, targetId, quoteType }) {
           </div>
 
           <div className="col-span-2">
-            <Label htmlFor="additional_info">
-              Additional Information (Optional)
-            </Label>
-            <Textarea
-              id="additional_info"
-              name="additional_info"
-              value={formData.additional_info}
-              placeholder="Any specific requirements or details you'd like to share?"
-              onChange={handleChange}
-            />
+            <Label htmlFor="additional_info">Additional Information (Optional)</Label>
+            <Textarea id="additional_info" name="additional_info" value={formData.additional_info} placeholder="Any specific requirements or details you'd like to share?" onChange={handleChange} />
           </div>
         </div>
 
         <div className="flex items-start space-x-3 py-4">
-          <input
-            type="checkbox"
-            id="agreement"
-            name="agreement"
-            required
-            checked={formData.agreement}
-            onChange={handleChange}
-            className="mt-1"
-          />
+          <input type="checkbox" id="agreement" name="agreement" required checked={formData.agreement} onChange={handleChange} className="mt-1" />
           <Label htmlFor="agreement" className="text-sm text-gray-700">
-            I agree to share my details with the storage provider for quotation
-            purposes
+            I agree to share my details with the storage provider for quotation purposes
           </Label>
         </div>
 
@@ -327,11 +239,7 @@ export default function StorageForm({ onClose, targetId, quoteType }) {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className={`w-full cursor-pointer flex justify-center py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white ${
-              isSubmitting
-                ? "bg-green-400 cursor-not-allowed"
-                : "bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-            }`}
+            className={`w-full cursor-pointer flex justify-center py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white ${isSubmitting ? "bg-green-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"}`}
           >
             {isSubmitting ? (
               <div className="flex justify-center items-center gap-2">
@@ -343,11 +251,7 @@ export default function StorageForm({ onClose, targetId, quoteType }) {
             )}
           </Button>
 
-          <Button
-            type="button"
-            onClick={onClose}
-            className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-          >
+          <Button type="button" onClick={onClose} className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
             Cancel
           </Button>
         </div>

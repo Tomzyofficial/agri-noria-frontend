@@ -102,12 +102,7 @@ h4 {
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
   animation: shimmer 1.5s infinite;
 }
 
@@ -239,5 +234,5 @@ textarea {
 }
 
 form label {
-  @apply text-[14px] text-start font-medium text-gray-900 dark:text-white mb-1 block;
+  @apply text-[14px] text-start font-medium text-gray-900 dark:text-white mb-1;
 }

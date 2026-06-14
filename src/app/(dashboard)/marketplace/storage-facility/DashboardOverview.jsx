@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/Button";
 import { fetcher, formatDate } from "@/utils/otherUtils";
 import Link from "next/link";
 import useSWR from "swr";
-import { CardSkeleton } from "@/components/ui/CardSkeleton";
 import { LuMessageCircleMore } from "react-icons/lu";
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
@@ -22,30 +21,7 @@ import { Package, EyeIcon } from "lucide-react";
 import { TbHandClick } from "react-icons/tb";
 import BarChartLoading from "@/components/ui/BarChartLoadingSkeleton";
 import { TableSkeleton } from "@/components/ui/TableLoadingSkeleton";
-
-function StatCard({ isLoading, error, title, value, icon: Icon }) {
-  return (
-    <div>
-      {isLoading ? (
-        <CardSkeleton />
-      ) : error ? (
-        <Card className="text-red-500 text-sm h-32 flex items-center justify-center">
-          {error.message}
-        </Card>
-      ) : (
-        <Card className="px-4 py-6">
-          <CardHeader className="flex items-center justify-between pb-2 px-2">
-            <CardTitle className="text-sm font-medium">{title}</CardTitle>
-            <Icon className="h-4 w-4" />
-          </CardHeader>
-          <CardContent>
-            <span className="text-2xl font-bold">{value}</span>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
+import { StatCard } from "../../dashboard/components/ui/StatCard";
 
 export function DashboardOverview({ user }) {
   const [showModal, setShowModal] = useState(false);
@@ -145,18 +121,12 @@ export function DashboardOverview({ user }) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 flex flex-col">
-            {/* <Button className="w-full rounded-xl" variant="outline">
-              View All Leads
-            </Button> */}
             <Link
               className="hover:underline"
               href="/marketplace/storage-facility/storage-facilities"
             >
               Manage Listings
             </Link>
-            {/* <Button className="w-full rounded-xl" variant="outline">
-              Update Availability
-            </Button> */}
             <Link
               href="/marketplace/storage-facility/storage-facilities/add-new"
               className="hover:underline "

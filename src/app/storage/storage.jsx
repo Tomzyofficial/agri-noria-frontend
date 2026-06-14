@@ -320,36 +320,41 @@ export default function StoragePage({ result, error }) {
             ) : (
               result?.length > 0 &&
               result?.map((st) => (
-                <Link href={`/storage/${st.id}`} className="flex items-center">
-                  <Card key={st.id} className="p-2 text-start">
-                    <div>
-                      <Image
-                        onClick={() => setIsModalOpen(true)}
-                        src={st.storage_image}
-                        alt={st.storage_name}
-                        width={400}
-                        height={400}
-                        className="w-full h-50 rounded object-cover"
-                      />
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2">
-                      {st.storage_name
-                        .split(" ")
-                        .map(
-                          (word) =>
-                            word.charAt(0).toUpperCase() + word.slice(1),
-                        )
-                        .join(" ")}
-                    </h3>
-                    <p className="text-sm">{st.description}</p>
-                    <div className="mb-6 flex justify-between items-center rounded p-2 bg-gray-300">
-                      <span className="text-lg font-semibold">
-                        {formatPrice(st.price, st.country_code, st.currency)} /
-                        Per MT
-                      </span>
-                    </div>
-                  </Card>
-                </Link>
+                <section key={st.id}>
+                  <Link
+                    href={`/storage/${st.id}`}
+                    className="flex items-center"
+                  >
+                    <Card className="p-2 text-start">
+                      <div>
+                        <Image
+                          onClick={() => setIsModalOpen(true)}
+                          src={st.storage_image}
+                          alt={st.storage_name}
+                          width={400}
+                          height={400}
+                          className="w-full h-50 rounded object-cover"
+                        />
+                      </div>
+                      <h3 className="text-xl font-semibold mb-2">
+                        {st.storage_name
+                          .split(" ")
+                          .map(
+                            (word) =>
+                              word.charAt(0).toUpperCase() + word.slice(1),
+                          )
+                          .join(" ")}
+                      </h3>
+                      <p className="text-sm">{st.description}</p>
+                      <div className="mb-6 flex justify-between items-center rounded p-2 bg-gray-300">
+                        <span className="text-lg font-semibold">
+                          {formatPrice(st.price, st.country_code, st.currency)}{" "}
+                          / Per MT
+                        </span>
+                      </div>
+                    </Card>
+                  </Link>
+                </section>
               ))
             )}
           </div>
