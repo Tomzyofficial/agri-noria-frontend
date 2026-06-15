@@ -11,6 +11,9 @@ export default function FarmerHarvestPage() {
   const [produces, setProduces] = useState([
     { crop: "Maize", quantity_mt: "", location: "" }
   ]);
+  const [requestModal, setRequestModal] = useState({ isOpen: false, type: "", batchId: null });
+  const [providersList, setProvidersList] = useState([]);
+  const [selectedProvider, setSelectedProvider] = useState("");
 
   const fetchBatches = async () => {
     try {
@@ -53,41 +56,47 @@ export default function FarmerHarvestPage() {
     }
   };
 
-  const requestStorage = async (batch_id) => {
+  const openRequestModal = async (type, batch_id) => {
+    setRequestModal({ isOpen: true, type, batchId: batch_id });
+    setProvidersList([]);
+    setSelectedProvider("");
     try {
-      const res = await fetch("/api/proxy/vendor/commodity-operations/harvest/request-storage", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ batch_id, storage_duration_days: 30, storage_fee: 50000 }),
-      });
+      const res = await fetch(`/api/proxy/vendor/commodity-operations/providers/${type}`);
       const data = await res.json();
       if (data.success) {
-        toast.success("Storage requested! Risk Request sent to Insurers.");
-        fetchBatches();
-      } else {
-        toast.error(data.error);
+        setProvidersList(data.data);
       }
     } catch (error) {
-      toast.error("Failed to request storage");
+      toast.error("Failed to fetch providers");
     }
   };
 
-  const requestLogistics = async (batch_id) => {
+  const submitProviderRequest = async (e) => {
+    e.preventDefault();
+    if (!selectedProvider) return toast.error("Please select a provider");
+
+    const isStorage = requestModal.type === "storage";
+    const endpoint = isStorage ? "request-storage" : "request-logistics";
+    const body = isStorage
+      ? { batch_id: requestModal.batchId, warehouse_id: selectedProvider, storage_duration_days: 30, storage_fee: 50000 }
+      : { batch_id: requestModal.batchId, logistics_provider_id: selectedProvider, destination: "Designated Warehouse/Buyer", logistics_fee: 15000 };
+
     try {
-      const res = await fetch("/api/proxy/vendor/commodity-operations/harvest/request-logistics", {
+      const res = await fetch(`/api/proxy/vendor/commodity-operations/harvest/${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ batch_id, destination: "Designated Warehouse/Buyer", logistics_fee: 15000 }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (data.success) {
-        toast.success("Logistics requested successfully!");
+        toast.success(`${isStorage ? 'Storage' : 'Logistics'} requested successfully!`);
+        setRequestModal({ isOpen: false, type: "", batchId: null });
         fetchBatches();
       } else {
         toast.error(data.error);
       }
     } catch (error) {
-      toast.error("Failed to request logistics");
+      toast.error(`Failed to request ${requestModal.type}`);
     }
   };
 
@@ -187,16 +196,16 @@ export default function FarmerHarvestPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {batch.status === 'harvest_declared' && (
+                  {(batch.status === 'harvest_declared' || batch.status === 'storage_reserved') && (
                     <div className="flex gap-2">
                       <button
-                        onClick={() => requestStorage(batch.batch_id)}
+                        onClick={() => openRequestModal("storage", batch.batch_id)}
                         className="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700"
                       >
                         Request Storage
                       </button>
                       <button
-                        onClick={() => requestLogistics(batch.batch_id)}
+                        onClick={() => openRequestModal("logistics", batch.batch_id)}
                         className="px-4 py-2 bg-purple-600 text-white text-sm font-bold rounded-lg hover:bg-purple-700"
                       >
                         Request Logistics
@@ -322,6 +331,52 @@ export default function FarmerHarvestPage() {
                   className="px-4 py-2 bg-(--greenish-color) text-white font-bold rounded-lg hover:opacity-90"
                 >
                   Declare Harvest
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Request Provider Modal */}
+      {requestModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6">
+            <h2 className="text-xl font-bold mb-4 capitalize">Request {requestModal.type}</h2>
+            <form onSubmit={submitProviderRequest} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Select Provider</label>
+                <select 
+                  className="w-full p-2 border rounded-lg dark:bg-gray-900 dark:border-gray-700"
+                  value={selectedProvider}
+                  onChange={(e) => setSelectedProvider(e.target.value)}
+                  required
+                >
+                  <option value="">-- Choose {requestModal.type} Provider --</option>
+                  {providersList.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.fname} {p.lname} - {p.workspace || 'N/A'} ({p.total_capacity_mt ? p.total_capacity_mt + ' MT Capacity' : 'Available'})
+                    </option>
+                  ))}
+                </select>
+                {providersList.length === 0 && (
+                  <p className="text-xs text-gray-500 mt-2">Loading providers...</p>
+                )}
+              </div>
+              <div className="flex gap-3 justify-end mt-6">
+                <button
+                  type="button"
+                  onClick={() => setRequestModal({ isOpen: false, type: "", batchId: null })}
+                  className="px-4 py-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!selectedProvider}
+                  className="px-4 py-2 bg-(--greenish-color) text-white font-bold rounded-lg hover:opacity-90 disabled:opacity-50"
+                >
+                  Submit Request
                 </button>
               </div>
             </form>
