@@ -102,3 +102,5 @@ export function getStatusBadgeClass(status) {
 export function formatStatusLabel(status) {
   return status?.replace(/_/g, " ") ?? "";
 }
+
+export const logisticsFetcher = (url) => fetch(url).then((res) => res.json());
