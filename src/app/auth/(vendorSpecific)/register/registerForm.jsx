@@ -440,8 +440,10 @@ export function RegisterForm() {
 
       if (session.authenticated) {
         const { workspace, role } = session;
-        if (workspace === "ecosystem") {
-          router.push("/onboarding");
+        if (workspace === "ecosystem" && role?.toLowerCase() === "farmer") {
+          router.push("/ecosystem/farmer/onboarding");
+        } else if (workspace === "ecosystem") {
+          router.push("/dashboard");
         } else {
           router.push(
             `/${workspace}/${role.toLowerCase().replace(/\s+/g, "-")}`,

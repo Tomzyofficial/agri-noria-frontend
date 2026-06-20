@@ -21,10 +21,12 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
+import { verifyVendorSession } from "@/actions/session";
 import { FarmerDataProvider } from "./useFarmerData";
 
 export default function FarmerLayout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -52,19 +54,29 @@ export default function FarmerLayout({ children }) {
   useEffect(() => {
     const checkExistingUser = async () => {
       try {
-        const response = await fetch("/api/proxy/auth/verify-vendor");
-        if (response.status !== 500 && response.status !== 200) {
-          const data = await response.json();
-          if (data?.authenticated === false) await handleSignout();
+        const session = await verifyVendorSession();
+        if (session?.authenticated === false) {
+           await handleSignout();
+           return;
         }
-      } catch {
-        return;
+        // Check onboarding level
+        if (session?.authenticated && session?.role?.toLowerCase() === "farmer") {
+          const isCompleted = session?.onboarding_level >= 3 || session?.onboarding_status === "completed" || session?.onboarding_status === "verified";
+          if (!isCompleted && pathname !== "/ecosystem/farmer/onboarding") {
+             router.replace("/ecosystem/farmer/onboarding");
+             return;
+          }
+        }
+        setOnboardingChecked(true);
+      } catch (e) {
+        console.error(e);
+        setOnboardingChecked(true);
       }
     };
     checkExistingUser();
     const interval = setInterval(checkExistingUser, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [pathname, router]);
 
   const navMenu = [
     {
@@ -130,6 +142,33 @@ export default function FarmerLayout({ children }) {
       ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 p-3 rounded-xl shadow-sm border-l-4 border-green-600"
       : "hover:bg-gray-100 dark:hover:bg-gray-800 p-3 rounded-xl transition-all duration-200 ml-1 text-gray-500 dark:text-gray-400";
   };
+
+  if (pathname === "/ecosystem/farmer/onboarding") {
+    return (
+      <FarmerDataProvider>
+        <div className="min-h-screen bg-(--background)">
+          {children}
+        </div>
+      </FarmerDataProvider>
+    );
+  }
+
+  // Show loading screen while checking onboarding status — never flash the dashboard
+  if (!onboardingChecked) {
+    return (
+      <div className="min-h-screen bg-(--background) flex items-center justify-center">
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '40px', height: '40px', border: '4px solid #e5e7eb',
+            borderTop: '4px solid #10b981', borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite', margin: '0 auto 16px'
+          }} />
+          <p style={{ color: '#6b7280', fontSize: '14px' }}>Loading your dashboard...</p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <FarmerDataProvider>

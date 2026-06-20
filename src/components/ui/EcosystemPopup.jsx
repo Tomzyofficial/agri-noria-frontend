@@ -71,7 +71,7 @@ export function EcosystemPopup() {
                </div>
 
                <div className="pt-2 flex gap-2">
-                  <Link href="/onboarding" className="flex-1" onClick={handleDismiss}>
+                  <Link href="/dashboard" className="flex-1" onClick={handleDismiss}>
                      <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 border-none">
                         Explore Mode
                      </Button>
