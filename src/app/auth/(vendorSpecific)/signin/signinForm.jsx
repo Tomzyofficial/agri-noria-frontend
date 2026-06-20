@@ -299,7 +299,18 @@ export function SigninForm() {
 
       if (session.authenticated) {
         const { workspace, role } = session;
-        router.push(resolveRedirectPath(role, workspace));
+        // Ecosystem farmers who haven't completed onboarding go directly there
+        if (
+          workspace?.toLowerCase() === "ecosystem" &&
+          role?.toLowerCase() === "farmer" &&
+          session.onboarding_status !== "completed" &&
+          session.onboarding_status !== "verified" &&
+          !(session.onboarding_level >= 3)
+        ) {
+          router.push("/ecosystem/farmer/onboarding");
+        } else {
+          router.push(resolveRedirectPath(role, workspace));
+        }
       }
       router.refresh();
     } catch (error) {

@@ -70,15 +70,16 @@ export default async function DashboardRouterPage() {
     redirect(marketplaceRoleRoutes[role] || "/marketplace/store");
   }
 
+  // Ecosystem farmers who haven't completed onboarding go directly to onboarding
   if (
     workspace === "ecosystem" &&
+    role === "farmer" &&
     session.onboarding_status !== "completed" &&
     session.onboarding_status !== "verified" &&
-    role !== "super admin" &&
-    role !== "admin"
+    !(session.onboarding_level >= 3)
   ) {
-    redirect("/onboarding");
+    redirect("/ecosystem/farmer/onboarding");
   }
 
-  redirect(ecosystemRoleRoutes[role] || "/onboarding");
+  redirect(ecosystemRoleRoutes[role] || "/ecosystem");
 }

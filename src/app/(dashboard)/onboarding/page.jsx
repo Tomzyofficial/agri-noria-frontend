@@ -299,6 +299,15 @@ export default function OnboardingPage() {
           return;
         }
 
+        if (normalizedRole === "farmer") {
+          if (session.onboarding_level >= 3 || session.onboarding_status === "completed" || session.onboarding_status === "verified") {
+            router.replace(resolveRedirectPath(session.role, session.workspace));
+          } else {
+            router.replace("/ecosystem/farmer/onboarding");
+          }
+          return;
+        }
+
         if (session.onboarding_status === "completed") {
           router.replace(resolveRedirectPath(session.role, session.workspace));
           return;
