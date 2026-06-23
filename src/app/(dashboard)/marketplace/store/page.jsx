@@ -1,5 +1,5 @@
 import { verifyVendorSession } from "@/actions/session";
-import { DashboardOverview } from "@/app/(dashboard)/marketplace/store/DashboardOverview";
+import { DashboardOverview } from "./components/DashboardOverview";
 import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
 
 export const metadata = {
@@ -9,10 +9,7 @@ export const metadata = {
 
 export default async function Dashboard() {
   const session = await verifyVendorSession();
-  if (
-    !session?.authenticated ||
-    (session.role !== "farmer" && session.role !== "seller")
-  ) {
+  if (!session?.authenticated || session.workspace !== "marketplace" || (session.role !== "farmer" && session.role !== "seller")) {
     return <Unauthorized />;
   }
 

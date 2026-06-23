@@ -6,15 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import {
-  Search,
-  Eye,
-  Edit,
-  Trash2,
-  Plus,
-  MapPin,
-  ArrowRight,
-} from "lucide-react";
+import { Search, Eye, Edit, Trash2, Plus, MapPin, ArrowRight } from "lucide-react";
 import { FaSpinner } from "react-icons/fa";
 
 import { Input } from "@/components/ui/Input";
@@ -24,8 +16,6 @@ import Skeleton from "@/components/ui/LoadingSkeleton";
 import { ErrorUi } from "@/components/ui/Error";
 import { NoProductsFound } from "@/app/(dashboard)/dashboard/components/ui/NotFound";
 import { formatPrice } from "@/utils/formatPrice";
-
-/* ── tiny helpers ─────────────────────────────────────── */
 
 function StatusBadge({ status }) {
   const map = {
@@ -125,12 +115,7 @@ function IconBtn({ href, onClick, disabled, title, danger, children }) {
       </Link>
     );
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      style={{ ...base, opacity: disabled ? 0.5 : 1 }}
-    >
+    <button onClick={onClick} disabled={disabled} title={title} style={{ ...base, opacity: disabled ? 0.5 : 1 }}>
       {children}
     </button>
   );
@@ -146,21 +131,14 @@ export function VehicleManagement() {
   const fetcher = async (url) => {
     const res = await fetch(url);
     const data = await res.json();
-    if (!res.ok || !data.success)
-      throw new Error(data?.error || "Failed to fetch vehicles");
+    if (!res.ok || !data.success) throw new Error(data?.error || "Failed to fetch vehicles");
     return data;
   };
 
-  const {
-    data: vehicleData,
-    error,
-    isLoading,
-  } = useSWR("/api/proxy/vendor/logistics/vehicles", fetcher);
+  const { data: vehicleData, error, isLoading } = useSWR("/api/proxy/vendor/logistics/vehicles", fetcher);
 
   const vehicles = vehicleData?.data || [];
-  const filtered = vehicles.filter((v) =>
-    v.title?.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const filtered = vehicles.filter((v) => v.title?.toLowerCase().includes(searchTerm.toLowerCase()));
 
   const handleDelete = async (id) => {
     if (!confirm("Delete this vehicle?")) return;
@@ -170,8 +148,7 @@ export function VehicleManagement() {
         method: "DELETE",
       });
       const data = await res.json();
-      if (!res.ok || !data.success)
-        throw new Error(data.error || "Delete failed");
+      if (!res.ok || !data.success) throw new Error(data.error || "Delete failed");
       toast.success("Vehicle deleted");
       refresh();
     } catch (err) {
@@ -195,12 +172,8 @@ export function VehicleManagement() {
         }}
       >
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 600, margin: "0 0 4px" }}>
-            Vehicle Management
-          </h1>
-          <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>
-            Manage your logistics fleet
-          </p>
+          <h1 style={{ fontSize: 22, fontWeight: 600, margin: "0 0 4px" }}>Vehicle Management</h1>
+          <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>Manage your logistics fleet</p>
         </div>
         <Link
           href="/marketplace/logistics/vehicles/add-new"
@@ -223,9 +196,7 @@ export function VehicleManagement() {
       </div>
 
       {/* SEARCH */}
-      <div
-        style={{ position: "relative", marginBottom: "1.25rem", maxWidth: 320 }}
-      >
+      <div style={{ position: "relative", marginBottom: "1.25rem", maxWidth: 320 }}>
         <Search
           size={14}
           style={{
@@ -236,20 +207,13 @@ export function VehicleManagement() {
             color: "#9ca3af",
           }}
         />
-        <Input
-          style={{ paddingLeft: 32, fontSize: 13 }}
-          placeholder="Search vehicles…"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        <Input style={{ paddingLeft: 32, fontSize: 13 }} placeholder="Search vehicles…" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
 
       {/* STATES */}
       {isLoading && <Skeleton />}
       {error && <ErrorUi />}
-      {!isLoading && !error && filtered.length === 0 && (
-        <NoProductsFound searchTerm={searchTerm} />
-      )}
+      {!isLoading && !error && filtered.length === 0 && <NoProductsFound href="/marketplace/logistics/vehicles/add-new" searchTerm={searchTerm} />}
 
       {/* ─── DESKTOP TABLE ──────────────────────────────── */}
       {!isLoading && !error && filtered.length > 0 && (
@@ -277,27 +241,12 @@ export function VehicleManagement() {
                     borderBottom: "0.5px solid #e5e7eb",
                   }}
                 >
-                  {[
-                    "Vehicle",
-                    "Type",
-                    "Cargo type",
-                    "Max weight",
-                    "Volume (m³)",
-                    "Location",
-                    "Pricing",
-                    "Status",
-                    "Actions",
-                  ].map((h, i) => (
+                  {["Vehicle", "Type", "Cargo type", "Max weight", "Volume (m³)", "Location", "Pricing", "Status", "Actions"].map((h, i) => (
                     <th
                       key={i}
                       style={{
                         padding: "10px 14px",
-                        textAlign:
-                          i >= 3 && i <= 4
-                            ? "right"
-                            : i === 8
-                              ? "right"
-                              : "left",
+                        textAlign: i >= 3 && i <= 4 ? "right" : i === 8 ? "right" : "left",
                         fontWeight: 500,
                         color: "#6b7280",
                         whiteSpace: "nowrap",
@@ -318,12 +267,8 @@ export function VehicleManagement() {
                       borderBottom: "0.5px solid #f3f4f6",
                       transition: "background 0.1s",
                     }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = "#fafafa")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background = "transparent")
-                    }
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "#fafafa")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                   >
                     {/* Vehicle */}
                     <td style={{ padding: "12px 14px" }}>
@@ -426,20 +371,12 @@ export function VehicleManagement() {
                           gap: 4,
                         }}
                       >
-                        <MapPin
-                          size={12}
-                          style={{ color: "#9ca3af", flexShrink: 0 }}
-                        />
+                        <MapPin size={12} style={{ color: "#9ca3af", flexShrink: 0 }} />
                         <span>{v.base_location}</span>
                         {v.operating_regions?.length > 0 && (
                           <>
-                            <ArrowRight
-                              size={11}
-                              style={{ color: "#d1d5db" }}
-                            />
-                            <span style={{ color: "#9ca3af", fontSize: 11 }}>
-                              {v.operating_regions.join(", ")}
-                            </span>
+                            <ArrowRight size={11} style={{ color: "#d1d5db" }} />
+                            <span style={{ color: "#9ca3af", fontSize: 11 }}>{v.operating_regions.join(", ")}</span>
                           </>
                         )}
                       </div>
@@ -456,9 +393,7 @@ export function VehicleManagement() {
                       >
                         {v.pricing_model?.replace(/_/g, " ")}
                       </p>
-                      <p style={{ margin: 0, fontSize: 11, color: "#6b7280" }}>
-                        {formatPrice(v.rate_amount, v.country_code, v.currency)}
-                      </p>
+                      <p style={{ margin: 0, fontSize: 11, color: "#6b7280" }}>{formatPrice(v.rate_amount, v.country_code, v.currency)}</p>
                     </td>
 
                     {/* Status */}
@@ -476,29 +411,14 @@ export function VehicleManagement() {
                           gap: 4,
                         }}
                       >
-                        <IconBtn
-                          href={`/marketplace/logistics/vehicles/view/${v.id}`}
-                          title="View"
-                        >
+                        <IconBtn href={`/marketplace/logistics/vehicles/view/${v.id}`} title="View">
                           <Eye size={14} />
                         </IconBtn>
-                        <IconBtn
-                          href={`/marketplace/logistics/vehicles/edit/${v.id}`}
-                          title="Edit"
-                        >
+                        <IconBtn href={`/marketplace/logistics/vehicles/edit/${v.id}`} title="Edit">
                           <Edit size={14} />
                         </IconBtn>
-                        <IconBtn
-                          onClick={() => handleDelete(v.id)}
-                          disabled={isDeleting[v.id]}
-                          title="Delete"
-                          danger
-                        >
-                          {isDeleting[v.id] ? (
-                            <FaSpinner size={13} className="animate-spin" />
-                          ) : (
-                            <Trash2 size={14} />
-                          )}
+                        <IconBtn onClick={() => handleDelete(v.id)} disabled={isDeleting[v.id]} title="Delete" danger>
+                          {isDeleting[v.id] ? <FaSpinner size={13} className="animate-spin" /> : <Trash2 size={14} />}
                         </IconBtn>
                       </div>
                     </td>
@@ -533,9 +453,7 @@ export function VehicleManagement() {
                 borderRadius: 12,
               }}
             >
-              <div
-                style={{ display: "flex", gap: 12, alignItems: "flex-start" }}
-              >
+              <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                 <div
                   style={{
                     width: 60,
@@ -628,13 +546,8 @@ export function VehicleManagement() {
                 <div>
                   <span style={{ color: "#9ca3af" }}>Pricing</span>
                   <br />
-                  <strong style={{ textTransform: "capitalize" }}>
-                    {v.pricing_model?.replace(/_/g, " ")}
-                  </strong>
-                  <span style={{ color: "#6b7280" }}>
-                    {" "}
-                    · {formatPrice(v.rate_amount, v.country_code, v.currency)}
-                  </span>
+                  <strong style={{ textTransform: "capitalize" }}>{v.pricing_model?.replace(/_/g, " ")}</strong>
+                  <span style={{ color: "#6b7280" }}> · {formatPrice(v.rate_amount, v.country_code, v.currency)}</span>
                 </div>
               </div>
 
@@ -702,11 +615,7 @@ export function VehicleManagement() {
                     opacity: isDeleting[v.id] ? 0.5 : 1,
                   }}
                 >
-                  {isDeleting[v.id] ? (
-                    <FaSpinner size={12} className="animate-spin" />
-                  ) : (
-                    <Trash2 size={13} />
-                  )}
+                  {isDeleting[v.id] ? <FaSpinner size={12} className="animate-spin" /> : <Trash2 size={13} />}
                   Delete
                 </button>
               </div>

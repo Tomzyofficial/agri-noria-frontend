@@ -8,17 +8,8 @@ export const metadata = {
     template: "%s | Agri-Noria",
     default: "Home | Agri-Noria",
   },
-  description:
-    "Agriculture is a way of life. We make it easier. We bridge the gap between farmers, buyers, and sellers.",
-  keywords: [
-    "Agriculture",
-    "Farmers",
-    "Buyers",
-    "Sellers",
-    "Agriculture is a way of life",
-    "We make it easier",
-    "We bridge the gap between farmers, buyers and sellers",
-  ],
+  description: "Agriculture is a way of life. We make it easier. We bridge the gap between farmers, buyers, and sellers.",
+  keywords: ["Agriculture", "Farmers", "Buyers", "Sellers", "Agriculture is a way of life", "We make it easier", "We bridge the gap between farmers, buyers and sellers"],
 };
 
 export default async function RootLayout({ children }) {
@@ -30,7 +21,7 @@ export default async function RootLayout({ children }) {
 
   return (
     <html lang="en">
-      <body className="bg-(--background)">
+      <body>
         <CartProvider buyerId={userId}>{children}</CartProvider>
         <ToastContainer />
       </body>

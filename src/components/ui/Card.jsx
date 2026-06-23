@@ -1,14 +1,7 @@
 function Card({ className, children, ...props }) {
   return (
-    <section>
-      <div
-        className={`${
-          className && className
-        } text-center transition-shadow hover:shadow-lg bg-(--gray-color) dark:hover:shadow-neutral-700 dark:bg-(--card-dark) text-(--foreground) rounded-lg border border-stone-100 dark:border-stone-800`}
-        {...props}
-      >
-        {children}
-      </div>
+    <section className={`${className && className} text-center bg-(--gray-color) dark:hover:shadow-neutral-700 dark:bg-(--card-dark) text-(--foreground) rounded-lg border border-stone-100 dark:border-stone-800 h-fit w-full`} {...props}>
+      {children}
     </section>
   );
 }
@@ -53,11 +46,4 @@ function CardFooter({ className, children, ...props }) {
   );
 }
 
-export {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-};
+export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter };

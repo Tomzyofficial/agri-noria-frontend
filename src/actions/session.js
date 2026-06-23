@@ -111,7 +111,7 @@ export async function setCartCookie(cart) {
       const cookieStore = await cookies();
       cookieStore.set("cart-session", token, {
         httpOnly: true,
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        sameSite: "none",
         secure: true,
         path: "/",
       });

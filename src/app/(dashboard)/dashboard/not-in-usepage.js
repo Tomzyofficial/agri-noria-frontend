@@ -52,7 +52,7 @@ export default async function Dashboard() {
     return redirect("/");
   }
 
-  const accountType = session.role?.toLowerCase();
+  const accountType = session.account_type?.toLowerCase();
 
   // 1. Determine if this is a legacy role that should bypass industrial onboarding
   //   const isLegacyRole = [

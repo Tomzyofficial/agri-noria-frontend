@@ -178,22 +178,13 @@ export function SigninForm() {
 
   const getDefaultWorkspace = (role) => {
     const normalizedRole = role?.toLowerCase().trim();
-    const marketplaceRoles = [
-      "seller",
-      "logistics",
-      "storage facility",
-      "trainer",
-      "farmer",
-    ];
-    return marketplaceRoles.includes(normalizedRole)
-      ? "marketplace"
-      : "ecosystem";
+    const marketplaceRoles = ["seller", "logistics", "storage facility", "trainer", "farmer"];
+    return marketplaceRoles.includes(normalizedRole) ? "marketplace" : "ecosystem";
   };
 
   const resolveRedirectPath = (role, workspace) => {
     const normalizedRole = role?.toLowerCase().trim();
-    const normalizedWorkspace =
-      workspace?.toLowerCase().trim() || getDefaultWorkspace(normalizedRole);
+    const normalizedWorkspace = workspace?.toLowerCase().trim() || getDefaultWorkspace(normalizedRole);
 
     if (normalizedWorkspace === "ecosystem") {
       const rolePath = ecosystemRoleRoutes[normalizedRole];
@@ -300,13 +291,7 @@ export function SigninForm() {
       if (session.authenticated) {
         const { workspace, role } = session;
         // Ecosystem farmers who haven't completed onboarding go directly there
-        if (
-          workspace?.toLowerCase() === "ecosystem" &&
-          role?.toLowerCase() === "farmer" &&
-          session.onboarding_status !== "completed" &&
-          session.onboarding_status !== "verified" &&
-          !(session.onboarding_level >= 3)
-        ) {
+        if (workspace?.toLowerCase() === "ecosystem" && role?.toLowerCase() === "farmer" && session.onboarding_status !== "completed" && session.onboarding_status !== "verified" && !(session.onboarding_level >= 3)) {
           router.push("/ecosystem/farmer/onboarding");
         } else {
           router.push(resolveRedirectPath(role, workspace));
@@ -337,44 +322,20 @@ export function SigninForm() {
             {/* Progress bar */}
             <div className="w-full mb-4">
               <div className="h-2 bg-gray-200 rounded-full">
-                <div
-                  className="h-2 bg-(--greenish-color) rounded-full transition-all"
-                  style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-                />
+                <div className="h-2 bg-(--greenish-color) rounded-full transition-all" style={{ width: `${(currentStep / totalSteps) * 100}%` }} />
               </div>
               <div className="mt-2 text-xs text-muted-foreground text-center">
                 Step {currentStep} of {totalSteps}
               </div>
             </div>
 
-            <form
-              onSubmit={handleSubmit}
-              aria-busy={isLoading}
-              className="space-y-4"
-              noValidate
-            >
+            <form onSubmit={handleSubmit} aria-busy={isLoading} className="space-y-4" noValidate>
               {/* Step 1: Email */}
               {currentStep === 1 && (
                 <div>
                   <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    autoFocus
-                    id="email"
-                    type="email"
-                    autoComplete="on"
-                    className={isLoading ? "opacity-50" : ""}
-                    disabled={isLoading}
-                    placeholder="Enter your email address"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                  />
-                  {errors.err?.email && (
-                    <p className="text-start text-red-400 dark:text-red-300 text-sm">
-                      {errors.err.email[0] || errors.err.email}
-                    </p>
-                  )}
+                  <Input autoFocus id="email" type="email" autoComplete="on" className={isLoading ? "opacity-50" : ""} disabled={isLoading} placeholder="Enter your email address" name="email" value={formData.email} onChange={handleInputChange} required />
+                  {errors.err?.email && <p className="text-start text-red-400 dark:text-red-300 text-sm">{errors.err.email[0] || errors.err.email}</p>}
                 </div>
               )}
 
@@ -384,43 +345,15 @@ export function SigninForm() {
                   <div>
                     <Label htmlFor="password">Password</Label>
                     <div className="relative">
-                      <Input
-                        autoFocus
-                        id="password"
-                        autoComplete="off"
-                        className={isLoading ? "opacity-50" : ""}
-                        type={showPassword ? "text" : "password"}
-                        disabled={isLoading}
-                        placeholder="Enter your password"
-                        value={formData.password}
-                        name="password"
-                        onChange={handleInputChange}
-                        required
-                      />
+                      <Input autoFocus id="password" autoComplete="off" className={isLoading ? "opacity-50" : ""} type={showPassword ? "text" : "password"} disabled={isLoading} placeholder="Enter your password" value={formData.password} name="password" onChange={handleInputChange} required />
 
-                      <Button
-                        type="button"
-                        className="absolute cursor-pointer right-2 top-1/2 transform -translate-y-1/2 h-8 w-8"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
+                      <Button type="button" className="absolute cursor-pointer right-2 top-1/2 transform -translate-y-1/2 h-8 w-8" onClick={() => setShowPassword(!showPassword)}>
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
                     </div>
-                    {errors.err?.password && (
-                      <p className="text-start text-red-400 dark:text-red-300 text-sm">
-                        {errors.err.password[0] || errors.err.password}
-                      </p>
-                    )}
+                    {errors.err?.password && <p className="text-start text-red-400 dark:text-red-300 text-sm">{errors.err.password[0] || errors.err.password}</p>}
 
-                    {errors.general && (
-                      <p className="text-start text-red-400 dark:text-red-300 text-sm">
-                        {errors.general}
-                      </p>
-                    )}
+                    {errors.general && <p className="text-start text-red-400 dark:text-red-300 text-sm">{errors.general}</p>}
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -443,51 +376,23 @@ export function SigninForm() {
                         Remember me
                       </Label>
                     </div>
-                    <Button className="p-0 h-auto text-sm">
-                      Forgot password?
-                    </Button>
+                    <Button className="p-0 h-auto text-sm">Forgot password?</Button>
                   </div>
                 </>
               )}
 
               {/* Navigation Buttons */}
               <div className="mt-4 flex items-center justify-between gap-3">
-                <Button
-                  type="button"
-                  className={`${
-                    isLoading
-                      ? "opacity-50 cursor-not-allowed"
-                      : "cursor-pointer"
-                  } bg-gray-200 dark:bg-gray-500 text-(--foreground) px-4 py-2 rounded-md`}
-                  onClick={handleBack}
-                  disabled={isLoading || currentStep === 1}
-                >
+                <Button type="button" className={`${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} bg-gray-200 dark:bg-gray-500 text-(--foreground) px-4 py-2 rounded-md`} onClick={handleBack} disabled={isLoading || currentStep === 1}>
                   Back
                 </Button>
 
                 {currentStep < totalSteps ? (
-                  <Button
-                    type="button"
-                    className={`${
-                      isLoading
-                        ? "opacity-50 cursor-not-allowed"
-                        : "cursor-pointer"
-                    } bg-(--greenish-color) text-(--white-fff) px-4 py-2 rounded-md`}
-                    onClick={handleNext}
-                    disabled={isLoading}
-                  >
+                  <Button type="button" className={`${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} bg-(--greenish-color) text-(--white-fff) px-4 py-2 rounded-md`} onClick={handleNext} disabled={isLoading}>
                     Next
                   </Button>
                 ) : (
-                  <Button
-                    type="submit"
-                    className={`${
-                      isLoading
-                        ? "opacity-50 cursor-not-allowed"
-                        : "cursor-pointer"
-                    } transition transition-background w-full bg-(--greenish-color) hover:bg-(--dark-green-color) text-(--white-fff) font-normal p-2 rounded-md`}
-                    disabled={isLoading}
-                  >
+                  <Button type="submit" className={`${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} transition transition-background w-full bg-(--greenish-color) hover:bg-(--dark-green-color) text-(--white-fff) font-normal p-2 rounded-md`} disabled={isLoading}>
                     {isLoading ? (
                       <div className="flex justify-center items-center gap-2">
                         <FaSpinner className="h-4 w-4 animate-spin" />
@@ -504,10 +409,7 @@ export function SigninForm() {
             <div className="mt-6 text-center">
               <p className="text-sm">
                 Don't have an account?{" "}
-                <Link
-                  href="/auth/register"
-                  className="text-blue-500 hover:underline"
-                >
+                <Link href="/auth/register" className="text-blue-500 hover:underline">
                   Register
                 </Link>
               </p>
