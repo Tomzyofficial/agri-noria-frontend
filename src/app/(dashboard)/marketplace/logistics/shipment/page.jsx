@@ -15,13 +15,5 @@ export default async function ShipmentPage() {
     return <Unauthorized />;
   }
 
-  return (
-    <Suspense
-      fallback={
-        <p className="p-6 text-center text-gray-500">Loading shipments...</p>
-      }
-    >
-      <LogisticsShipmentsList />
-    </Suspense>
-  );
+  return <LogisticsShipmentsList />;
 }

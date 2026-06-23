@@ -1,33 +1,14 @@
 @import "tailwindcss";
+@import "react-phone-number-input/style.css";
 
 /* Custom Font Declarations */
 /* @font-face {
   font-family: "Epunda Sans";
-  src: url("/frontend/public/fonts/web_font/Mozilla_Text/MozillaText-VariableFont_wght.ttf")
-    format("truetype-variations");
-  src: url("../../../frontend/public/fonts/web_font/Epunda_Sans/EpundaSans-Italic-VariableFont_wght.ttf")
-    format("truetype-variations");
+  src: url("/fonts/web_font/Epunda_Sans/EpundaSans-Italic-VariableFont_wght.ttf") format("truetype");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
-}
-@font-face {
-  font-family: "Epunda Sans";
-  src: url("/frontend/public/fonts/web_font/Mozilla_Text/MozillaText-VariableFont_wght_ital.ttf")
-  format("truetype-variations");
-  font-weight: 100 900;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Mozilla Text";
-  src: url("/frontend/public/fonts/web_font/Mozilla_Text/MozillaText-VariableFont_wght.ttf")
-    format("truetype-variations");
-  font-weight: 200 700;
-  font-style: normal;
-  font-display: swap;
-}  */
+} */
 
 :root {
   --background: #f2f2f2;
@@ -226,9 +207,7 @@ header.sticky {
     transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-form input:not([type="checkbox"]):not(.bookings),
-select:not(.bookings),
-textarea {
+form:not(.job-search-form) :is(input:not([type="checkbox"]), select:not(.bookings), textarea) {
   @apply border-1 border-transparent ring ring-(--greenish-color) dark:ring-gray-700 outline-none bg-(--gray-color) dark:bg-(--background) focus:border-(--dark-green-color) dark:focus:border-gray-500 rounded p-2 w-full;
   resize: none;
 }

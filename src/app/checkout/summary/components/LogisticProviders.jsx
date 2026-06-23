@@ -19,9 +19,7 @@ export function LogisticsProviders({ address, onLogisticsSelect }) {
     setError(null);
 
     try {
-      const response = await fetch(
-        `/api/proxy/vendor/logistics/near-buyer?address=${encodeURIComponent(address)}`,
-      );
+      const response = await fetch(`/api/proxy/vendor/logistics/near-buyer?address=${encodeURIComponent(address)}`);
 
       const data = await response.json();
 
@@ -29,12 +27,13 @@ export function LogisticsProviders({ address, onLogisticsSelect }) {
         throw new Error(data.error || "Failed to fetch logistics providers");
       }
 
-      const providers = data.providers || data.data || data || [];
+      const providers = data.data || [];
       setLogisticsOptions(Array.isArray(providers) ? providers : []);
     } catch (err) {
       console.error("Logistics fetch error:", err);
       setError(err.message || "Could not load delivery options");
       setLogisticsOptions([]);
+      return;
     } finally {
       setLoading(false);
     }
@@ -58,9 +57,7 @@ export function LogisticsProviders({ address, onLogisticsSelect }) {
         <div className="mt-6">
           <div className="flex items-center gap-2 mb-4">
             <Truck className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-            <h3 className="font-semibold text-lg">
-              Available Logistics Partners
-            </h3>
+            <h3 className="font-semibold text-lg">Available Logistics Partners</h3>
           </div>
 
           {loading && (
@@ -70,31 +67,16 @@ export function LogisticsProviders({ address, onLogisticsSelect }) {
             </div>
           )}
 
-          {error && (
-            <div className="text-red-600 bg-red-50 dark:bg-red-950 p-4 rounded-lg">
-              {error}
-            </div>
-          )}
+          {error && <div className="text-red-600 bg-red-50 dark:bg-red-950 p-4 rounded-lg">{error}</div>}
 
           {!loading && logisticsOptions.length > 0 && (
             <div className="space-y-4">
               {logisticsOptions.map((option) => (
-                <div
-                  key={option.id}
-                  onClick={() => handleSelect(option)}
-                  className={`border-2 rounded-xl p-5 cursor-pointer transition-all hover:shadow-md ${
-                    selectedLogistics?.id === option.id
-                      ? "border-blue-600 bg-blue-50 dark:bg-blue-950"
-                      : "border-gray-200 hover:border-gray-300 dark:border-gray-700"
-                  }`}
-                >
+                <div key={option.id} onClick={() => handleSelect(option)} className={`border-2 rounded-xl p-5 cursor-pointer transition-all hover:shadow-md ${selectedLogistics?.id === option.id ? "border-blue-600 bg-blue-50 dark:bg-blue-950" : "border-gray-200 hover:border-gray-300 dark:border-gray-700"}`}>
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-semibold text-lg">
-                          {option?.title?.charAt(0).toUpperCase() +
-                            option?.title?.slice(1)}
-                        </h4>
+                        <h4 className="font-semibold text-lg">{option?.title?.charAt(0).toUpperCase() + option?.title?.slice(1)}</h4>
                         <div className="flex items-center text-yellow-500">
                           {/* <span>{option.rating || "4.5"}</span> */}
                           {/* <span className="ml-1">★</span> */}
@@ -104,8 +86,7 @@ export function LogisticsProviders({ address, onLogisticsSelect }) {
                       <div className="mt-3 flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
                         <div className="flex items-center gap-1">
                           <Truck className="w-4 h-4" />
-                          {option?.vehicle_type.charAt(0).toUpperCase() +
-                            option?.vehicle_type.slice(1)}
+                          {option?.vehicle_type.charAt(0).toUpperCase() + option?.vehicle_type.slice(1)}
                         </div>
                         <div className="flex items-center gap-1">
                           <span>Cargo type:</span>
@@ -115,11 +96,7 @@ export function LogisticsProviders({ address, onLogisticsSelect }) {
                     </div>
 
                     <div className="text-right ml-6">
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                        {option.rate_amount
-                          ? `₦${Number(option.rate_amount).toLocaleString()}`
-                          : "—"}
-                      </p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{option.rate_amount ? `₦${Number(option.rate_amount).toLocaleString()}` : "—"}</p>
                       <p className="text-xs text-gray-500">Delivery Fee</p>
                     </div>
                   </div>
@@ -127,14 +104,6 @@ export function LogisticsProviders({ address, onLogisticsSelect }) {
               ))}
             </div>
           )}
-
-          {!loading &&
-            logisticsOptions.length === 0 &&
-            address?.trim().length > 3 && (
-              <p className="text-gray-500 italic py-6">
-                No logistics partners found for this address.
-              </p>
-            )}
         </div>
       )}
     </div>

@@ -8,6 +8,9 @@ import { LogOut, X, Menu, LayoutDashboard, Package2, UserPen, CreditCard, HandCo
 import { toast } from "react-toastify";
 import { VerifyNotiBanner } from "@/app/(dashboard)/dashboard/components/VerifyNotiBanner";
 import { signoutBridge } from "@/actions/authActions";
+import { IoBriefcaseOutline } from "react-icons/io5";
+import { GiShoppingCart } from "react-icons/gi";
+import { IoSchoolOutline } from "react-icons/io5";
 
 export default function DashboardLayout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -102,28 +105,33 @@ export default function DashboardLayout({ children }) {
       icon: <Package2 className="w-4 h-4" />,
     },
     {
+      label: "Orders",
+      href: "/marketplace/store/orders",
+      icon: <GiShoppingCart className="w-4 h-4" />,
+    },
+    {
       label: "Enrollments",
       href: "/marketplace/store/enrollments",
-      icon: <Package2 className="w-4 h-4" />,
+      icon: <IoSchoolOutline className="w-4 h-4" />,
     },
     {
       label: "Profile",
       href: "/marketplace/store/profile",
       icon: <UserPen className="w-4 h-4" />,
     },
+    //  {
+    //    label: "Loan Management",
+    //    href: "/marketplace/store/loan",
+    //    icon: <HandCoins className="w-4 h-4" />,
+    //  },
     {
-      label: "Loan Management",
-      href: "/marketplace/store/loan",
-      icon: <HandCoins className="w-4 h-4" />,
+      label: "Job Management",
+      href: "/marketplace/store/job-management",
+      icon: <IoBriefcaseOutline className="w-4 h-4" />,
     },
     {
       label: "Billing",
       href: "/marketplace/store/billing",
-      icon: <CreditCard className="w-4 h-4" />,
-    },
-    {
-      label: "Job Management",
-      href: "/marketplace/store/jobs",
       icon: <CreditCard className="w-4 h-4" />,
     },
   ];
@@ -133,7 +141,7 @@ export default function DashboardLayout({ children }) {
   };
 
   return (
-    <div className="flex min-h-screen bg-(--background)">
+    <div className="flex">
       {/* Sidebar */}
       <aside>
         {/* Sidebar menu toggler */}

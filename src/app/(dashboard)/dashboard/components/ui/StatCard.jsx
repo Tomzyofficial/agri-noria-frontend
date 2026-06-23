@@ -1,7 +1,7 @@
 import { CardSkeleton } from "@/components/ui/CardSkeleton";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/Card";
 
-export const StatCard = ({ isLoading, error, title, value, icon: Icon }) => {
+export const StatCard = ({ isLoading, error, title, value, subValue = null, icon: Icon }) => {
   return (
     <div>
       {isLoading ? (
@@ -12,10 +12,11 @@ export const StatCard = ({ isLoading, error, title, value, icon: Icon }) => {
         <Card className="px-4 py-6 text-start">
           <CardHeader className="flex items-center justify-between pb-2">
             <CardTitle className="text-sm font-normal">{title}</CardTitle>
-            <Icon className="h-4 w-4" />
+            <Icon className="h-6 w-6 text-neutral-600" />
           </CardHeader>
-          <CardContent>
-            <span className="font-normal text-md">{value}</span>
+          <CardContent className="text-center space-y-2">
+            <p className="font-normal text-md">{value}</p>
+            <p className="text-sm">{subValue ? subValue : null}</p>
           </CardContent>
         </Card>
       )}

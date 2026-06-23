@@ -3,17 +3,7 @@ import Link from "next/link";
 import { formatPrice } from "@/utils/formatPrice";
 import { Shield } from "lucide-react";
 
-export function CheckoutSummary({
-  itemsCount,
-  discount,
-  subTotal,
-  deliveryFee = 0,
-  totalAmount,
-  hasLogisticsSelected = false,
-  formData,
-  cart,
-  isProcessing = false,
-}) {
+export function CheckoutSummary({ itemsCount, discount, subTotal, deliveryFee = 0, totalAmount, hasLogisticsSelected = false, formData, cart, isProcessing = false }) {
   // Get currency and country from first cart item for formatting
   const firstItem = cart?.[0];
   const countryCode = firstItem?.country_code;
@@ -37,43 +27,29 @@ export function CheckoutSummary({
   return (
     <div className="lg:sticky lg:top-18 w-full lg:w-2/5 h-fit">
       <div className="bg-(--white-fff) dark:bg-(--card-dark) rounded-md shadow-sm p-6">
-        <h3 className="font-semibold uppercase text-(--foreground) mb-5">
-          order summary
-        </h3>
+        <h3 className="font-semibold uppercase text-(--foreground) mb-5">order summary</h3>
 
         <div className="flex justify-between py-3 border-b border-gray-200 text-sm">
           <span className="text-gray-600">{`Item's total (${itemsCount})`}</span>
-          <span className="text-(--foreground) font-medium">
-            {formatPrice(subTotal, countryCode, currency)}
-          </span>
+          <span className="text-(--foreground) font-medium">{formatPrice(subTotal, countryCode, currency)}</span>
         </div>
 
         <div className="flex justify-between py-3 border-b border-gray-200 text-sm">
           <span className="text-gray-600">Delivery fees</span>
-          <span className="text-(--foreground) font-medium">
-            {hasLogisticsSelected
-              ? formatPrice(deliveryFee, countryCode, currency)
-              : "Select a logistics partner"}
-          </span>
+          <span className="text-(--foreground) font-medium">{hasLogisticsSelected ? formatPrice(deliveryFee, countryCode, currency) : "Select a logistics partner"}</span>
         </div>
 
         <div className="flex justify-between py-3 border-b border-gray-200 text-sm">
           <span className="text-gray-600">Discount</span>
           <div>
-            <span className="text-(--foreground) font-medium pr-1">
-              {formatPrice(discount, countryCode, currency)}
-            </span>
-            {discount > 0 && (
-              <span className="text-(--foreground) font-medium">(Applied)</span>
-            )}
+            <span className="text-(--foreground) font-medium pr-1">{discount > 0 ? formatPrice(discount, countryCode, currency) : "N/A"}</span>
+            {discount > 0 && <span className="text-(--foreground) font-medium">(Applied)</span>}
           </div>
         </div>
 
         <div className="flex justify-between pt-4 text-lg font-semibold">
           <span className="text-(--foreground)">Total</span>
-          <span className="text-(--foreground)">
-            {formatPrice(totalAmount, countryCode, currency)}
-          </span>
+          <span className="text-(--foreground)">{formatPrice(totalAmount, countryCode, currency)}</span>
         </div>
 
         {/* Escrow Badge */}
@@ -82,29 +58,17 @@ export function CheckoutSummary({
             <Shield className="w-5 h-5 text-green-600 mr-2 mt-0.5" />
             <div>
               <p className="font-medium text-green-900">Escrow Protection</p>
-              <p className="text-sm text-green-700 mt-1">
-                Your payment is held securely until you confirm delivery
-              </p>
+              <p className="text-sm text-green-700 mt-1">Your payment is held securely until you confirm delivery</p>
             </div>
           </div>
         </div>
 
         {/* Confirm Button */}
-        <Button
-          disabled={!formData.accepted || isProcessing}
-          type="submit"
-          className={`${
-            formData.accepted && !isProcessing
-              ? "bg-(--greenish-color) cursor-pointer hover:bg-(--dark-green-color) transition transition-background"
-              : "bg-[#C0C0C0] cursor-not-allowed"
-          } w-full py-4 text-white rounded font-semibold text-[15px] mb-3`}
-        >
+        <Button disabled={!formData.accepted || isProcessing} type="submit" className={`${formData.accepted && !isProcessing ? "bg-(--greenish-color) cursor-pointer hover:bg-(--dark-green-color) transition transition-background" : "bg-[#C0C0C0] cursor-not-allowed"} w-full py-4 text-white rounded font-semibold text-[15px] mb-3`}>
           {isProcessing ? "Processing..." : "Confirm order"}
         </Button>
 
-        <div className="text-center text-xs text-gray-500 mb-4">
-          (Complete the steps in order to proceed)
-        </div>
+        <div className="text-center text-xs text-gray-500 mb-4">(Complete the steps in order to proceed)</div>
 
         <div className="text-center text-xs text-gray-600">
           By proceeding, you are automatically accepting the{" "}

@@ -2,8 +2,8 @@
   "compilerOptions": {
     "strict": true,
     "baseUrl": ".",
-    "ignoreDeprecations": "6.0",
-    //  "moduleResolution": "bundler",
+    //  "ignoreDeprecations": "6.0",
+    "moduleResolution": "bundler",
     "module": "esnext",
     "paths": { "@/*": ["src/*"] }
   }

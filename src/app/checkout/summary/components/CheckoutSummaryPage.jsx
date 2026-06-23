@@ -38,12 +38,8 @@ export function CheckoutSummaryPage({ buyer, cart, vendors }) {
   }));
 
   // Calculate totals
-  const itemsCount = cart
-    ? cart.reduce((sum, item) => sum + item.quantity || 1, 0)
-    : 0;
-  const subtotal = cart
-    ? cart.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0)
-    : 0;
+  const itemsCount = cart ? cart.reduce((sum, item) => sum + item.quantity || 1, 0) : 0;
+  const subtotal = cart ? cart.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0) : 0;
 
   // Calculate discount - only apply if buyer meets minimum quantity requirements
   const discount = cart
@@ -59,10 +55,7 @@ export function CheckoutSummaryPage({ buyer, cart, vendors }) {
         return totalDiscount;
       }, 0)
     : 0;
-  const { deliveryFee, totalAmount } = useMemo(
-    () => getFeesFromLogistics(selectedLogistics, subtotal, discount),
-    [selectedLogistics, subtotal, discount],
-  );
+  const { deliveryFee, totalAmount } = useMemo(() => getFeesFromLogistics(selectedLogistics, subtotal, discount), [selectedLogistics, subtotal, discount]);
 
   const [formData, setFormData] = useState({
     fname: buyer?.name?.split(" ")[0] || "",
@@ -86,18 +79,14 @@ export function CheckoutSummaryPage({ buyer, cart, vendors }) {
 
   // Verify payment after Paystack redirect
   useEffect(() => {
-    const reference =
-      searchParams.get("reference") || searchParams.get("trxref");
+    const reference = searchParams.get("reference") || searchParams.get("trxref");
 
     if (!reference) return;
 
     const verifyPayment = async () => {
       setIsProcessing(true);
       try {
-        const verifyResponse = await fetch(
-          `/api/proxy/buyer/payment/verify?ref=${encodeURIComponent(reference)}`,
-          { method: "GET" },
-        );
+        const verifyResponse = await fetch(`/api/proxy/buyer/payment/verify?ref=${encodeURIComponent(reference)}`, { method: "GET" });
         const verifyData = await verifyResponse.json();
 
         if (!verifyResponse.ok || !verifyData.success) {
@@ -156,29 +145,25 @@ export function CheckoutSummaryPage({ buyer, cart, vendors }) {
       const orderData = await orderResponse.json();
 
       if (!orderResponse.ok || !orderData.success) {
-        throw new Error(
-          orderData.error || orderData.message || "Failed to place order",
-        );
+        throw new Error(orderData.error || orderData.message || "Failed to place order");
       }
 
       const orderAmount = Number(orderData.data.total_amount);
-      const paymentResponse = await fetch(
-        "/api/proxy/buyer/payment/initialize",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            order_id: orderData.data.id,
-            amount: orderAmount,
-            email: formData.email,
-            firstname: formData.fname,
-            lastname: formData.lname,
-            seller_id: formData.vendor.seller_id,
-          }),
+
+      const paymentResponse = await fetch("/api/proxy/buyer/payment/initialize", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          order_id: orderData.data.id,
+          amount: orderAmount,
+          email: formData.email,
+          firstname: formData.fname,
+          lastname: formData.lname,
+          seller_id: formData.vendor.seller_id,
+        }),
+      });
 
       const paymentData = await paymentResponse.json();
 
@@ -197,18 +182,10 @@ export function CheckoutSummaryPage({ buyer, cart, vendors }) {
   return (
     <main>
       {/* Main Content */}
-      <form
-        noValidate
-        onSubmit={handlePlaceOrder}
-        className="max-w-[1400px] m-4 md:m-10 mb-50 flex flex-col lg:flex-row gap-5"
-      >
+      <form noValidate onSubmit={handlePlaceOrder} className="max-w-[1400px] m-4 md:m-10 mb-50 flex flex-col lg:flex-row gap-5">
         {/* Left Section */}
         <div className="flex flex-col gap-5 w-full lg:w-2/3">
-          <CustomerAddress
-            formData={formData}
-            handleInputChange={handleInputChange}
-            onLogisticsSelect={setSelectedLogistics}
-          />
+          <CustomerAddress formData={formData} handleInputChange={handleInputChange} onLogisticsSelect={setSelectedLogistics} />
 
           {/* <PaymentMethod
             formData={formData}
@@ -221,17 +198,7 @@ export function CheckoutSummaryPage({ buyer, cart, vendors }) {
         </div>
 
         {/* Right Section - Order Summary */}
-        <CheckoutSummary
-          itemsCount={itemsCount}
-          discount={discount}
-          subTotal={subtotal}
-          deliveryFee={deliveryFee}
-          totalAmount={totalAmount}
-          hasLogisticsSelected={Boolean(selectedLogistics)}
-          formData={formData}
-          cart={cart}
-          isProcessing={isProcessing}
-        />
+        <CheckoutSummary itemsCount={itemsCount} discount={discount} subTotal={subtotal} deliveryFee={deliveryFee} totalAmount={totalAmount} hasLogisticsSelected={Boolean(selectedLogistics)} formData={formData} cart={cart} isProcessing={isProcessing} />
       </form>
     </main>
   );

@@ -8,24 +8,12 @@ export const metadata = {
   description: "Orders assigned to your logistics vehicles",
 };
 
-export default async function LogisticsOrdersPage() {
+export default async function OrdersPage() {
   const session = await verifyVendorSession();
 
-  if (
-    !session?.authenticated ||
-    session.role !== "logistics" ||
-    session.workspace !== "marketplace"
-  ) {
+  if (!session?.authenticated || session.role !== "logistics" || session.workspace !== "marketplace") {
     return <Unauthorized />;
   }
 
-  return (
-    <Suspense
-      fallback={
-        <p className="p-6 text-center text-gray-500">Loading orders...</p>
-      }
-    >
-      <LogisticsOrdersList />
-    </Suspense>
-  );
+  return <LogisticsOrdersList />;
 }

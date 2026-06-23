@@ -106,11 +106,7 @@ export default function StorageForm({ onClose, targetId, quoteType }) {
   return (
     <div className="p-3">
       <h3 className="sm:text-lg md:text-2xl font-semibold md:font-bold text-gray-900 mb-4 md:mb-6">Request Storage Quote</h3>
-      {/* <p className="text-gray-600 mb-6">
-        Fill in your details to request a storage quote for {storageName}.
-      </p> */}
-
-      <form onSubmit={handleSubmit} className="" noValidate>
+      <form onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate>
         {/* CONTACT INFORMATION */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:space-y-2">
           <div>
@@ -123,7 +119,7 @@ export default function StorageForm({ onClose, targetId, quoteType }) {
             </div>
           </div>
 
-          <div className="space-y-1">
+          <div>
             <Label htmlFor="phone">Phone Number</Label>
             <div className="flex items-center">
               {/* <div className="pointer-events-none p-3 bg-background ring ring-(--greenish-color) dark:ring-gray-700 rounded-l">

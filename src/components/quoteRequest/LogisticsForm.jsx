@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Calendar, Clock, User, Mail, Phone, CheckCircle } from "lucide-react";
+import { Calendar, User, CheckCircle } from "lucide-react";
 import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";

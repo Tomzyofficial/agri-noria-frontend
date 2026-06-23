@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, X, Menu, CreditCard, UserPen, ShoppingCart, Briefcase, BarChart3, LayoutDashboard, Settings } from "lucide-react";
+import { LogOut, X, Menu, CreditCard, UserPen, ShoppingCart, BarChart3, LayoutDashboard, Settings } from "lucide-react";
 import { toast } from "react-toastify";
+import { IoBriefcaseOutline } from "react-icons/io5";
 import { VerifyNotiBanner } from "@/app/(dashboard)/dashboard/components/VerifyNotiBanner";
 import { signoutBridge } from "@/actions/authActions";
 
@@ -104,12 +105,17 @@ export default function DashboardLayout({ children }) {
     {
       label: "Portfolio",
       href: "/marketplace/farm-development/portfolio",
-      icon: Briefcase,
+      icon: IoBriefcaseOutline,
     },
     {
       label: "Profile",
       href: "/marketplace/farm-development/profile",
       icon: UserPen,
+    },
+    {
+      label: "Job Management",
+      href: "/marketplace/farm-development/job-management",
+      icon: IoBriefcaseOutline,
     },
     {
       label: "Billing",
@@ -123,7 +129,7 @@ export default function DashboardLayout({ children }) {
   };
 
   return (
-    <div className="flex min-h-screen bg-(--background)">
+    <div className="flex">
       {/* Sidebar */}
       <aside>
         {/* Sidebar menu toggler */}
