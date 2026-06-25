@@ -57,30 +57,38 @@ const marketplaceRoleRoutes = {
 };
 
 export default async function DashboardRouterPage() {
-  const session = await verifyVendorSession();
+  try {
+    const session = await verifyVendorSession();
 
-  if (!session?.authenticated) {
+    if (!session?.authenticated) {
+      redirect("/auth/signin");
+    }
+
+    const workspace = session.workspace?.toLowerCase();
+    const role = session.role?.toLowerCase() || session.role?.toLowerCase();
+
+    if (workspace === "marketplace") {
+      redirect(marketplaceRoleRoutes[role] || "/marketplace/store");
+    }
+
+    // Ecosystem farmers who haven't completed onboarding go directly to onboarding
+    if (
+      workspace === "ecosystem" &&
+      role === "farmer" &&
+      session.onboarding_status !== "completed" &&
+      session.onboarding_status !== "verified" &&
+      !(session.onboarding_level >= 3)
+    ) {
+      redirect("/ecosystem/farmer/onboarding");
+    }
+
+    redirect(ecosystemRoleRoutes[role] || "/ecosystem");
+  } catch (err) {
+    // Re-throw Next.js redirect errors (they use throw internally)
+    if (err?.digest?.startsWith("NEXT_REDIRECT")) {
+      throw err;
+    }
     redirect("/auth/signin");
   }
-
-  const workspace = session.workspace?.toLowerCase();
-  const role = session.role?.toLowerCase() || session.role?.toLowerCase();
-
-  if (workspace === "marketplace") {
-    redirect(marketplaceRoleRoutes[role] || "/marketplace/store");
-  }
-
-  // Ecosystem farmers who haven't completed onboarding go directly to onboarding
-  if (
-    workspace === "ecosystem" &&
-    role === "farmer" &&
-    session.onboarding_status !== "completed" &&
-    session.onboarding_status !== "verified" &&
-    !(session.onboarding_level >= 3)
-  ) {
-    redirect("/ecosystem/farmer/onboarding");
-  }
-
-  redirect(ecosystemRoleRoutes[role] || "/ecosystem");
 }
  */
