@@ -42,7 +42,7 @@ export default function ClusterChat({ clusterId }) {
       initChat();
 
       // Setup Socket.io connection
-      const socketInstance = io(process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080");
+      const socketInstance = io(process.env.NEXT_PUBLIC_BACKEND_URL || "https://agri-noria-backend.onrender.com");
       setSocket(socketInstance);
 
       socketInstance.on("connect", () => {
