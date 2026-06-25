@@ -15,8 +15,10 @@ export default function OrdersPage() {
 }
 
 function OrdersContent() {
-   const { loading, buyerOrders, payForOrder, verifyOrderPayment } = useBuyerData();
+   const { loading, buyerOrders, forwardContracts, payForOrder, verifyOrderPayment } = useBuyerData();
    const [filteredOrders, setFilteredOrders] = useState([]);
+   const [filteredContracts, setFilteredContracts] = useState([]);
+   const [activeTab, setActiveTab] = useState("marketplace");
    const [searchTerm, setSearchTerm] = useState("");
    const [statusFilter, setStatusFilter] = useState("");
    const searchParams = useSearchParams();
@@ -35,7 +37,8 @@ function OrdersContent() {
 
    useEffect(() => {
       setFilteredOrders(buyerOrders || []);
-   }, [buyerOrders]);
+      setFilteredContracts(forwardContracts || []);
+   }, [buyerOrders, forwardContracts]);
 
    useEffect(() => {
       let filtered = buyerOrders || [];
@@ -50,9 +53,14 @@ function OrdersContent() {
       if (statusFilter) {
          filtered = filtered.filter((order) => order.status.toUpperCase() === statusFilter);
       }
-
       setFilteredOrders(filtered);
-   }, [searchTerm, statusFilter, buyerOrders]);
+
+      let filteredC = forwardContracts || [];
+      if (searchTerm) {
+         filteredC = filteredC.filter(c => c.commodity?.toLowerCase().includes(searchTerm.toLowerCase()));
+      }
+      setFilteredContracts(filteredC);
+   }, [searchTerm, statusFilter, buyerOrders, forwardContracts]);
 
    return (
       <div className="space-y-8">
@@ -86,26 +94,59 @@ function OrdersContent() {
             </div>
          </div>
 
+         {/* Tabs */}
+         <div className="flex gap-4 border-b border-gray-100 dark:border-gray-800 pb-1">
+            <button
+               onClick={() => setActiveTab("marketplace")}
+               className={`pb-4 px-2 font-black text-sm uppercase tracking-widest transition-all ${activeTab === "marketplace" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-gray-400 hover:text-gray-600"}`}
+            >
+               Marketplace Orders
+            </button>
+            <button
+               onClick={() => setActiveTab("pre-harvest")}
+               className={`pb-4 px-2 font-black text-sm uppercase tracking-widest transition-all ${activeTab === "pre-harvest" ? "text-amber-600 border-b-2 border-amber-600" : "text-gray-400 hover:text-gray-600"}`}
+            >
+               Pre-Harvest Contracts
+            </button>
+         </div>
+
          <Card className="border-none shadow-2xl bg-white dark:bg-gray-950 rounded-[2.5rem] overflow-hidden">
             <CardHeader className="p-10 border-b border-gray-50 dark:border-gray-900">
                <CardTitle className="text-xl font-black flex items-center gap-3">
-                  <ShoppingCart className="text-indigo-600" /> Order History ({filteredOrders.length})
+                  <ShoppingCart className={activeTab === "marketplace" ? "text-indigo-600" : "text-amber-600"} /> 
+                  {activeTab === "marketplace" ? "Marketplace Orders" : "Forward Contracts"} 
+                  ({activeTab === "marketplace" ? filteredOrders.length : filteredContracts.length})
                </CardTitle>
             </CardHeader>
             <CardContent className="p-10">
                {loading ? (
                   <div className="text-center py-20 animate-pulse font-black text-gray-300">Loading Orders...</div>
-               ) : filteredOrders.length > 0 ? (
-                  <div className="space-y-4">
-                     {filteredOrders.map((order) => (
-                        <OrderRow key={order.id} order={order} onPay={payForOrder} />
-                     ))}
-                  </div>
+               ) : activeTab === "marketplace" ? (
+                  filteredOrders.length > 0 ? (
+                     <div className="space-y-4">
+                        {filteredOrders.map((order) => (
+                           <OrderRow key={order.id} order={order} onPay={payForOrder} />
+                        ))}
+                     </div>
+                  ) : (
+                     <div className="text-center py-20 bg-gray-50 dark:bg-gray-900 rounded-3xl border-2 border-dashed border-gray-100 dark:border-gray-900">
+                        <Package className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                        <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No marketplace orders found</p>
+                     </div>
+                  )
                ) : (
-                  <div className="text-center py-20 bg-gray-50 dark:bg-gray-900 rounded-3xl border-2 border-dashed border-gray-100 dark:border-gray-900">
-                     <Package className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-                     <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No matching orders found</p>
-                  </div>
+                  filteredContracts.length > 0 ? (
+                     <div className="space-y-4">
+                        {filteredContracts.map((contract) => (
+                           <ContractRow key={contract.id} contract={contract} />
+                        ))}
+                     </div>
+                  ) : (
+                     <div className="text-center py-20 bg-gray-50 dark:bg-gray-900 rounded-3xl border-2 border-dashed border-gray-100 dark:border-gray-900">
+                        <Package className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                        <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No forward contracts found</p>
+                     </div>
+                  )
                )}
             </CardContent>
          </Card>
@@ -193,6 +234,37 @@ function OrderRow({ order, onPay }) {
                   Awaiting finance confirmation
                </p>
             )}
+         </div>
+      </div>
+   );
+}
+
+function ContractRow({ contract }) {
+   return (
+      <div className="p-6 bg-gray-50/50 dark:bg-gray-900/30 rounded-3xl border border-gray-100 dark:border-gray-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 hover:shadow-lg transition-all group">
+         <div className="flex items-center gap-6">
+            <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center shadow-sm group-hover:bg-amber-600 group-hover:text-white transition-colors">
+               <Package size={24} />
+            </div>
+            <div>
+               <h3 className="text-lg font-black">{contract.commodity || "Pre-Harvest Contract"}</h3>
+               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Contract ID: {contract.id.split('-')[0]} • {contract.quantity_tons} Tons</p>
+               {contract.escrow_status && (
+                  <span className={`inline-flex items-center gap-1 mt-2 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${contract.escrow_status === 'pending_deposit' ? 'text-amber-600 bg-amber-50 dark:bg-amber-900/20' : 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20'}`}>
+                     <ShieldCheck size={10} /> {contract.escrow_status.replaceAll("_", " ")}
+                  </span>
+               )}
+            </div>
+         </div>
+         <div className="flex flex-col items-end shrink-0">
+            <p className="text-2xl font-black tracking-tighter">₦{parseFloat(contract.total_price).toLocaleString()}</p>
+            <div className="flex items-center gap-3 mt-2">
+               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{new Date(contract.created_at).toLocaleDateString()}</span>
+               <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${contract.contract_status === 'pending_approval' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                  {contract.contract_status === 'pending_approval' ? <Clock className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
+                  {contract.contract_status.replaceAll("_", " ")}
+               </span>
+            </div>
          </div>
       </div>
    );

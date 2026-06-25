@@ -25,7 +25,6 @@ const workspaceRoleCategories = {
         "NGO",
         "DFI",
         "Commodity Board",
-        "Finance",
       ],
     },
     {
@@ -70,10 +69,7 @@ const workspaceRoleCategories = {
       name: "Aggregator",
       roles: ["Aggregator"],
     },
-    {
-      name: "Sales & Distribution",
-      roles: ["Sales Manager", "Logistics Coordinator", "Warehouse Supervisor"],
-    },
+
     {
       name: "Intelligence & Monitoring",
       roles: ["Data Analyst", "Satellite Monitor", "Field Auditor"],
@@ -439,9 +435,11 @@ export function RegisterForm() {
       console.log(session);
 
       if (session.authenticated) {
-        const { workspace, role } = session;
+        const { workspace, role, onboarding_status } = session;
         if (workspace === "ecosystem" && role?.toLowerCase() === "farmer") {
           router.push("/ecosystem/farmer/onboarding");
+        } else if (onboarding_status === "pending") {
+          router.push("/onboarding");
         } else if (workspace === "ecosystem") {
           router.push("/dashboard");
         } else {

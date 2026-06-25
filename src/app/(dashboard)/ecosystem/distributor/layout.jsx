@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LogOut, X, Menu, LayoutDashboard, Truck, Globe } from "lucide-react";
+import { LogOut, X, Menu, LayoutDashboard, Truck, Globe, Settings } from "lucide-react";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
 import { FaChartLine, FaWallet } from "react-icons/fa6";
@@ -48,6 +48,11 @@ export default function DistributorLayout({ children }) {
       label: "Analytics",
       href: "/ecosystem/distributor/analytics",
       icon: <FaChartLine className="w-4 h-4" />,
+    },
+    {
+      label: "Settings",
+      href: "/ecosystem/distributor/settings",
+      icon: <Settings className="w-4 h-4" />,
     },
   ];
 

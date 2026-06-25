@@ -13,18 +13,22 @@ export default function StorageDashboard() {
     expected_arrivals: 0
   });
   const [tickets, setTickets] = useState([]);
+  const [preHarvestListings, setPreHarvestListings] = useState([]);
 
   const fetchData = async () => {
     try {
-      const [statsRes, ticketsRes] = await Promise.all([
+      const [statsRes, ticketsRes, preHarvestRes] = await Promise.all([
         fetch("/api/proxy/vendor/commodity-operations/storage/dashboard"),
-        fetch("/api/proxy/vendor/commodity-operations/storage/tickets")
+        fetch("/api/proxy/vendor/commodity-operations/storage/tickets"),
+        fetch("/api/proxy/pipeline/preharvest/opportunities")
       ]);
       const statsData = await statsRes.json();
       const ticketsData = await ticketsRes.json();
+      const preHarvestData = await preHarvestRes.json();
 
       if (statsData.success) setStats(statsData.data);
       if (ticketsData.success) setTickets(ticketsData.data);
+      if (preHarvestData.success) setPreHarvestListings(preHarvestData.data);
     } catch (error) {
       console.error("Error fetching storage data:", error);
     } finally {
@@ -174,6 +178,50 @@ export default function StorageDashboard() {
                       Verify & Accept Batch
                     </button>
                   )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        </div>
+
+      <div className="bg-white dark:bg-(--background) border rounded-xl overflow-hidden">
+        <div className="px-6 py-4 border-b bg-amber-50 dark:bg-amber-900/10">
+          <h2 className="text-lg font-bold text-amber-800 dark:text-amber-400 flex items-center gap-2">
+            Expected Inflow Forecast (Pre-Harvest)
+          </h2>
+          <p className="text-xs text-amber-600 mt-1 uppercase tracking-widest font-black">Upcoming harvests tracked by clusters</p>
+        </div>
+        
+        {preHarvestListings.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500">No expected inflow forecasts available.</p>
+          </div>
+        ) : (
+          <div className="divide-y">
+            {preHarvestListings.map((listing) => (
+              <div key={listing.id} className="p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 hover:bg-gray-50 dark:hover:bg-gray-900 transition">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-lg">{listing.commodity}</span>
+                    <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-bold uppercase">
+                      Forecast
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 font-medium">
+                    Supervisor: {listing.supervisor_name}
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-8 text-sm">
+                  <div>
+                    <p className="text-gray-500 uppercase text-xs font-bold mb-1">Expected Vol</p>
+                    <p className="font-semibold text-amber-600">{listing.estimated_yield_tons} MT</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 uppercase text-xs font-bold mb-1">Est. Harvest</p>
+                    <p className="font-semibold">{new Date(listing.expected_harvest_date).toLocaleDateString()}</p>
+                  </div>
                 </div>
               </div>
             ))}

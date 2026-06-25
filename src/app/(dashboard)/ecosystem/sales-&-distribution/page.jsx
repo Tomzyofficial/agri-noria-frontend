@@ -23,6 +23,7 @@ export default function SalesDistributionDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [ecosystemOrders, setEcosystemOrders] = useState([]);
+  const [forwardContracts, setForwardContracts] = useState([]);
   const [distributors, setDistributors] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
 
@@ -154,7 +155,18 @@ export default function SalesDistributionDashboard() {
     };
     fetchStats();
     fetchEcosystemOrders();
+    fetchForwardContracts();
   }, []);
+
+  const fetchForwardContracts = async () => {
+    try {
+      const res = await fetch("/api/proxy/pipeline/forward-contracts/sales");
+      const data = await res.json();
+      if (data.success) setForwardContracts(data.data || []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const fetchEcosystemOrders = async () => {
     setLoadingOrders(true);
@@ -434,6 +446,73 @@ export default function SalesDistributionDashboard() {
             <p className="text-gray-400 mt-2 max-w-sm mx-auto">
               New buyer orders from the marketplace will appear here once they
               secure funding.
+            </p>
+          </Card>
+        )}
+      </div>
+
+      <div className="pt-8 mt-8 border-t border-gray-100 dark:border-gray-800">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+          <div>
+            <h2 className="text-3xl font-black text-(--foreground) tracking-tight flex items-center gap-3">
+              <span className="text-amber-500">
+                <FaBoxOpen />
+              </span>{" "}
+              Pre-Harvest Forward Contracts
+            </h2>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mt-2">
+              Review pre-orders waiting for harvest
+            </p>
+          </div>
+        </div>
+
+        {forwardContracts.length > 0 ? (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {forwardContracts.map((contract, i) => (
+              <Card
+                key={i}
+                className="rounded-[2.5rem] border-2 border-gray-100 dark:border-gray-800 shadow-xl overflow-hidden hover:shadow-2xl hover:border-amber-200 transition-all group bg-white dark:bg-gray-900"
+              >
+                <div className="p-8 pb-6 border-b border-gray-50 dark:border-gray-800 flex justify-between items-start">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">
+                      {contract.commodity}
+                    </h3>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mt-1">
+                      Buyer: {contract.buyer_name}
+                      {contract.buyer_phone && ` • ${contract.buyer_phone}`}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-black text-amber-600">
+                      ₦{parseFloat(contract.total_price || 0).toLocaleString()}
+                    </p>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                      {contract.quantity_tons} Tons Total
+                    </p>
+                  </div>
+                </div>
+                <div className="p-8 pt-6 flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Status</p>
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300 capitalize">{contract.escrow_status.replace('_', ' ')}</p>
+                  </div>
+                  <div className="text-right">
+                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Expected Harvest</p>
+                     <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{new Date(contract.expected_harvest_date).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="rounded-[4rem] border-none shadow-xl bg-white dark:bg-gray-800 p-24 text-center">
+            <FaBoxOpen className="text-6xl text-gray-100 mx-auto mb-8" />
+            <h3 className="text-2xl font-black text-slate-300 uppercase tracking-widest">
+              No Forward Contracts
+            </h3>
+            <p className="text-gray-400 mt-2 max-w-sm mx-auto">
+              No pre-harvest opportunities have been ordered yet.
             </p>
           </Card>
         )}
