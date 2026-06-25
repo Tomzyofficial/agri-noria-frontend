@@ -84,13 +84,17 @@ export default async function middleware(request) {
     // VENDOR PROTECTION
     if (
       pathname.startsWith("/marketplace") ||
-      pathname.startsWith("/ecosystem")
+      pathname.startsWith("/ecosystem") ||
+      pathname.startsWith("/dashboard")
     ) {
       const token = request.cookies.get("vendor-session")?.value;
 
       if (!token) {
         console.log("Middleware: No vendor session token found");
-        return NextResponse.redirect(new URL("/", request.url));
+        const redirectUrl = pathname.startsWith("/dashboard")
+          ? "/auth/signin"
+          : "/";
+        return NextResponse.redirect(new URL(redirectUrl, request.url));
       }
 
       try {
@@ -183,6 +187,7 @@ export const config = {
   matcher: [
     "/marketplace/:path*",
     "/ecosystem/:path*",
+    "/dashboard/:path*",
     "/buyer/:path*",
     "/((?!api|_next/static|_next/image|favicon.ico).*)",
   ],
