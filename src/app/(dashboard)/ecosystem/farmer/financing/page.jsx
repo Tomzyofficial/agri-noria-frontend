@@ -51,7 +51,12 @@ export default function FinancingPage() {
    if (inputRequests.length > 0) {
        // Assuming inputRequests are sorted newest first
        const latest = inputRequests[0];
-       if (latest.status === "approved" && latest.items_status !== "pending") {
+       if (latest.items_status === "confirmed_delivered") {
+           btnState = "confirmed_delivered";
+       } else if (latest.items_status === "delivered") {
+           btnState = "delivered";
+           activeRequest = latest;
+       } else if (latest.status === "approved" && latest.items_status !== "pending") {
            btnState = "completed";
        } else if (latest.status === "items_selected" || latest.items_status === "submitted") {
            btnState = "items_selected";
@@ -96,7 +101,28 @@ export default function FinancingPage() {
                </Button>
             ) : btnState === "completed" ? (
                <Button disabled className="bg-emerald-600 cursor-not-allowed text-white px-10 py-5 rounded-2xl font-black flex items-center gap-3 shadow-xl uppercase tracking-widest text-xs opacity-80">
-                  ✓ Inputs Submitted
+                  ✓ Inputs Distributed
+               </Button>
+            ) : btnState === "delivered" ? (
+               <Button 
+                  onClick={async () => {
+                     try {
+                        const res = await fetch(`/api/proxy/pipeline/inputs/${activeRequest.id}/confirm-delivery`, { method: "PATCH" });
+                        if (res.ok) {
+                           toast.success("Delivery confirmed!");
+                           refreshData();
+                        } else {
+                           toast.error("Failed to confirm delivery");
+                        }
+                     } catch { toast.error("Network error"); }
+                  }}
+                  className="bg-amber-500 hover:bg-amber-600 text-white px-10 py-5 rounded-2xl font-black flex items-center gap-3 shadow-xl uppercase tracking-widest text-xs transition-all hover:scale-105 active:scale-95 animate-pulse"
+               >
+                  ✓ Confirm Delivery
+               </Button>
+            ) : btnState === "confirmed_delivered" ? (
+               <Button disabled className="bg-emerald-600 cursor-not-allowed text-white px-10 py-5 rounded-2xl font-black flex items-center gap-3 shadow-xl uppercase tracking-widest text-xs opacity-80">
+                  ✓ Delivery Confirmed
                </Button>
             ) : (
                <Button 

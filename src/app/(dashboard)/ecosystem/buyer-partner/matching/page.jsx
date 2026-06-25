@@ -14,7 +14,8 @@ const produceIcons = {
 };
 
 export default function MarketMatchingPage() {
-   const { loading, buyerMatches, placeOrder } = useBuyerData();
+   const { loading, buyerMatches, preHarvestOpportunities, createForwardContract, placeOrder } = useBuyerData();
+   const [activeTab, setActiveTab] = useState("inventory");
    const [searchTerm, setSearchTerm] = useState("");
    const [cart, setCart] = useState([]);
    const [showCart, setShowCart] = useState(false);
@@ -23,13 +24,15 @@ export default function MarketMatchingPage() {
 
    // Filter produce based on search
    const filteredProduce = useMemo(() => {
-      if (!searchTerm) return buyerMatches;
+      const sourceList = activeTab === "inventory" ? buyerMatches : preHarvestOpportunities;
+      if (!searchTerm) return sourceList;
       const term = searchTerm.toLowerCase();
-      return buyerMatches.filter(item =>
+      return sourceList.filter(item =>
          item.commodity?.toLowerCase().includes(term) ||
-         item.warehouse_name?.toLowerCase().includes(term)
+         item.warehouse_name?.toLowerCase().includes(term) ||
+         item.supervisor_name?.toLowerCase().includes(term)
       );
-   }, [buyerMatches, searchTerm]);
+   }, [buyerMatches, preHarvestOpportunities, activeTab, searchTerm]);
 
    // Cart helpers
    const addToCart = (item, quantity) => {
@@ -140,7 +143,7 @@ export default function MarketMatchingPage() {
                <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
                <input
                   type="text"
-                  placeholder="Search produce... e.g. Rice, Maize, Tomato"
+                  placeholder={activeTab === "inventory" ? "Search produce... e.g. Rice, Maize, Tomato" : "Search pre-harvest... e.g. Rice, Maize"}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full bg-gray-50 dark:bg-gray-900 border-none pl-12 pr-4 py-4 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -151,11 +154,32 @@ export default function MarketMatchingPage() {
             </button>
          </div>
 
+         {/* Tabs */}
+         <div className="flex items-center gap-4 border-b border-gray-100 dark:border-gray-800 pb-1">
+            <button
+               onClick={() => setActiveTab("inventory")}
+               className={`pb-4 px-2 font-black text-sm uppercase tracking-widest transition-all ${activeTab === "inventory" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-gray-400 hover:text-gray-600"}`}
+            >
+               Current Inventory
+            </button>
+            <button
+               onClick={() => setActiveTab("pre-harvest")}
+               className={`pb-4 px-2 font-black text-sm uppercase tracking-widest transition-all flex items-center gap-2 ${activeTab === "pre-harvest" ? "text-amber-600 border-b-2 border-amber-600" : "text-gray-400 hover:text-gray-600"}`}
+            >
+               <FaLeaf /> Pre-Harvest Opportunities
+            </button>
+         </div>
+
+
          {/* Product Grid */}
          {filteredProduce.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                {filteredProduce.map((item, i) => (
-                  <ProductCard key={item.id || i} item={item} onAddToCart={addToCart} cartItems={cart} />
+                  activeTab === "inventory" ? (
+                     <ProductCard key={item.id || i} item={item} onAddToCart={addToCart} cartItems={cart} />
+                  ) : (
+                     <PreHarvestCard key={item.id || i} item={item} onCreateForwardContract={createForwardContract} />
+                  )
                ))}
             </div>
          ) : (
@@ -404,6 +428,99 @@ function ProductCard({ item, onAddToCart, cartItems }) {
             >
                <FaShoppingCart size={14} />
                {isInCart ? 'Update Cart' : 'Add to Cart'} • ₦{lineTotal.toLocaleString()}
+            </button>
+         </CardContent>
+      </Card>
+   );
+}
+
+function PreHarvestCard({ item, onCreateForwardContract }) {
+   const [quantity, setQuantity] = useState(1);
+   const [isSubmitting, setIsSubmitting] = useState(false);
+
+   const maxQuantity = parseFloat(item.estimated_yield_tons || 0);
+   const lineTotal = quantity * parseFloat(item.offer_price_per_ton || 0);
+   const emoji = produceIcons[item.commodity] || '📦';
+   const dateStr = item.expected_harvest_date ? new Date(item.expected_harvest_date).toLocaleDateString() : 'N/A';
+
+   return (
+      <Card className="overflow-hidden border-2 border-gray-100 dark:border-gray-800 rounded-[2rem] hover:shadow-2xl hover:border-amber-200 dark:hover:border-amber-900/50 transition-all duration-300 group">
+         <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/20 dark:to-amber-900/10 p-6 flex items-start justify-between">
+            <div>
+               <div className="flex items-center gap-3 mb-2">
+                  <span className="text-4xl filter drop-shadow-sm group-hover:scale-110 transition-transform">{emoji}</span>
+                  <div>
+                     <h3 className="font-black text-xl text-slate-800 dark:text-slate-200">{item.commodity}</h3>
+                     <span className="px-2 py-0.5 bg-amber-200 dark:bg-amber-900/40 text-amber-800 dark:text-amber-400 text-[10px] font-black uppercase tracking-widest rounded-md">
+                        PRE-HARVEST
+                     </span>
+                  </div>
+               </div>
+               <p className="text-sm font-bold text-gray-500 flex items-center gap-2 mt-2">
+                  <FaLeaf className="text-amber-500" />
+                  Supervisor: {item.supervisor_name}
+               </p>
+               <p className="text-xs font-bold text-gray-500 mt-1 flex items-center gap-2">
+                  🗓️ Harvest: {dateStr}
+               </p>
+            </div>
+            <div className="text-right">
+               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Offer Price</p>
+               <p className="text-2xl font-black text-amber-600">₦{parseFloat(item.offer_price_per_ton).toLocaleString()}</p>
+               <p className="text-[10px] font-bold text-gray-500">per ton</p>
+            </div>
+         </div>
+
+         <CardContent className="p-6 space-y-6">
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-4 space-y-3">
+               <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Request Quantity (Tons)</label>
+                  <span className="text-[10px] font-bold text-amber-600">Max: {maxQuantity}</span>
+               </div>
+               <div className="flex items-center gap-3">
+                  <button
+                     onClick={() => setQuantity(Math.max(0.1, quantity - 1))}
+                     className="w-10 h-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl flex items-center justify-center hover:bg-amber-50 hover:border-amber-200 transition-all"
+                  >
+                     <FaMinus size={10} />
+                  </button>
+                  <input
+                     type="number"
+                     min="0.1"
+                     max={maxQuantity}
+                     step="0.1"
+                     value={quantity}
+                     onChange={(e) => setQuantity(Math.max(0, parseFloat(e.target.value) || 0))}
+                     className="flex-1 text-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl py-2.5 text-sm font-black focus:ring-2 focus:ring-amber-500 outline-none"
+                  />
+                  <button
+                     onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
+                     className="w-10 h-10 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl flex items-center justify-center hover:bg-amber-50 hover:border-amber-200 transition-all"
+                  >
+                     <FaPlus size={10} />
+                  </button>
+               </div>
+
+               <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Contract Total</span>
+                  <span className="text-lg font-black text-slate-900 dark:text-white">₦{lineTotal.toLocaleString()}</span>
+               </div>
+            </div>
+
+            <button
+               onClick={async () => {
+                  setIsSubmitting(true);
+                  await onCreateForwardContract(item.id, quantity, lineTotal);
+                  setIsSubmitting(false);
+               }}
+               disabled={isSubmitting || quantity <= 0 || quantity > maxQuantity}
+               className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-md hover:shadow-xl flex items-center justify-center gap-3 ${
+                  isSubmitting || quantity <= 0 || quantity > maxQuantity
+                     ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                     : 'bg-amber-600 text-white hover:bg-amber-700'
+               }`}
+            >
+               {isSubmitting ? 'Processing...' : 'Place Pre-Order'} • Escrow Deposit
             </button>
          </CardContent>
       </Card>

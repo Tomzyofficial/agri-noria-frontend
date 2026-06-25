@@ -11,14 +11,18 @@ export function BuyerDataProvider({ children }) {
    const [clusters, setClusters] = useState([]);
    const [logistics, setLogistics] = useState([]);
    const [buyerOrders, setBuyerOrders] = useState([]);
+   const [preHarvestOpportunities, setPreHarvestOpportunities] = useState([]);
+   const [forwardContracts, setForwardContracts] = useState([]);
 
    const fetchData = useCallback(async () => {
       setLoading(true);
       try {
-         const [matchesRes, statsRes, clustersRes] = await Promise.all([
+         const [matchesRes, statsRes, clustersRes, preHarvestRes, fwContractsRes] = await Promise.all([
             fetch("/api/proxy/pipeline/warehouse/inventory"),
             fetch("/api/proxy/pipeline/stats"),
             fetch("/api/proxy/pipeline/clusters"),
+            fetch("/api/proxy/pipeline/preharvest/opportunities"),
+            fetch("/api/proxy/pipeline/forward-contracts/buyer"),
          ]);
          
          if (matchesRes.ok) { 
@@ -29,6 +33,16 @@ export function BuyerDataProvider({ children }) {
          if (statsRes.ok) { 
             const d = await statsRes.json(); 
             setStats(d.data || {}); 
+         }
+         
+         if (preHarvestRes.ok) {
+            const d = await preHarvestRes.json();
+            setPreHarvestOpportunities(d.data || []);
+         }
+
+         if (fwContractsRes.ok) {
+            const d = await fwContractsRes.json();
+            setForwardContracts(d.data || []);
          }
          
          if (clustersRes.ok) {
@@ -64,10 +78,46 @@ export function BuyerDataProvider({ children }) {
       }
    }, []);
 
+   const fetchForwardContracts = useCallback(async () => {
+      try {
+         const res = await fetch("/api/proxy/pipeline/forward-contracts/buyer");
+         if (res.ok) {
+            const d = await res.json();
+            setForwardContracts(d.data || []);
+         }
+      } catch (err) {
+         console.error("Error fetching forward contracts:", err);
+      }
+   }, []);
+
+   const createForwardContract = async (pre_harvest_listing_id, quantity_tons, total_price) => {
+      try {
+         const res = await fetch("/api/proxy/pipeline/forward-contracts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pre_harvest_listing_id, quantity_tons, total_price }),
+         });
+         const data = await res.json();
+         if (res.ok && data.success) {
+            toast.success("Forward contract created successfully");
+            fetchData();
+            return data.data;
+         } else {
+            toast.error(data.error || "Failed to create forward contract");
+            return null;
+         }
+      } catch (err) {
+         console.error(err);
+         toast.error("Error creating forward contract");
+         return null;
+      }
+   };
+
    useEffect(() => {
       fetchData();
       fetchOrders();
-   }, [fetchData, fetchOrders]);
+      fetchForwardContracts();
+   }, [fetchData, fetchOrders, fetchForwardContracts]);
 
    const placeOrder = async (items, totalAmount, deliveryAddress) => {
       try {
@@ -145,12 +195,15 @@ export function BuyerDataProvider({ children }) {
          stats, 
          clusters, 
          logistics, 
+         preHarvestOpportunities,
+         forwardContracts,
          confirmedMatches,
          totalTons,
          refreshData,
          placeOrder,
          payForOrder,
-         verifyOrderPayment
+         verifyOrderPayment,
+         createForwardContract
       }}>
          {children}
       </BuyerDataContext.Provider>

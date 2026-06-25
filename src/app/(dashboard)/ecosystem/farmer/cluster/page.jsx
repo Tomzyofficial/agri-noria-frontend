@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { FaUsers, FaMapMarkerAlt, FaCalendarAlt, FaUserTie, FaPhone, FaSeedling } from "react-icons/fa";
 import { toast } from "react-toastify";
 import Link from "next/link";
+import ClusterChat from "../../components/ClusterChat";
 
 export default function MyClusterPage() {
    const [cluster, setCluster] = useState(null);
@@ -171,6 +172,11 @@ export default function MyClusterPage() {
                   </div>
                </CardContent>
             </Card>
+
+            {/* Cluster Chat */}
+            <div className="xl:col-span-2">
+               <ClusterChat clusterId={cluster.id} />
+            </div>
          </div>
       </div>
    );

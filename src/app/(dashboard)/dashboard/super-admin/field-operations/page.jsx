@@ -88,59 +88,7 @@ export default function FieldOperationsDashboard() {
          toast.error("Failed to load cluster supervision");
       }
    };
-
-   const handleUpdateSupervision = async () => {
-      if (!selectedCluster || !supervision) return;
-      setIsSaving(true);
-      try {
-         const res = await fetch("/api/proxy/pipeline/supervision/cluster/update", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-               ...supervision,
-               cluster_id: selectedCluster.id
-            })
-         });
-         if (res.ok) {
-            toast.success("Cluster supervision updated successfully");
-            const d = await res.json();
-            setSupervision(d.data);
-         } else {
-            toast.error("Failed to update supervision");
-         }
-      } catch (err) {
-         toast.error("Network error");
-      } finally {
-         setIsSaving(false);
-      }
-   };
-
-   const handleImageUpload = async (e, stageId) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      setUploadingImageFor(stageId);
-      const formData = new FormData();
-      formData.append("file", file);
-
-      try {
-         const res = await fetch("/api/proxy/vendor/upload/document", {
-            method: "POST",
-            body: formData
-         });
-         const json = await res.json();
-         if (res.ok && json.success) {
-            setSupervision(prev => ({ ...prev, [`${stageId}_image`]: json.data.url }));
-            toast.success("Image uploaded successfully");
-         } else {
-            toast.error(json.error || "Failed to upload image");
-         }
-      } catch (err) {
-         toast.error("Network error during upload");
-      } finally {
-         setUploadingImageFor(null);
-      }
-   };
+   // Read-only logic: no handleUpdateSupervision, no handleImageUpload.
 
    const getStatusColor = (status, isSolid = false) => {
       switch (status) {
@@ -339,14 +287,6 @@ export default function FieldOperationsDashboard() {
                                           </div>
                                        </div>
                                     </div>
-                                    <button
-                                       onClick={handleUpdateSupervision}
-                                       disabled={isSaving}
-                                       className="bg-white text-teal-700 px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 disabled:scale-100"
-                                    >
-                                       {isSaving ? <FaSpinner className="animate-spin" /> : <FaSave />}
-                                       {isSaving ? "Saving..." : "Save Progress"}
-                                    </button>
                                  </div>
                               </CardHeader>
 
@@ -375,36 +315,33 @@ export default function FieldOperationsDashboard() {
 
                                                    <div className="flex flex-wrap p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-fit gap-1">
                                                       {['pending', 'in_progress', 'completed'].map((status) => (
-                                                         <button
+                                                         <span
                                                             key={status}
-                                                            onClick={() => setSupervision({ ...supervision, [`${stage.id}_status`]: status })}
                                                             className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all ${supervision?.[`${stage.id}_status`] === status
                                                                ? getStatusColor(status, true)
-                                                               : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-200'
+                                                               : 'text-gray-500 bg-transparent'
                                                                }`}
                                                          >
                                                             {status.replace('_', ' ')}
-                                                         </button>
+                                                         </span>
                                                       ))}
                                                    </div>
                                                 </div>
 
                                                 <textarea
-                                                   placeholder={`Add field notes for ${stage.label}...`}
+                                                   placeholder={`No notes provided...`}
                                                    value={supervision?.[`${stage.id}_notes`] || ""}
-                                                   onChange={(e) => setSupervision({ ...supervision, [`${stage.id}_notes`]: e.target.value })}
-                                                   className="w-full bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all min-h-[80px] resize-none"
+                                                   disabled
+                                                   className="w-full bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all min-h-[80px] resize-none opacity-80"
                                                 />
-                                                <div className="flex items-center gap-4">
-                                                   <label className={`cursor-pointer px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${uploadingImageFor === stage.id ? 'opacity-50 pointer-events-none' : ''}`}>
-                                                      {uploadingImageFor === stage.id ? <FaSpinner className="animate-spin" /> : <FaTools />}
-                                                      {uploadingImageFor === stage.id ? 'Uploading...' : 'Upload Image'}
-                                                      <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, stage.id)} disabled={uploadingImageFor === stage.id} />
-                                                   </label>
-                                                   {supervision?.[`${stage.id}_image`] && (
-                                                      <a href={supervision[`${stage.id}_image`]} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:text-teal-700 text-xs font-bold underline">
-                                                         View Image
-                                                      </a>
+                                                <div className="flex items-center gap-4 mt-2">
+                                                   {supervision?.[`${stage.id}_image`] ? (
+                                                      <div className="rounded-lg overflow-hidden border border-gray-200">
+                                                         <img src={supervision[`${stage.id}_image`]} alt={`${stage.label} view`} className="w-32 h-32 object-cover" />
+                                                         <a href={supervision[`${stage.id}_image`]} target="_blank" rel="noopener noreferrer" className="block text-center bg-gray-100 p-1 text-xs text-teal-600 font-bold hover:underline">View Full</a>
+                                                      </div>
+                                                   ) : (
+                                                      <span className="text-gray-400 text-xs italic">No image uploaded</span>
                                                    )}
                                                 </div>
                                              </div>

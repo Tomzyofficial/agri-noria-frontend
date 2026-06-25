@@ -15,6 +15,7 @@ import {
   Wallet,
   Users,
   BarChart3,
+  MapPin,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
@@ -64,6 +65,11 @@ export default function SuperAdminLayout({ children }) {
       label: "User Management",
       href: "/dashboard/super-admin/users",
       icon: <UserCog className="w-4 h-4" />,
+    },
+    {
+      label: "Field Operations",
+      href: "/dashboard/super-admin/field-operations",
+      icon: <MapPin className="w-4 h-4" />,
     },
     {
       label: "System Analytics",

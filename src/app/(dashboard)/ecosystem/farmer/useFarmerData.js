@@ -14,6 +14,7 @@ export function FarmerDataProvider({ children }) {
    const [stats, setStats] = useState({});
    const [availablePrograms, setAvailablePrograms] = useState([]);
    const [trainingData, setTrainingData] = useState({ modules: [], progress: [] });
+   const [clusterTrainings, setClusterTrainings] = useState([]);
    const [myCluster, setMyCluster] = useState(null);
    const [enrollingProgramId, setEnrollingProgramId] = useState(null);
 
@@ -64,6 +65,13 @@ export function FarmerDataProvider({ children }) {
          if (clusterRes.ok) {
             const d = await clusterRes.json();
             setMyCluster(d.data);
+            if (d.data?.id) {
+               const trRes = await fetch(`/api/proxy/pipeline/clusters/${d.data.id}/training`);
+               if (trRes.ok) {
+                  const trD = await trRes.json();
+                  setClusterTrainings(trD.data || []);
+               }
+            }
          }
       } catch (err) {
          console.error("Error fetching farmer data:", err);
@@ -107,6 +115,7 @@ export function FarmerDataProvider({ children }) {
       stats,
       availablePrograms,
       trainingData,
+      clusterTrainings,
       myCluster,
       enrollingProgramId,
       refreshData: fetchData,

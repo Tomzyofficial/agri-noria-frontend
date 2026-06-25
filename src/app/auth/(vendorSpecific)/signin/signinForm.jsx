@@ -289,10 +289,18 @@ export function SigninForm() {
       const session = await verifyVendorSession();
 
       if (session.authenticated) {
-        const { workspace, role } = session;
+        const { workspace, role, onboarding_status, onboarding_level } = session;
         // Ecosystem farmers who haven't completed onboarding go directly there
-        if (workspace?.toLowerCase() === "ecosystem" && role?.toLowerCase() === "farmer" && session.onboarding_status !== "completed" && session.onboarding_status !== "verified" && !(session.onboarding_level >= 3)) {
+        if (
+          workspace?.toLowerCase() === "ecosystem" &&
+          role?.toLowerCase() === "farmer" &&
+          onboarding_status !== "completed" &&
+          onboarding_status !== "verified" &&
+          !(onboarding_level >= 3)
+        ) {
           router.push("/ecosystem/farmer/onboarding");
+        } else if (onboarding_status === "pending") {
+          router.push("/onboarding");
         } else {
           router.push(resolveRedirectPath(role, workspace));
         }
