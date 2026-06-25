@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { X, User, Store, Package, MapPin, Phone, Mail } from "lucide-react";
-import { logisticsFetcher, formatStatusLabel, getStatusBadgeClass } from "./logisticsOrderUtils";
+import { formatStatusLabel, getStatusBadgeClass } from "./logisticsOrderUtils";
+import { fetcher } from "@/utils/otherUtils";
 
 export function LogisticsOrderDetailModal({ orderId, open, onClose }) {
   const [detail, setDetail] = useState(null);
@@ -16,7 +17,7 @@ export function LogisticsOrderDetailModal({ orderId, open, onClose }) {
       setLoading(true);
       setError(null);
       try {
-        const data = await logisticsFetcher(
+        const data = await fetcher(
           `/api/proxy/vendor/logistics/orders/${orderId}/detail`,
         );
         setDetail(data.data);
@@ -54,9 +55,7 @@ export function LogisticsOrderDetailModal({ orderId, open, onClose }) {
           {loading && (
             <p className="text-center text-gray-500 py-8">Loading order...</p>
           )}
-          {error && (
-            <p className="text-center text-red-600 py-8">{error}</p>
-          )}
+          {error && <p className="text-center text-red-600 py-8">{error}</p>}
 
           {detail && !loading && (
             <>
@@ -107,7 +106,9 @@ export function LogisticsOrderDetailModal({ orderId, open, onClose }) {
                     <span className="text-gray-500">Name: </span>
                     {[detail.seller_fname, detail.seller_lname]
                       .filter(Boolean)
-                      .join(" ") || detail.seller_business_name || "—"}
+                      .join(" ") ||
+                      detail.seller_business_name ||
+                      "—"}
                   </p>
                   <p className="text-sm flex items-center gap-1">
                     <Phone className="w-3.5 h-3.5 text-gray-400" />
@@ -177,7 +178,10 @@ export function LogisticsOrderDetailModal({ orderId, open, onClose }) {
               </section>
 
               <div className="flex justify-end gap-2 text-sm text-gray-600">
-                <span>Delivery fee: ₦{Number(detail.delivery_fee || 0).toLocaleString()}</span>
+                <span>
+                  Delivery fee: ₦
+                  {Number(detail.delivery_fee || 0).toLocaleString()}
+                </span>
                 <span>·</span>
                 <span className="font-semibold text-gray-900 dark:text-white">
                   Total: ₦{Number(detail.total_amount || 0).toLocaleString()}

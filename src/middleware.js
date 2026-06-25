@@ -11,8 +11,8 @@ const LOCATION_COOKIE_NAME = "user_location";
 const setLocationCookie = (response, location) => {
   response.cookies.set(LOCATION_COOKIE_NAME, JSON.stringify(location), {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: true,
+    sameSite: "none",
     path: "/",
     maxAge: 60 * 60 * 24 * 7, // 7 days
   });

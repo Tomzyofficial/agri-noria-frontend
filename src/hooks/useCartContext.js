@@ -1,12 +1,5 @@
 "use client";
-import {
-  useContext,
-  createContext,
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-} from "react";
+import { useContext, createContext, useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
 import { getCartFromCookie, setCartCookie } from "@/actions/session";
 
@@ -167,7 +160,7 @@ export function CartProvider({ buyerId, children }) {
         });
       } catch {}
     },
-    [buyerId],
+    [buyerId]
   );
 
   // Add item to cart:
@@ -188,9 +181,7 @@ export function CartProvider({ buyerId, children }) {
 
   // Remove item from cart
   const removeItem = (item) => {
-    setCart((prevCart) =>
-      prevCart.filter((n) => n.listing_id !== item.listing_id),
-    );
+    setCart((prevCart) => prevCart.filter((n) => n.listing_id !== item.listing_id));
 
     // Sync to server for authenticated users
     if (buyerId) {
@@ -204,14 +195,8 @@ export function CartProvider({ buyerId, children }) {
   // Increase quantity
   const increaseQuantity = (item) => {
     setCart((prevCart) => {
-      const updatedCart = prevCart.map((n) =>
-        n.listing_id === item.listing_id
-          ? { ...n, quantity: (n.quantity || 1) + 1 }
-          : n,
-      );
-      const updatedItem = updatedCart.find(
-        (n) => n.listing_id === item.listing_id,
-      );
+      const updatedCart = prevCart.map((n) => (n.listing_id === item.listing_id ? { ...n, quantity: (n.quantity || 1) + 1 } : n));
+      const updatedItem = updatedCart.find((n) => n.listing_id === item.listing_id);
 
       // Sync to server for authenticated users
       if (buyerId && updatedItem) {
@@ -233,14 +218,8 @@ export function CartProvider({ buyerId, children }) {
 
       if (existing.quantity > 1) {
         // decrease normally
-        const updatedCart = prevCart.map((n) =>
-          n.listing_id === item.listing_id
-            ? { ...n, quantity: n.quantity - 1 }
-            : n,
-        );
-        const updatedItem = updatedCart.find(
-          (n) => n.listing_id === item.listing_id,
-        );
+        const updatedCart = prevCart.map((n) => (n.listing_id === item.listing_id ? { ...n, quantity: n.quantity - 1 } : n));
+        const updatedItem = updatedCart.find((n) => n.listing_id === item.listing_id);
 
         // Sync to server for authenticated users
         if (buyerId && updatedItem) {
@@ -309,8 +288,8 @@ export function CartProvider({ buyerId, children }) {
 
 export function useCartContext() {
   const context = useContext(CartContext);
-  if (context === undefined) {
-    throw new Error("useCart must be used within a CartProvider");
-  }
+  //   if (context === undefined) {
+  //     throw new Error("useCart must be used within a CartProvider");
+  //   }
   return context;
 }

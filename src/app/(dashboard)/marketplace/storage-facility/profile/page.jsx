@@ -105,11 +105,7 @@ async function getProfileImage() {
 
 export default async function Page() {
   const session = await verifyVendorSession();
-  if (
-    !session?.authenticated ||
-    session.role !== "storage facility" ||
-    session.workspace !== "marketplace"
-  ) {
+  if (!session?.authenticated || session.role !== "storage facility" || session.workspace !== "marketplace") {
     return <Unauthorized />;
   }
 
