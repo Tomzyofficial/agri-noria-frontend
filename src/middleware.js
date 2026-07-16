@@ -139,6 +139,10 @@ export default async function middleware(request) {
           const userRole = payload.role?.toLowerCase();
           const allowedBaseRoute = ecosystemRoleRoutes[userRole];
 
+          if (payload.approval_status === "pending_approval" && pathname.startsWith("/ecosystem")) {
+             return NextResponse.redirect(new URL("/onboarding", request.url));
+          }
+
           if (allowedBaseRoute) {
             // Redirect root /ecosystem to their specific dashboard
             if (pathname === "/ecosystem" || pathname === "/ecosystem/") {
