@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { FaMapMarkerAlt, FaClipboardCheck, FaSatelliteDish, FaThermometerHalf, FaLeaf, FaCalendarDay, FaCheckCircle, FaSpinner, FaClock, FaHistory, FaEdit, FaSave, FaUserAlt, FaTools, FaWater, FaSeedling, FaLayerGroup, FaSun } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
+import MapboxFarmCapture from "@/components/MapboxFarmCapture";
 
 export default function FieldOperationsDashboard() {
    const [activeSection, setActiveSection] = useState("overview");
@@ -16,6 +17,14 @@ export default function FieldOperationsDashboard() {
    const [isSaving, setIsSaving] = useState(false);
    const [uploadingImageFor, setUploadingImageFor] = useState(null);
    const [verifications, setVerifications] = useState([]);
+   const [assignments, setAssignments] = useState([]);
+   const [assignmentForm, setAssignmentForm] = useState({ officerId: "", community: "", ward: "", lga: "", zone: "", target: "" });
+   const [userRole, setUserRole] = useState(null);
+
+   const [farmerRegData, setFarmerRegData] = useState({
+      fname: "", lname: "", email: "", phone: "", pword: "", country_name: "Nigeria", country_code: "NG", state_name: "", currency: "NGN"
+   });
+   const [isRegistering, setIsRegistering] = useState(false);
 
    const stages = [
       { id: 'clearing', label: 'Farm Clearing', icon: <FaTools /> },
@@ -29,14 +38,50 @@ export default function FieldOperationsDashboard() {
       fetchInitialData();
    }, []);
 
+   const handleFarmerRegChange = (e) => {
+      setFarmerRegData({ ...farmerRegData, [e.target.name]: e.target.value });
+   };
+
+   const handleRegisterFarmer = async (e) => {
+      e.preventDefault();
+      setIsRegistering(true);
+      try {
+         const res = await fetch("/api/proxy/field-operations/register-farmer", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(farmerRegData),
+         });
+         const json = await res.json();
+         if (res.ok && json.success) {
+            toast.success(json.message || "Farmer registered successfully!");
+            setFarmerRegData({ fname: "", lname: "", email: "", phone: "", pword: "", country_name: "Nigeria", country_code: "NG", state_name: "", currency: "NGN" });
+         } else {
+            toast.error(json.error?.[0] || "Failed to register farmer.");
+         }
+      } catch (err) {
+         toast.error("Network error.");
+      } finally {
+         setIsRegistering(false);
+      }
+   };
+
    const fetchInitialData = async () => {
       try {
          setLoading(true);
-         const [statsRes, clustersRes] = await Promise.all([
+         const [statsRes, clustersRes, assignmentsRes, sessionRes, farmersRes] = await Promise.all([
             fetch("/api/proxy/pipeline/stats"),
             fetch("/api/proxy/pipeline/clusters"),
+            fetch("/api/proxy/field-operations/work-assignments"),
+            fetch("/api/proxy/auth/verify-vendor"),
+            fetch("/api/proxy/field-operations/farmers")
          ]);
          if (statsRes.ok) { const d = await statsRes.json(); setStats(d.data || {}); }
+         if (assignmentsRes.ok) { const d = await assignmentsRes.json(); setAssignments(d.data || []); }
+         if (sessionRes.ok) { const d = await sessionRes.json(); setUserRole(d.role?.toLowerCase() || ""); }
+         
+         let globalFarmers = [];
+         if (farmersRes.ok) { const d = await farmersRes.json(); globalFarmers = d.data || []; }
+
          if (clustersRes.ok) {
             const d = await clustersRes.json();
             const cl = d.data || [];
@@ -63,7 +108,19 @@ export default function FieldOperationsDashboard() {
             }
 
             setVerifications(allVerifications);
-            setClusterFarmers(allFarmers);
+            
+            const uniqueFarmersMap = new Map();
+            allFarmers.forEach(f => {
+               if (!uniqueFarmersMap.has(f.farmer_id)) {
+                  uniqueFarmersMap.set(f.farmer_id, f);
+               }
+            });
+            globalFarmers.forEach(f => {
+               if (!uniqueFarmersMap.has(f.farmer_id)) {
+                  uniqueFarmersMap.set(f.farmer_id, f);
+               }
+            });
+            setClusterFarmers(Array.from(uniqueFarmersMap.values()));
          }
       } catch (err) {
          console.error(err);
@@ -165,6 +222,58 @@ export default function FieldOperationsDashboard() {
       }
    };
 
+   const handleCreateAssignment = async (e) => {
+      e.preventDefault();
+      setIsSaving(true);
+      try {
+         const res = await fetch("/api/proxy/field-operations/work-assignments", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(assignmentForm)
+         });
+         const data = await res.json();
+         if (data.success) {
+            toast.success("Work assignment created successfully");
+            setAssignments([data.data, ...assignments]);
+            setAssignmentForm({ officerId: "", community: "", ward: "", lga: "", zone: "", target: "" });
+         } else {
+            toast.error(data.message || "Failed to create assignment");
+         }
+      } catch (err) {
+         toast.error("Network error");
+      } finally {
+         setIsSaving(false);
+      }
+   };
+
+   const handleBoundaryCapture = async (data) => {
+      if (!selectedFarmer || !data) return;
+      setIsSaving(true);
+      try {
+         const res = await fetch("/api/proxy/field-operations/capture-farm-boundary", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+               farmerId: selectedFarmer.farmer_id,
+               polygon: data.polygon,
+               hectares: data.hectares,
+               lat: data.location?.latitude,
+               lng: data.location?.longitude
+            })
+         });
+         const result = await res.json();
+         if (result.success) {
+            toast.success("Farm boundary captured and verified successfully");
+         } else {
+            toast.error(result.message || "Failed to capture boundary");
+         }
+      } catch (err) {
+         toast.error("Network error");
+      } finally {
+         setIsSaving(false);
+      }
+   };
+
    return (
       <div className="space-y-6 pb-20">
          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -176,12 +285,15 @@ export default function FieldOperationsDashboard() {
 
          <div className="flex flex-wrap gap-2 p-1 bg-gray-100 dark:bg-gray-800/50 rounded-2xl w-fit">
             {[
-               { key: "overview", label: "Overview" },
-               { key: "supervision", label: "Farm Supervision" },
-               // { key: "verification", label: "Field Verification" },
-               // { key: "monitoring", label: "Crop Monitoring" },
-               // { key: "harvest", label: "Harvest Approval" },
-            ].map(({ key, label }) => (
+               { key: "overview", label: "Overview", roles: ["all"] },
+               { key: "register_farmer", label: "Register Farmer", roles: ["enumerator", "field officer", "agronomist", "field operations supervisor", "program director"] },
+               { key: "capture_boundary", label: "Capture Boundary", roles: ["field officer", "agronomist", "field operations supervisor", "program director"] },
+               { key: "supervision", label: "Farm Supervision (Agronomy)", roles: ["agronomist", "field operations supervisor", "program director"] },
+               { key: "inspections", label: "Field Inspections", roles: ["inspector", "field operations supervisor", "program director"] },
+               { key: "assignments", label: "Work Assignments", roles: ["field operations supervisor", "program director"] }
+            ]
+            .filter(tab => !userRole || tab.roles.includes("all") || tab.roles.some(r => userRole.includes(r)))
+            .map(({ key, label }) => (
                <button
                   key={key}
                   onClick={() => setActiveSection(key)}
@@ -570,6 +682,119 @@ export default function FieldOperationsDashboard() {
                         </div>
                      </CardContent>
                   </Card>
+               )}
+               {activeSection === "assignments" && (
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                     <Card className="lg:col-span-1 border-none shadow-xl rounded-3xl p-6 bg-white dark:bg-gray-800">
+                        <CardTitle className="text-sm font-black uppercase mb-4">Create Assignment</CardTitle>
+                        <form onSubmit={handleCreateAssignment} className="space-y-4">
+                           <input type="text" placeholder="Officer ID" className="w-full p-2 border rounded text-gray-900 dark:text-white dark:bg-gray-700" required value={assignmentForm.officerId} onChange={e => setAssignmentForm({...assignmentForm, officerId: e.target.value})} />
+                           <input type="text" placeholder="Community" className="w-full p-2 border rounded text-gray-900 dark:text-white dark:bg-gray-700" required value={assignmentForm.community} onChange={e => setAssignmentForm({...assignmentForm, community: e.target.value})} />
+                           <input type="text" placeholder="Ward" className="w-full p-2 border rounded text-gray-900 dark:text-white dark:bg-gray-700" required value={assignmentForm.ward} onChange={e => setAssignmentForm({...assignmentForm, ward: e.target.value})} />
+                           <input type="text" placeholder="LGA" className="w-full p-2 border rounded text-gray-900 dark:text-white dark:bg-gray-700" required value={assignmentForm.lga} onChange={e => setAssignmentForm({...assignmentForm, lga: e.target.value})} />
+                           <input type="text" placeholder="Enumeration Zone" className="w-full p-2 border rounded text-gray-900 dark:text-white dark:bg-gray-700" required value={assignmentForm.zone} onChange={e => setAssignmentForm({...assignmentForm, zone: e.target.value})} />
+                           <input type="number" placeholder="Target Farmers" className="w-full p-2 border rounded text-gray-900 dark:text-white dark:bg-gray-700" required value={assignmentForm.target} onChange={e => setAssignmentForm({...assignmentForm, target: e.target.value})} />
+                           <button type="submit" disabled={isSaving} className="w-full bg-teal-600 text-white p-3 rounded font-bold uppercase tracking-widest hover:bg-teal-700 transition">{isSaving ? 'Assigning...' : 'Assign Work'}</button>
+                        </form>
+                     </Card>
+                     <Card className="lg:col-span-2 border-none shadow-xl rounded-3xl p-6 bg-white dark:bg-gray-800">
+                        <CardTitle className="text-sm font-black uppercase mb-4">Work Assignments</CardTitle>
+                        <div className="space-y-4 max-h-[500px] overflow-y-auto">
+                           {assignments.length > 0 ? assignments.map(a => (
+                              <div key={a.id} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl flex justify-between items-center">
+                                 <div>
+                                    <p className="font-bold text-lg text-gray-900 dark:text-white">{a.officer_name}</p>
+                                    <p className="text-sm text-gray-500">Zone: {a.enumeration_zone}, Ward: {a.ward}, LGA: {a.lga}</p>
+                                    <p className="text-xs text-gray-400 mt-1">Created: {new Date(a.created_at).toLocaleDateString()}</p>
+                                 </div>
+                                 <div className="text-right">
+                                    <p className="text-xs font-bold uppercase tracking-widest text-teal-600">Target Farmers</p>
+                                    <p className="text-2xl font-black">{a.target_farmers}</p>
+                                 </div>
+                              </div>
+                           )) : (
+                              <p className="text-center text-gray-500 mt-10">No assignments found.</p>
+                           )}
+                        </div>
+                     </Card>
+                  </div>
+               )}
+
+               {activeSection === "capture_boundary" && (
+                  <div className="space-y-6">
+                     <Card className="border-none shadow-xl rounded-3xl p-6 bg-white dark:bg-gray-800">
+                        <CardTitle className="text-sm font-black uppercase mb-4 flex items-center gap-2">
+                           <FaMapMarkerAlt className="text-teal-500" /> Search & Select Farmer for Boundary Capture
+                        </CardTitle>
+                        <p className="text-sm text-gray-500 mb-4">Search by full name, phone number, or unapproved AIN to proceed with farm mapping.</p>
+                        <select className="w-full p-3 border rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white" onChange={(e) => setSelectedFarmer(clusterFarmers.find(f => f.farmer_id === e.target.value))} value={selectedFarmer?.farmer_id || ""}>
+                           <option value="">-- Select Farmer --</option>
+                           {clusterFarmers.map(f => (
+                              <option key={f.farmer_id} value={f.farmer_id}>{f.fname} {f.lname} | AIN: {f.ain || 'Pending'} | Phone: {f.phone || 'N/A'}</option>
+                           ))}
+                        </select>
+                     </Card>
+                     
+                     {selectedFarmer ? (
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                           <MapboxFarmCapture key={selectedFarmer.farmer_id} onCapture={handleBoundaryCapture} initialPolygon={typeof selectedFarmer.boundary_polygon === 'string' ? JSON.parse(selectedFarmer.boundary_polygon) : selectedFarmer.boundary_polygon} />
+                        </div>
+                     ) : (
+                        <div className="p-10 text-center bg-gray-50 dark:bg-gray-800 rounded-3xl">
+                           <p className="text-gray-500">Please select a farmer from the list above to begin farm boundary capture.</p>
+                        </div>
+                     )}
+                  </div>
+               )}
+
+               {activeSection === "register_farmer" && (
+                  <div className="p-8 bg-gray-50 dark:bg-gray-800 rounded-3xl max-w-4xl mx-auto">
+                     <div className="text-center mb-8">
+                        <FaUserAlt className="text-teal-500 text-5xl mx-auto mb-4" />
+                        <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Farmer Registration Module</h3>
+                        <p className="text-gray-500 mt-2 max-w-lg mx-auto">Field operations staff can register new farmers and create their initial Agricultural Identity Number (AIN) here. Once registered, they can be scheduled for a later boundary capture and full verification.</p>
+                     </div>
+                     <form onSubmit={handleRegisterFarmer} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name *</label>
+                           <input type="text" name="fname" required value={farmerRegData.fname} onChange={handleFarmerRegChange} className="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-teal-500 outline-none" />
+                        </div>
+                        <div>
+                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last Name *</label>
+                           <input type="text" name="lname" required value={farmerRegData.lname} onChange={handleFarmerRegChange} className="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-teal-500 outline-none" />
+                        </div>
+                        <div>
+                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                           <input type="email" name="email" value={farmerRegData.email} onChange={handleFarmerRegChange} className="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-teal-500 outline-none" />
+                        </div>
+                        <div>
+                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone Number *</label>
+                           <input type="text" name="phone" required value={farmerRegData.phone} onChange={handleFarmerRegChange} className="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-teal-500 outline-none" />
+                        </div>
+                        <div>
+                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">State / Region *</label>
+                           <input type="text" name="state_name" required value={farmerRegData.state_name} onChange={handleFarmerRegChange} className="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-teal-500 outline-none" />
+                        </div>
+                        <div>
+                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Initial Password *</label>
+                           <input type="password" name="pword" required value={farmerRegData.pword} onChange={handleFarmerRegChange} placeholder="e.g. Farmer123!" className="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-teal-500 outline-none" />
+                        </div>
+                        <div className="md:col-span-2 mt-4 text-center">
+                           <button type="submit" disabled={isRegistering} className="px-8 py-3 bg-teal-600 text-white rounded-xl font-bold hover:bg-teal-700 transition disabled:opacity-50">
+                              {isRegistering ? <FaSpinner className="animate-spin inline mr-2" /> : null}
+                              {isRegistering ? "Registering..." : "Complete Registration"}
+                           </button>
+                        </div>
+                     </form>
+                  </div>
+               )}
+
+               {activeSection === "inspections" && (
+                  <div className="p-10 text-center bg-gray-50 dark:bg-gray-800 rounded-3xl">
+                     <FaCheckCircle className="text-teal-500 text-5xl mx-auto mb-4" />
+                     <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Field Inspections Module</h3>
+                     <p className="text-gray-500 mt-2">Inspectors can log quality checks and verify standard operating procedures here.</p>
+                  </div>
                )}
             </div>
          )}

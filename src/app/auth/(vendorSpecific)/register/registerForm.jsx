@@ -141,6 +141,9 @@ export function RegisterForm() {
     state_code: "",
     state_name: "",
     currency: "",
+    appointment_letter_url: "",
+    id_card_url: "",
+    optional_document_url: "",
   });
 
   // Handle email verification
@@ -158,6 +161,9 @@ export function RegisterForm() {
   const selectedWorkspaceTitle = workspaceOptions.find((workspace) => workspace.id === formData.workspace)?.title || "";
 
   const selectedRoleCategories = workspaceRoleCategories[formData.workspace] || [];
+
+  const fieldOpsRoles = ["Field Officer", "Agronomist", "Inspector", "Enumerator"];
+  const isFieldOps = fieldOpsRoles.includes(formData.role);
 
   const handleWorkspaceSelect = (workspaceId) => {
     setFormData((prev) => ({
@@ -246,6 +252,7 @@ export function RegisterForm() {
     setErrors({}); // Clear error on change
   };
 
+  // Handle file input manuallyear error on change
   // Schema-based validation per step and final submit
   //   const validateWithSchemaForStep = (step) => {
   //     let schemaForStep = registerFormSchema;
@@ -365,6 +372,9 @@ export function RegisterForm() {
         pword: "",
         confirmPword: "",
         terms_of_service: false,
+        appointment_letter_url: "",
+        id_card_url: "",
+        optional_document_url: "",
       });
 
       setShowPassword(false);
@@ -565,6 +575,8 @@ export function RegisterForm() {
                   </div>
                 </div>
               )}
+
+              {/* Field ops documents removed from registration, handled in onboarding */}
 
               {/* Step 3: Security */}
               {currentStep === 3 && (

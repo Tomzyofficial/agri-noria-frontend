@@ -272,7 +272,11 @@ export default function OnboardingPage() {
   const [userName, setUserName] = useState("");
   const [formData, setFormData] = useState({
     migrateFromOuter: false,
+    appointment_letter_url: "",
+    id_card_url: "",
+    optional_document_url: ""
   });
+  const [uploadingDoc, setUploadingDoc] = useState(null);
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -331,6 +335,33 @@ export default function OnboardingPage() {
     setFormData({ ...formData, [e.target.name]: e.target.files[0] });
   };
 
+  const handleFileUpload = async (e, fieldName) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingDoc(fieldName);
+    const formDataObj = new FormData();
+    formDataObj.append("file", file);
+
+    try {
+      const res = await fetch("/api/proxy/vendor/upload/document", {
+        method: "POST",
+        body: formDataObj
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setFormData(prev => ({ ...prev, [fieldName]: json.data.url }));
+        toast.success("Document uploaded successfully!");
+      } else {
+        toast.error(json.error || "Failed to upload document");
+      }
+    } catch (err) {
+      toast.error("Network error during upload");
+    } finally {
+      setUploadingDoc(null);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -365,12 +396,30 @@ export default function OnboardingPage() {
         if (!res.ok) throw new Error("Failed to create aggregator profile");
       }
 
-      toast.success("Documents have been submitted successfully");
+      else if (
+        ["field officer", "agronomist", "inspector", "enumerator", "field operations supervisor"].includes(roleStr)
+      ) {
+        if (!formData.appointment_letter_url || !formData.id_card_url) {
+          throw new Error("Appointment letter and ID card are required");
+        }
+        const res = await fetch("/api/proxy/vendor/complete-onboarding", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+             appointment_letter_url: formData.appointment_letter_url,
+             id_card_url: formData.id_card_url,
+             optional_document_url: formData.optional_document_url
+          })
+        });
+        if (!res.ok) throw new Error("Failed to submit Field Operations documents");
+      } else {
+        // Finalize onboarding status in DB for others
+        await fetch("/api/proxy/vendor/complete-onboarding", {
+          method: "POST",
+        });
+      }
 
-      // Finalize onboarding status in DB
-      await fetch("/api/proxy/vendor/complete-onboarding", {
-        method: "POST",
-      });
+      toast.success("Onboarding completed successfully");
 
       router.replace(resolveRedirectPath(role, workspace));
     } catch (err) {
@@ -537,6 +586,52 @@ export default function OnboardingPage() {
                 onChange={handleInputChange}
                 required
               />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Field Operations
+    if (
+      ["field officer", "agronomist", "inspector", "enumerator", "field operations supervisor"].includes(roleStr)
+    ) {
+      return (
+        <div className="space-y-6">
+          <div className="p-4 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-800/30">
+            <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-4">
+              Field Operations Authorization
+            </p>
+            <p className="text-sm text-gray-500 mb-6">
+               Please upload your official authorization documents to verify your Field Operations identity.
+            </p>
+            <div className="space-y-6">
+               <div>
+                 <Label htmlFor="appointment_letter_url" className="text-start block mb-2 font-medium">Appointment / Authorization Letter *</Label>
+                 <div className="flex items-center gap-3">
+                   <Input id="appointment_letter_url" type="file" accept="image/*,.pdf" className={inputClass} onChange={(e) => handleFileUpload(e, 'appointment_letter_url')} required={!formData.appointment_letter_url} />
+                   {uploadingDoc === 'appointment_letter_url' && <FaSpinner className="animate-spin text-(--greenish-color) shrink-0" />}
+                   {formData.appointment_letter_url && <span className="text-emerald-600 text-xs font-bold shrink-0">✓ Uploaded</span>}
+                 </div>
+               </div>
+               
+               <div>
+                 <Label htmlFor="id_card_url" className="text-start block mb-2 font-medium">Employer ID Card *</Label>
+                 <div className="flex items-center gap-3">
+                   <Input id="id_card_url" type="file" accept="image/*,.pdf" className={inputClass} onChange={(e) => handleFileUpload(e, 'id_card_url')} required={!formData.id_card_url} />
+                   {uploadingDoc === 'id_card_url' && <FaSpinner className="animate-spin text-(--greenish-color) shrink-0" />}
+                   {formData.id_card_url && <span className="text-emerald-600 text-xs font-bold shrink-0">✓ Uploaded</span>}
+                 </div>
+               </div>
+               
+               <div>
+                 <Label htmlFor="optional_document_url" className="text-start block mb-2 font-medium">Optional Document</Label>
+                 <div className="flex items-center gap-3">
+                   <Input id="optional_document_url" type="file" accept="image/*,.pdf" className={inputClass} onChange={(e) => handleFileUpload(e, 'optional_document_url')} />
+                   {uploadingDoc === 'optional_document_url' && <FaSpinner className="animate-spin text-(--greenish-color) shrink-0" />}
+                   {formData.optional_document_url && <span className="text-emerald-600 text-xs font-bold shrink-0">✓ Uploaded</span>}
+                 </div>
+               </div>
             </div>
           </div>
         </div>
@@ -921,7 +1016,7 @@ export default function OnboardingPage() {
           </div>
           <div>
             <Label htmlFor="cropType" className="block mb-1.5 font-medium">
-              Primary Crop / Livestock
+              Primary Crop
             </Label>
             <Input
               id="cropType"
