@@ -1,11 +1,11 @@
 import { ProductInfo } from "@/app/products/[id]/components/ProductInfo";
 import { ProductInformation } from "@/app/products/[id]/components/ProductInformation";
 import { SellerCard } from "@/app/products/[id]/components/SellerCard";
-import NotFound from "@/app/not-found";
+import { notFound } from "next/navigation";
 
 export function ProductDetail({ product, summary }) {
   if (!product) {
-    return <NotFound />;
+    notFound();
   }
 
   return (

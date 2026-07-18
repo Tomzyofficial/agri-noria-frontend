@@ -63,56 +63,80 @@ const GovernmentDashboard = ({ stats }) => (
   </div>
 );
 
-const BankDashboard = ({ stats }) => (
-  <div className="space-y-6">
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Outstanding Loans</p>
-              <h3 className="text-3xl font-black mt-2 text-(--foreground)">₦{stats.overview?.totalDeployed?.toLocaleString() || "0"}</h3>
+const BankDashboard = () => {
+  const [portfolio, setPortfolio] = useState({ activeLoans: 0, repaymentRate: 0, atRisk: 0, enrolledFarmers: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPortfolio = async () => {
+      try {
+        const res = await fetch("/api/proxy/admin/institution/portfolio");
+        const json = await res.json();
+        if (json.success) {
+          setPortfolio(json.data || { activeLoans: 0, repaymentRate: 0, atRisk: 0, enrolledFarmers: 0 });
+        }
+      } catch (error) {
+        console.error("Failed to load portfolio");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPortfolio();
+  }, []);
+
+  if (loading) return <div className="h-32 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Outstanding Loans</p>
+                <h3 className="text-3xl font-black mt-2 text-(--foreground)">₦{parseFloat(portfolio.activeLoans || 0).toLocaleString()}</h3>
+              </div>
+              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-xl"><Activity size={24} /></div>
             </div>
-            <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-xl"><Activity size={24} /></div>
-          </div>
-        </CardContent>
-      </Card>
-      <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Repayment Rate</p>
-              <h3 className="text-3xl font-black mt-2 text-(--foreground)">87.5%</h3>
+          </CardContent>
+        </Card>
+        <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Repayment Rate</p>
+                <h3 className="text-3xl font-black mt-2 text-(--foreground)">{portfolio.repaymentRate}%</h3>
+              </div>
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl"><TrendingUp size={24} /></div>
             </div>
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl"><TrendingUp size={24} /></div>
-          </div>
-        </CardContent>
-      </Card>
-      <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Portfolio at Risk</p>
-              <h3 className="text-3xl font-black mt-2 text-red-500">12.5%</h3>
+          </CardContent>
+        </Card>
+        <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Portfolio at Risk</p>
+                <h3 className="text-3xl font-black mt-2 text-red-500">{portfolio.atRisk}%</h3>
+              </div>
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-xl"><ShieldAlert size={24} /></div>
             </div>
-            <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-xl"><ShieldAlert size={24} /></div>
-          </div>
-        </CardContent>
-      </Card>
-      <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Farmer Profiles</p>
-              <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.totalFarmers?.toLocaleString() || "0"}</h3>
+          </CardContent>
+        </Card>
+        <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Farmer Profiles</p>
+                <h3 className="text-3xl font-black mt-2 text-(--foreground)">{(portfolio.enrolledFarmers || 0).toLocaleString()}</h3>
+              </div>
+              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-xl"><Users size={24} /></div>
             </div>
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-xl"><Users size={24} /></div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const CommodityBoardDashboard = ({ stats }) => (
   <div className="space-y-6">

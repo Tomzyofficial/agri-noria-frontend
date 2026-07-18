@@ -79,7 +79,12 @@ export default function InstitutionLayout({ children }) {
         { label: "Farmer Registry", href: "/ecosystem/institution/farmers", icon: <Globe className="w-4 h-4" /> },
         { label: "Programme Management", href: "/ecosystem/institution/programs", icon: <Landmark className="w-4 h-4" /> },
         { label: "Monitoring", href: "/ecosystem/institution/monitoring", icon: <Activity className="w-4 h-4" /> },
-        { label: "Approvals", href: "/ecosystem/institution/approvals", icon: <Coins className="w-4 h-4" /> },
+      ];
+      break;
+    case "finance":
+      navMenu = [
+        { label: "Financial Dashboard", href: "/ecosystem/institution", icon: <LayoutDashboard className="w-4 h-4" /> },
+        { label: "Approvals Center", href: "/ecosystem/institution/approvals", icon: <Coins className="w-4 h-4" /> },
       ];
       break;
     case "bank":
