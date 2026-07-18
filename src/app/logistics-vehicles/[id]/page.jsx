@@ -1,6 +1,6 @@
 import { VehicleDetail } from "@/app/logistics-vehicles/[id]/components/VehicleDetailsPage";
 import { Footer } from "@/components/ui/Footer";
-import NotFound from "@/app/not-found";
+import { notFound } from "next/navigation";
 import { apiUrl } from "@/_lib/api";
 
 export default async function Page({ params }) {
@@ -34,12 +34,7 @@ export default async function Page({ params }) {
 
   // Error or Not Found state
   if (error || !vehicleData) {
-    return (
-      <>
-        <NotFound />
-        <Footer />
-      </>
-    );
+    notFound();
   }
 
   // Success - render vehicle details
