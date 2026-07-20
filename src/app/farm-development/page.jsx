@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { apiUrl } from "@/_lib/api";
+import { formatLabel } from "@/utils/otherUtils";
 
 export async function getData() {
   const response = await fetch(apiUrl("/api/farm-development/public/service-list"));
@@ -135,10 +136,10 @@ export default async function FarmingPage() {
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "16px" }}>
           {(service.serviceCategoryCard || []).map((cat, i) => (
-            <Link key={cat.category} href={`/farm-development/services?category=${encodeURIComponent(cat.category)}`} style={{ textDecoration: "none" }}>
+            <Link key={cat.category} href={`/farm-development/services?category=${cat.category}`} style={{ textDecoration: "none" }}>
               <div className="bg-white rounded-lg p-[24px] h-40 border border-gray-200 text-center transition transition-all duration-250 hover:translate-y-[-3px] hover:border-[#9DC07A] hover:shadow-[0_8px_24px_rgba(61,107,69,0.12)]">
                 <div style={{ fontSize: "32px", marginBottom: "12px" }}>{categoryIcons[cat.slug] || "🌱"}</div>
-                <h3 style={{ fontFamily: "Playfair Display, serif", fontSize: "15px", fontWeight: "700", color: "#2C1A0E", marginBottom: "6px" }}>{cat.category}</h3>
+                <h3 style={{ fontFamily: "Playfair Display, serif", fontSize: "15px", fontWeight: "700", color: "#2C1A0E", marginBottom: "6px" }}>{formatLabel(cat.category)}</h3>
                 <p style={{ fontSize: "12px", color: "#8B5E3C" }}>
                   {cat.service_count} service{cat.service_count !== 1 ? "s" : ""}
                 </p>

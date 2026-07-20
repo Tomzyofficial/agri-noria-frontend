@@ -8,8 +8,8 @@ import { IoIosFunnel } from "react-icons/io";
 import Link from "next/link";
 import { useSearchParams } from "node_modules/next/navigation";
 import { useState } from "react";
-import { NoSearchResults } from "./components/NoSearchResult";
-import { NoJobsAvailable } from "./components/NoJobsAvailable";
+import { NoSearchResults } from "./NoSearchResult";
+import { NoJobsAvailable } from "./NoJobsAvailable";
 import { useRouter } from "next/navigation";
 import { formatLabel } from "@/utils/otherUtils";
 
@@ -29,41 +29,41 @@ export function JobsPageClient({ jobs }) {
 
   return (
     <>
-      <header className="bg-gradient-to-r from-[#1a481e] via-[#113211] to-[#364511] h-[80dvh] w-full text-start px-8 py-25 text-[#fbf9ed]">
-        <span className="border border-gray-200 uppercase leading-6 p-2 rounded-full text-md">Jobs across the value chain</span>
+      <header className="bg-gradient-to-r from-[#1a481e] via-[#113211] to-[#364511] max-h-120 w-full text-start px-4 py-12 text-[#fbf9ed] lg:h-[80dvh] md:px-8 md:py-25">
+        <span className="border border-gray-200 uppercase leading-6 p-2 rounded-full text-[10px] md:text-md ">Jobs across the value chain</span>
         <div className="py-5">
-          <h1 className="text-5xl">
+          <h1 className="text-3xl md:text-5xl">
             Work the land. <span className="text-[#f7a020]">Move the harvest.</span>
           </h1>
-          <p className="max-w-4xl text-2xl">Verified roles posted directly by farmers, cooperatives, sellers and distributors. Apply in minutes with your CV — no account required.</p>
+          <p className="text-lg md:text-xl md:max-w-3xl md:text-2xl">Verified roles posted directly by farmers, cooperatives, sellers and distributors. Apply in minutes with your CV — no account required.</p>
         </div>
-        <form className="flex w-[80%] job-search-form">
-          <div className="relative w-[40%] h-10">
+        <form className="grid grid-cols-2 md:grid-cols-3 max-w-full job-search-form md:max-w-5xl">
+          <div className="relative h-10">
             <IoSearch className="absolute left-2 top-1/2 -translate-y-1/2" />
             <Input name="search" type="search" placeholder="Search title, category, or employer" className="rounded-l-full w-full h-full pl-8 pr-3 border border-gray-100 outline-none" />
           </div>
-          <div className="relative h-10 w-[30%]">
+          <div className="relative h-10">
             <FaLocationDot className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input name="location" type="search" placeholder="City, state, country" className="w-full h-full pl-8 border border-gray-100 outline-none" />
+            <Input name="location" type="search" placeholder="City, state, country" className="w-full h-full pl-8 border border-gray-100 outline-none rounded-r-full md:rounded-none" />
           </div>
-          <Button type="submit" className="hover:bg-[#364511] transition-colors bg-transparent border border-gray-100 cursor-pointer text-center text-lg rounded-r-full w-[10%] h-10">
+          <Button type="submit" className="mt-2 md:mt-0 hover:bg-[#364511] transition-colors bg-transparent border border-gray-100 cursor-pointer text-center text-lg md:rounded-r-full max-w-30 h-10 rounded-lg">
             Search
           </Button>
         </form>
-        <div className="flex gap-6 mt-2 text-sm text-gray-50">
-          <p className="flex items-center gap-1">
+        <div className="grid grid-cols-2 md:flex gap-4 mt-2 text-sm text-gray-50">
+          <p className="text-sm flex items-center gap-1">
             <span>
               <FaRegCheckCircle />
             </span>
             Verified vendors
           </p>
-          <p className="flex items-center gap-1">
+          <p className="text-sm flex items-center gap-1">
             <span>
               <FaRegCheckCircle />
             </span>
             No account needed to apply
           </p>
-          <p className="flex items-center gap-1">
+          <p className="text-sm flex items-center gap-1 ">
             <span>
               <FaRegCheckCircle />
             </span>
@@ -72,13 +72,13 @@ export function JobsPageClient({ jobs }) {
         </div>
       </header>
       <section>
-        <div className="flex items-center gap-4 bg-white p-2 h-15">
+        <div className="flex items-center gap-4 bg-white p-2 h-15 overflow-y-auto">
           <span className="inline-flex items-center">
             <IoIosFunnel />
             TYPE
           </span>
           {JOBTYPE.map((type) => (
-            <Button key={type} className={`border border-gray-500 px-4 py-1 rounded-full ${typeFilter === type ? "bg-[#1a481e] text-white" : "bg-gray-200"}`} onClick={() => setTypeFilter(type)}>
+            <Button key={type} className={`w-full border border-gray-500 px-4 py-1 rounded-full ${typeFilter === type ? "bg-[#1a481e] text-white" : "bg-gray-200"}`} onClick={() => setTypeFilter(type)}>
               {type}
             </Button>
           ))}

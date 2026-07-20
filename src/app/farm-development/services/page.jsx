@@ -1,4 +1,4 @@
-import ServicesPage from "./servicePage";
+import ServicesPage from "../components/servicePage";
 import { apiUrl } from "@/_lib/api";
 
 export default async function Page({ searchParams }) {

@@ -6,7 +6,7 @@ export function apiUrl(path) {
    const cleanPath = path.startsWith("/") ? path : `/${path}`;
    let baseUrl = BACKEND_URL;
    if (baseUrl && baseUrl.includes("localhost")) {
-       baseUrl = baseUrl.replace("localhost", "127.0.0.1");
+      baseUrl = baseUrl.replace("localhost", "127.0.0.1");
    }
    return `${baseUrl}${cleanPath}`;
 }
