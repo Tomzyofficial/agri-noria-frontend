@@ -259,16 +259,30 @@ export function SigninForm() {
 
       // Clear previous errors
       setErrors({});
+      setFormData({
+        email: "",
+        password: "",
+        rememberMe: false,
+      });
 
-      // Final full-schema validation before submit
-      const finalCheck = signinSchema.safeParse(normalizedData);
+      const session = await verifyVendorSession();
 
-      if (!finalCheck.success) {
-         const fieldErrors = finalCheck.error.flatten().fieldErrors;
-         setErrors({ err: fieldErrors });
-         const firstMsg = Object.values(fieldErrors).flat().filter(Boolean);
-         if (firstMsg) toast.error(firstMsg);
-         return;
+      if (session.authenticated) {
+        const { workspace, role, onboarding_status, onboarding_level } = session;
+        // Ecosystem farmers who haven't completed onboarding go directly there
+        if (
+          workspace?.toLowerCase() === "ecosystem" &&
+          role?.toLowerCase() === "farmer" &&
+          onboarding_status !== "completed" &&
+          onboarding_status !== "verified" &&
+          !(onboarding_level >= 3)
+        ) {
+          router.push("/ecosystem/farmer/onboarding");
+        } else if (onboarding_status === "pending") {
+          router.push("/onboarding");
+        } else {
+          router.push(resolveRedirectPath(role, workspace));
+        }
       }
 
       try {

@@ -1,11 +1,12 @@
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { FaMapMarkedAlt, FaPlus, FaTimes, FaUserTie, FaWallet } from "react-icons/fa";
-import { useState } from "react";
+import { FaMapMarkedAlt, FaPlus, FaTimes, FaUserTie, FaWallet, FaVideo } from "react-icons/fa";
+import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useProgramData } from "../useProgramData";
 import InputRequestModal from "@/app/components/dashboard/InputRequestModal";
+import ClusterChat from "../../components/ClusterChat";
 
 export default function ClusterOperationsPage() {
    const {
@@ -17,7 +18,37 @@ export default function ClusterOperationsPage() {
    const [clusterForm, setClusterForm] = useState({ name: "", program_id: "", region: "" });
    const [showAddMember, setShowAddMember] = useState(null);
    const [showMembers, setShowMembers] = useState(null);
+   const [showChat, setShowChat] = useState(null);
+   const [showScheduleTraining, setShowScheduleTraining] = useState(null);
+   const [clusterTrainings, setClusterTrainings] = useState([]);
+   const [trainingForm, setTrainingForm] = useState({ title: "", description: "", scheduled_at: "" });
    const [isRequestingClusterInput, setIsRequestingClusterInput] = useState(null);
+   const [showPreHarvest, setShowPreHarvest] = useState(null);
+   const [preHarvestForm, setPreHarvestForm] = useState({ commodity: "", estimated_yield_tons: "", offer_price_per_ton: "", expected_harvest_date: "" });
+   const [isListingPreHarvest, setIsListingPreHarvest] = useState(false);
+   const [showViewPreHarvest, setShowViewPreHarvest] = useState(null);
+   const [clusterPreHarvests, setClusterPreHarvests] = useState([]);
+
+   const fetchClusterTrainings = async (clusterId) => {
+      try {
+         const res = await fetch(`/api/proxy/pipeline/clusters/${clusterId}/training`);
+         if (res.ok) {
+            const data = await res.json();
+            if (data.success) setClusterTrainings(data.data || []);
+         }
+      } catch (e) {
+         console.error(e);
+      }
+   };
+
+   // Fetch trainings when modal opens
+   useEffect(() => {
+      if (showScheduleTraining) {
+         fetchClusterTrainings(showScheduleTraining);
+      } else {
+         setClusterTrainings([]);
+      }
+   }, [showScheduleTraining]);
    const [showRequestModal, setShowRequestModal] = useState(false);
    const [selectingForRequest, setSelectingForRequest] = useState(null);
    const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,6 +75,29 @@ export default function ClusterOperationsPage() {
             fetchClusters();
          }
       } catch { toast.error("Failed to create cluster"); }
+      finally { setIsSubmitting(false); }
+   };
+
+   const handleScheduleTraining = async (e) => {
+      e.preventDefault();
+      if (!trainingForm.title || !trainingForm.scheduled_at) {
+         toast.error("Title and Scheduled Time are required");
+         return;
+      }
+      setIsSubmitting(true);
+      try {
+         const res = await fetch(`/api/proxy/pipeline/clusters/${showScheduleTraining}/training`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(trainingForm),
+         });
+         if (res.ok) {
+            toast.success("Training scheduled successfully");
+            setShowScheduleTraining(null);
+            setTrainingForm({ title: "", description: "", scheduled_at: "" });
+         } else {
+            toast.error("Failed to schedule training");
+         }
+      } catch { toast.error("Network error"); }
       finally { setIsSubmitting(false); }
    };
 
@@ -97,10 +151,30 @@ export default function ClusterOperationsPage() {
       finally { setIsRequestingClusterInput(null); }
    };
 
+   const handleViewPreHarvest = async (cluster) => {
+      setShowViewPreHarvest(cluster);
+      setClusterPreHarvests([]);
+      try {
+         const res = await fetch(`/api/proxy/pipeline/preharvest/cluster/${cluster.id}`);
+         if (res.ok) {
+            const data = await res.json();
+            setClusterPreHarvests(data.data || []);
+         }
+      } catch (e) {
+         toast.error("Failed to fetch listings");
+      }
+   };
+
    // Derive button state for a cluster
    const getClusterButtonState = (cluster) => {
+      if (cluster.request_items_status === "delivered") {
+         return "completed"; // Delivery confirmed, now ready for distribution
+      }
+      if (cluster.request_items_status === "dispatched") {
+         return "needs_confirmation"; // Items dispatched by distributor, needs confirmation
+      }
       if (cluster.request_status === "approved" && cluster.request_items_status !== "pending") {
-         return "completed"; // Everything done
+         return "processing"; // Still processing / not dispatched yet
       }
       if (cluster.request_status === "items_selected") {
          return "awaiting_items_approval"; // Items selected, waiting for final approval
@@ -187,17 +261,20 @@ export default function ClusterOperationsPage() {
                                     </div>
                                  </div>
                                  <div className="flex items-center gap-3">
-                                    <span className={`px-4 py-1.5 text-[10px] rounded-full font-black uppercase tracking-widest ${btnState === "completed" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200" :
-                                       btnState === "awaiting_items_approval" ? "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border border-gray-300" :
-                                          btnState === "select_inputs" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-200" :
-                                             btnState === "awaiting_approval" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200" :
-                                                cluster.status === "active" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200" :
-                                                   "bg-gray-100 text-gray-600 border border-gray-200"
-                                       }`}>
-                                       {btnState === "completed" ? "Ready for Distribution" :
-                                          btnState === "awaiting_items_approval" ? "Inputs Submitted" :
-                                             btnState === "select_inputs" ? "Awaiting Selection" :
-                                                btnState === "awaiting_approval" ? "Funding Requested" : cluster.status}
+                                     <span className={`px-4 py-1.5 text-[10px] rounded-full font-black uppercase tracking-widest ${btnState === "completed" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-200" :
+                                        btnState === "awaiting_items_approval" ? "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border border-gray-300" :
+                                           btnState === "select_inputs" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-200" :
+                                              btnState === "awaiting_approval" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200" :
+                                                btnState === "needs_confirmation" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200" :
+                                                 cluster.status === "active" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200" :
+                                                    "bg-gray-100 text-gray-600 border border-gray-200"
+                                        }`}>
+                                        {btnState === "completed" ? "Ready for Distribution" :
+                                           btnState === "needs_confirmation" ? "Needs Confirmation" :
+                                           btnState === "awaiting_items_approval" ? "Inputs Submitted" :
+                                              btnState === "select_inputs" ? "Awaiting Selection" :
+                                                 btnState === "awaiting_approval" ? "Funding Requested" :
+                                                  btnState === "processing" ? "Processing Order" : cluster.status}
                                     </span>
                                  </div>
                               </div>
@@ -225,6 +302,10 @@ export default function ClusterOperationsPage() {
                                  <div className="flex flex-wrap gap-3">
                                     <Button onClick={() => { setShowAddMember(cluster.id); fetchEligibleFarmers(cluster.program_id, cluster.id); }} className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-6 py-3 font-bold rounded-xl transition shadow-lg shadow-blue-500/10">Recruit Farmers</Button>
                                     <Button onClick={() => { setShowMembers(cluster); fetchClusterMembers(cluster); }} className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs px-6 py-3 font-bold rounded-xl border border-gray-200 dark:border-gray-700 transition">Manage Members</Button>
+                                    <Button onClick={() => setShowChat(cluster.id)} className="bg-teal-600 hover:bg-teal-700 text-white text-xs px-6 py-3 font-bold rounded-xl transition shadow-lg shadow-teal-500/10">Open Chat</Button>
+                                    <Button onClick={() => setShowScheduleTraining(cluster.id)} className="bg-purple-600 hover:bg-purple-700 text-white text-xs px-6 py-3 font-bold rounded-xl transition shadow-lg shadow-purple-500/10">Schedule Training</Button>
+                                    <Button onClick={() => { setShowPreHarvest(cluster); setPreHarvestForm({ commodity: cluster.program_name, estimated_yield_tons: "", offer_price_per_ton: "", expected_harvest_date: "" })}} className="bg-amber-600 hover:bg-amber-700 text-white text-xs px-6 py-3 font-bold rounded-xl transition shadow-lg shadow-amber-500/10">List Pre-Harvest</Button>
+                                    <Button onClick={() => handleViewPreHarvest(cluster)} className="bg-orange-100 hover:bg-orange-200 text-orange-700 text-xs px-6 py-3 font-bold rounded-xl transition">View Listings</Button>
                                     <div className="ml-auto">
                                        {btnState === "select_inputs" ? (
                                           <Button
@@ -253,13 +334,46 @@ export default function ClusterOperationsPage() {
                                                 disabled
                                                 className="bg-emerald-600 cursor-not-allowed text-white text-xs px-6 py-3 font-bold rounded-xl shadow-none opacity-90"
                                              >
-                                                ✓ Ready for Distribution
+                                                ✓ Delivery Confirmed / Distributed
                                              </Button>
                                              {cluster.distributor_name && (
                                                 <div className="text-[10px] text-right text-emerald-800 dark:text-emerald-200 font-medium bg-emerald-50 border border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-800/50 px-2.5 py-1.5 rounded-md mt-1.5 shadow-sm">
                                                    Distributor: <span className="font-bold text-emerald-950 dark:text-emerald-50">{cluster.distributor_name}</span> {cluster.distributor_phone && `(${cluster.distributor_phone})`}
                                                 </div>
                                              )}
+                                          </div>
+                                       ) : btnState === "needs_confirmation" ? (
+                                          <div className="flex flex-col items-end gap-1">
+                                             <Button
+                                                onClick={async () => {
+                                                   try {
+                                                      const res = await fetch(`/api/proxy/pipeline/inputs/${cluster.pending_request_id}/confirm-delivery`, { method: "PATCH" });
+                                                      if (res.ok) {
+                                                         toast.success("Delivery confirmed!");
+                                                         fetchClusters();
+                                                      } else {
+                                                         toast.error("Failed to confirm delivery");
+                                                      }
+                                                   } catch { toast.error("Network error"); }
+                                                }}
+                                                className="bg-amber-500 hover:bg-amber-600 text-white text-xs px-6 py-3 font-bold rounded-xl shadow-lg animate-pulse"
+                                             >
+                                                ✓ Confirm Delivery
+                                             </Button>
+                                             {cluster.distributor_name && (
+                                                <div className="text-[10px] text-right text-emerald-800 dark:text-emerald-200 font-medium bg-emerald-50 border border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-800/50 px-2.5 py-1.5 rounded-md mt-1.5 shadow-sm">
+                                                   Distributor: <span className="font-bold text-emerald-950 dark:text-emerald-50">{cluster.distributor_name}</span> {cluster.distributor_phone && `(${cluster.distributor_phone})`}
+                                                </div>
+                                             )}
+                                          </div>
+                                       ) : btnState === "processing" ? (
+                                          <div className="flex flex-col items-end gap-1">
+                                             <Button
+                                                disabled
+                                                className="bg-blue-600 cursor-not-allowed text-white text-xs px-6 py-3 font-bold rounded-xl shadow-none opacity-60"
+                                             >
+                                                Processing Order
+                                             </Button>
                                           </div>
                                        ) : (
                                           <Button
@@ -405,6 +519,207 @@ export default function ClusterOperationsPage() {
                </Card>
             </div>
          )}
+         {/* Pre-Harvest Listing Modal */}
+         {showPreHarvest && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+               <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] p-8 w-full max-w-lg shadow-2xl relative border border-gray-100 dark:border-gray-800">
+                  <button onClick={() => setShowPreHarvest(null)} className="absolute top-8 right-8 text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition bg-gray-50 dark:bg-gray-800 rounded-full p-2">
+                     <FaTimes />
+                  </button>
+                  <h2 className="text-2xl font-black text-(--foreground) tracking-tight mb-2">List Pre-Harvest</h2>
+                  <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-8">Offer future yields to buyers</p>
+                  
+                  <form onSubmit={async (e) => {
+                     e.preventDefault();
+                     setIsListingPreHarvest(true);
+                     try {
+                        const res = await fetch("/api/proxy/pipeline/preharvest", {
+                           method: "POST", headers: { "Content-Type": "application/json" },
+                           body: JSON.stringify({
+                              cluster_id: showPreHarvest.id,
+                              program_id: showPreHarvest.program_id,
+                              commodity: preHarvestForm.commodity,
+                              estimated_yield_tons: preHarvestForm.estimated_yield_tons,
+                              offer_price_per_ton: preHarvestForm.offer_price_per_ton,
+                              expected_harvest_date: preHarvestForm.expected_harvest_date
+                           })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                           toast.success("Pre-harvest listing created successfully!");
+                           setShowPreHarvest(null);
+                        } else {
+                           toast.error(data.error || "Failed to create listing");
+                        }
+                     } catch(err) {
+                        toast.error("Error creating listing");
+                     } finally {
+                        setIsListingPreHarvest(false);
+                     }
+                  }} className="space-y-6">
+                     <div>
+                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest block mb-2">Commodity</label>
+                        <input type="text" required value={preHarvestForm.commodity} onChange={e => setPreHarvestForm({...preHarvestForm, commodity: e.target.value})} className="w-full bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl px-6 py-4 font-bold text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-amber-500 outline-none transition" />
+                     </div>
+                     <div>
+                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest block mb-2">Estimated Yield (Tons)</label>
+                        <input type="number" step="0.01" required value={preHarvestForm.estimated_yield_tons} onChange={e => setPreHarvestForm({...preHarvestForm, estimated_yield_tons: e.target.value})} className="w-full bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl px-6 py-4 font-bold text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-amber-500 outline-none transition" />
+                     </div>
+                     <div>
+                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest block mb-2">Offer Price per Ton (₦)</label>
+                        <input type="number" step="0.01" required value={preHarvestForm.offer_price_per_ton} onChange={e => setPreHarvestForm({...preHarvestForm, offer_price_per_ton: e.target.value})} className="w-full bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl px-6 py-4 font-bold text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-amber-500 outline-none transition" />
+                     </div>
+                     <div>
+                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest block mb-2">Expected Harvest Date</label>
+                        <input type="date" required value={preHarvestForm.expected_harvest_date} onChange={e => setPreHarvestForm({...preHarvestForm, expected_harvest_date: e.target.value})} className="w-full bg-gray-50 dark:bg-gray-800/50 border-none rounded-2xl px-6 py-4 font-bold text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-amber-500 outline-none transition" />
+                     </div>
+                     
+                     <Button disabled={isListingPreHarvest} type="submit" className="w-full bg-amber-600 hover:bg-amber-700 text-white font-black py-4 rounded-xl shadow-xl shadow-amber-600/20">
+                        {isListingPreHarvest ? "Listing..." : "Submit Listing"}
+                     </Button>
+                  </form>
+               </div>
+            </div>
+         )}
+         {/* Chat Interface */}
+         {showChat && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+               <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl relative flex flex-col">
+                  <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-800">
+                     <h3 className="text-xl font-black text-(--foreground)">Cluster Chat</h3>
+                     <button onClick={() => setShowChat(null)} className="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20">
+                        <FaTimes size={20} />
+                     </button>
+                  </div>
+                  <div className="p-6">
+                     <ClusterChat clusterId={showChat} />
+                  </div>
+               </div>
+            </div>
+         )}
+         {/* Schedule/Live Sessions Modal */}
+         {showScheduleTraining && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+               <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+                  <div className="flex justify-between items-center mb-6">
+                     <h3 className="text-xl font-black text-(--foreground)">Cluster Live Sessions</h3>
+                     <button onClick={() => setShowScheduleTraining(null)} className="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20">
+                        <FaTimes size={20} />
+                     </button>
+                  </div>
+                  
+                  {clusterTrainings.length > 0 && (
+                     <div className="mb-8">
+                        <h4 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Scheduled Sessions</h4>
+                        <div className="space-y-3">
+                           {clusterTrainings.map(t => (
+                              <div key={t.id} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                                 <div>
+                                    <p className="font-bold text-sm text-gray-900 dark:text-gray-100">{t.title}</p>
+                                    <p className="text-xs text-gray-500 mt-1">{new Date(t.scheduled_time).toLocaleString()}</p>
+                                 </div>
+                                 <Button 
+                                    onClick={() => window.open(`/ecosystem/program-management/clusters/live/${t.id}`, '_blank')}
+                                    className="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2"
+                                 >
+                                    <FaVideo /> Join Session
+                                 </Button>
+                              </div>
+                           ))}
+                        </div>
+                     </div>
+                  )}
+
+                  <div className="border-t border-gray-100 dark:border-gray-800 pt-6">
+                     <h4 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Schedule New Session</h4>
+                     <form onSubmit={handleScheduleTraining} className="space-y-4">
+                        <div>
+                           <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Training Title</label>
+                           <input
+                              required
+                              type="text"
+                              value={trainingForm.title}
+                              onChange={e => setTrainingForm({ ...trainingForm, title: e.target.value })}
+                              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500"
+                              placeholder="e.g. Pest Control Best Practices"
+                           />
+                        </div>
+                     <div>
+                        <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Description</label>
+                        <textarea
+                           value={trainingForm.description}
+                           onChange={e => setTrainingForm({ ...trainingForm, description: e.target.value })}
+                           className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500 resize-none h-24"
+                           placeholder="Brief description of the session..."
+                        />
+                     </div>
+                     <div>
+                        <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Scheduled Time</label>
+                        <input
+                           required
+                           type="datetime-local"
+                           value={trainingForm.scheduled_at}
+                           onChange={e => setTrainingForm({ ...trainingForm, scheduled_at: e.target.value })}
+                           className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-purple-500"
+                        />
+                     </div>
+                     <Button disabled={isSubmitting} type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl mt-4">
+                        {isSubmitting ? "Scheduling..." : "Schedule Live Session"}
+                     </Button>
+                  </form>
+               </div>
+            </div>
+         </div>
+      )}
+      
+      {/* View Pre-Harvest Listings Modal */}
+      {showViewPreHarvest && (
+         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+            <div className="bg-white dark:bg-gray-900 w-full max-w-3xl rounded-[32px] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+               <div className="px-8 py-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50">
+                  <div>
+                     <h2 className="text-2xl font-black text-(--foreground) tracking-tight mb-1">Pre-Harvest Listings</h2>
+                     <p className="text-xs font-bold uppercase tracking-widest text-gray-500">Listings for {showViewPreHarvest.name}</p>
+                  </div>
+                  <button onClick={() => setShowViewPreHarvest(null)} className="p-3 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-2xl transition-colors">
+                     <FaTimes className="text-gray-500" />
+                  </button>
+               </div>
+               <div className="p-8 max-h-[60vh] overflow-y-auto">
+                  {clusterPreHarvests.length === 0 ? (
+                     <div className="text-center py-10">
+                        <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">No listings found</p>
+                     </div>
+                  ) : (
+                     <div className="grid gap-4">
+                        {clusterPreHarvests.map(listing => (
+                           <div key={listing.id} className="p-5 border border-gray-100 dark:border-gray-800 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                              <div>
+                                 <p className="font-black text-lg text-gray-900 dark:text-gray-100">{listing.commodity}</p>
+                                 <p className="text-xs text-gray-500 font-bold uppercase mt-1">Status: <span className={listing.status === 'available' ? 'text-green-500' : 'text-orange-500'}>{listing.status}</span></p>
+                              </div>
+                              <div className="flex items-center gap-6 text-sm">
+                                 <div>
+                                    <p className="text-xs text-gray-500 font-bold uppercase">Yield</p>
+                                    <p className="font-bold">{listing.estimated_yield_tons} Tons</p>
+                                 </div>
+                                 <div>
+                                    <p className="text-xs text-gray-500 font-bold uppercase">Price/Ton</p>
+                                    <p className="font-bold text-emerald-600">₦{parseFloat(listing.offer_price_per_ton).toLocaleString()}</p>
+                                 </div>
+                                 <div>
+                                    <p className="text-xs text-gray-500 font-bold uppercase">Expected</p>
+                                    <p className="font-bold">{new Date(listing.expected_harvest_date).toLocaleDateString()}</p>
+                                 </div>
+                              </div>
+                           </div>
+                        ))}
+                     </div>
+                  )}
+               </div>
+            </div>
+         </div>
+      )}
       </div>
    );
 }

@@ -19,7 +19,7 @@ export default function ContractsPage() {
 
          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
-               <Card className="border-none shadow-2xl bg-white dark:bg-gray-950 rounded-[2.5rem] overflow-hidden">
+               <Card className="border-none shadow-2xl bg-white dark:bg-gray-950 rounded-[2.5rem] overflow-hidden mb-8">
                   <CardHeader className="p-10 border-b border-gray-50 dark:border-gray-900">
                      <CardTitle className="text-xl font-black flex items-center gap-3">
                         <FaFileContract className="text-indigo-600" /> Confirmed Agreements
@@ -36,6 +36,28 @@ export default function ContractsPage() {
                         <div className="text-center py-24 bg-gray-50 dark:bg-gray-900/50 rounded-3xl border-2 border-dashed border-gray-100 dark:border-gray-800">
                            <FaFileContract className="text-5xl text-gray-200 mx-auto mb-4" />
                            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest italic">No confirmed contracts found</p>
+                        </div>
+                     )}
+                  </CardContent>
+               </Card>
+
+               <Card className="border-none shadow-2xl bg-white dark:bg-gray-950 rounded-[2.5rem] overflow-hidden">
+                  <CardHeader className="p-10 border-b border-gray-50 dark:border-gray-900">
+                     <CardTitle className="text-xl font-black flex items-center gap-3">
+                        <FaFileContract className="text-amber-600" /> Pre-Harvest Forward Contracts
+                     </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-10">
+                     {forwardContracts.length > 0 ? (
+                        <div className="space-y-4">
+                           {forwardContracts.map((contract, i) => (
+                              <ForwardContractRow key={i} contract={contract} />
+                           ))}
+                        </div>
+                     ) : (
+                        <div className="text-center py-24 bg-gray-50 dark:bg-gray-900/50 rounded-3xl border-2 border-dashed border-gray-100 dark:border-gray-800">
+                           <FaFileContract className="text-5xl text-gray-200 mx-auto mb-4" />
+                           <p className="text-sm font-bold text-gray-400 uppercase tracking-widest italic">No forward contracts found</p>
                         </div>
                      )}
                   </CardContent>
@@ -98,9 +120,36 @@ function ContractRow({ contract }) {
 
 function ContractStat({ label, value }) {
    return (
-      <div className="p-4 bg-white/10 rounded-2xl border border-white/20">
-         <p className="text-[9px] font-black uppercase tracking-widest opacity-60 mb-1">{label}</p>
-         <p className="text-lg font-black">{value}</p>
+      <div className="flex justify-between items-center pb-4 border-b border-white/20 last:border-0 last:pb-0">
+         <span className="text-xs font-black uppercase tracking-widest text-indigo-200">{label}</span>
+         <span className="text-lg font-black">{value}</span>
+      </div>
+   );
+}
+
+function ForwardContractRow({ contract }) {
+   return (
+      <div className="p-6 bg-amber-50/50 dark:bg-amber-900/10 rounded-3xl border border-amber-100 dark:border-amber-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 hover:shadow-lg transition-all group">
+         <div className="flex items-center gap-6">
+            <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center shadow-sm group-hover:bg-amber-600 group-hover:text-white transition-all">
+               <FaFileContract size={24} />
+            </div>
+            <div>
+               <h3 className="text-lg font-black">Pre-Order: {contract.commodity}</h3>
+               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Expected: {new Date(contract.expected_harvest_date).toLocaleDateString()} • {contract.quantity_tons} Tons</p>
+            </div>
+         </div>
+         <div className="flex items-center gap-4 shrink-0">
+            <div className="text-right">
+               <p className="text-xl font-black text-amber-600">₦{parseFloat(contract.total_price || 0).toLocaleString()}</p>
+               <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center justify-end gap-1">
+                  {contract.escrow_status === 'pending_deposit' ? 'Awaiting Escrow Deposit' : contract.escrow_status}
+               </span>
+            </div>
+            <button className="p-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-900/20 text-gray-400 hover:text-amber-600 transition-all">
+               <FaFileDownload />
+            </button>
+         </div>
       </div>
    );
 }

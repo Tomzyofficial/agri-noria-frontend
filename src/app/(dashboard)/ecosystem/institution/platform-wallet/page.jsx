@@ -174,7 +174,7 @@ export default function PlatformWalletPage() {
                      <option value="">-- Select an entity --</option>
                      {entityWallets.map(w => (
                         <option key={w.id} value={w.id}>
-                           {w.owner_type.toUpperCase()} - {w.fname} {w.lname} ({w.company_name || 'Individual'}) - Balance: {formatCurrency(w.balance)}
+                           {w.owner_type.toUpperCase()} - {w.fname} {w.lname} ({w.email}) ({w.company_name || 'Individual'}) - Balance: {formatCurrency(w.balance)}
                         </option>
                      ))}
                   </select>

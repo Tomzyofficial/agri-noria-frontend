@@ -85,12 +85,19 @@ export default async function middleware(request) {
 
   try {
     // VENDOR PROTECTION
-    if (pathname.startsWith("/marketplace") || pathname.startsWith("/ecosystem")) {
+    if (
+      pathname.startsWith("/marketplace") ||
+      pathname.startsWith("/ecosystem") ||
+      pathname.startsWith("/dashboard")
+    ) {
       const token = request.cookies.get("vendor-session")?.value;
 
       if (!token) {
         console.log("Middleware: No vendor session token found");
-        return NextResponse.redirect(new URL("/", request.url));
+        const redirectUrl = pathname.startsWith("/dashboard")
+          ? "/auth/signin"
+          : "/";
+        return NextResponse.redirect(new URL(redirectUrl, request.url));
       }
 
       try {
@@ -135,6 +142,10 @@ export default async function middleware(request) {
           const userRole = payload.role?.toLowerCase();
           const allowedBaseRoute = ecosystemRoleRoutes[userRole];
 
+          if (payload.approval_status === "pending_approval" && pathname.startsWith("/ecosystem")) {
+             return NextResponse.redirect(new URL("/onboarding", request.url));
+          }
+
           if (allowedBaseRoute) {
             // Redirect root /ecosystem to their specific dashboard
             if (pathname === "/ecosystem" || pathname === "/ecosystem/") {
@@ -177,5 +188,11 @@ export default async function middleware(request) {
 }
 
 export const config = {
-  matcher: ["/marketplace/:path*", "/ecosystem/:path*", "/buyer/:path*", "/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/marketplace/:path*",
+    "/ecosystem/:path*",
+    "/dashboard/:path*",
+    "/buyer/:path*",
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+  ],
 };

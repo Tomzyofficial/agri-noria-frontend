@@ -114,6 +114,7 @@ export default function FinanceApprovalsPage() {
   });
   const [stage1, setStage1] = useState([]);
   const [stage2, setStage2] = useState([]);
+  const [stage3, setStage3] = useState([]);
   const [history, setHistory] = useState([]);
   const [distributors, setDistributors] = useState([]);
   const [marketplaceOrders, setMarketplaceOrders] = useState([]);
@@ -156,6 +157,11 @@ export default function FinanceApprovalsPage() {
       setStage2(
         pending.filter(
           (r) => r.funds_status === "approved" && r.status === "items_selected",
+        ),
+      );
+      setStage3(
+        pending.filter(
+          (r) => r.funds_status === "approved" && r.items_status === "delivered",
         ),
       );
       const all = allJson.success ? allJson.data || [] : [];
@@ -260,6 +266,28 @@ export default function FinanceApprovalsPage() {
     }
   };
 
+  const handleReleaseFunds = async (req) => {
+    setProcessingId(`release-${req.id}`);
+    try {
+      const res = await fetch("/api/proxy/admin/institution/payout-distributor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId: req.id }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(`✅ Payout released to distributor for ${req.fname} ${req.lname}`);
+        fetchData();
+      } else {
+        toast.error(json.error || "Failed to release payout");
+      }
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   if (loading)
     return (
       <div className="space-y-6 animate-pulse">
@@ -320,7 +348,7 @@ export default function FinanceApprovalsPage() {
           Finance Approval Center
         </h1>
         <p className="text-gray-500 mt-1">
-          Two-stage authorization: Fund release → Input & Distributor Assignment
+          Three-stage authorization: Fund release → Input & Distributor Assignment → Payout Authorization
         </p>
       </div>
 
@@ -577,7 +605,79 @@ export default function FinanceApprovalsPage() {
         )}
       </div>
 
-          {/* (End of STAGE 2) */}
+      {/* STAGE 3 — Payout Authorization */}
+      <div className="pt-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black text-sm">
+            3
+          </div>
+          <h2 className="text-lg font-black">
+            Stage 3 — Payout Authorization
+          </h2>
+          {stage3.length > 0 && (
+            <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-full uppercase tracking-wider">
+              {stage3.length} Pending Payout
+            </span>
+          )}
+        </div>
+
+        {stage3.length === 0 ? (
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-12 text-center">
+              <CheckCircle2 className="w-10 h-10 text-emerald-300 mx-auto mb-3" />
+              <p className="font-bold text-gray-400">
+                No requests awaiting payout authorization
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Requests move here after the items are delivered
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {stage3.map((req) => (
+              <Card
+                key={req.id}
+                className="border-none shadow-sm overflow-hidden"
+              >
+                <div className="h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />
+                <CardContent className="p-6 space-y-5">
+                  <div className="flex flex-col sm:flex-row justify-between gap-4">
+                    <RequesterCard req={req} />
+                    <div className="text-right">
+                      <p className="text-[10px] text-gray-400 font-bold uppercase">
+                        Total Payout Value
+                      </p>
+                      <p className="text-2xl font-black text-emerald-600">
+                        ₦
+                        {parseFloat(
+                          req.total_amount || req.total_value || 0,
+                        ).toLocaleString()}
+                      </p>
+                      <span className="text-[9px] font-black px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full uppercase">
+                        Delivered ✓
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      onClick={() => handleReleaseFunds(req)}
+                      disabled={processingId === `release-${req.id}`}
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl py-5 text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
+                    >
+                      <Building2 className="w-4 h-4 mr-2" /> 
+                      {processingId === `release-${req.id}` ? "Processing..." : "Authorize Payout to Distributor"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+          {/* (End of STAGE 3) */}
         </TabsContent>
 
         <TabsContent value="marketplace_orders" className="space-y-8">

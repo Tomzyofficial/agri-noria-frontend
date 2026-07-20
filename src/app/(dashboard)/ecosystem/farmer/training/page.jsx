@@ -1,15 +1,39 @@
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { FaGraduationCap, FaPlay, FaCheckCircle, FaLock } from "react-icons/fa";
+import { FaGraduationCap, FaPlay, FaCheckCircle, FaLock, FaVideo, FaCalendarAlt } from "react-icons/fa";
 import { useFarmerData } from "../useFarmerData";
+import { LiveVideoSession } from "@/components/agora/LiveVideoSession";
+import { useState } from "react";
+import { FaTimes } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 export default function TrainingCenterPage() {
-   const { loading, profile, trainingData } = useFarmerData();
+   const { loading, profile, trainingData, clusterTrainings } = useFarmerData();
+   const [activeSession, setActiveSession] = useState(null);
+   const [activeVideo, setActiveVideo] = useState(null);
 
    if (loading) return <div className="p-8 text-center animate-pulse font-black text-gray-400">Loading Curriculum...</div>;
 
-   const modules = trainingData.modules || [];
-   const progress = trainingData.progress || [];
+   if (activeSession) {
+      return (
+         <div className="space-y-6">
+            <button 
+               onClick={() => setActiveSession(null)}
+               className="text-sm font-bold text-gray-500 hover:text-gray-900 dark:hover:text-white"
+            >
+               ← Back to Training Center
+            </button>
+            <LiveVideoSession 
+               sessionData={activeSession} 
+               onEndSession={() => setActiveSession(null)} 
+            />
+         </div>
+      );
+   }
+
+   const modules = trainingData?.modules || [];
+   const progress = trainingData?.progress || [];
+   const liveSessions = clusterTrainings || [];
 
    return (
       <div className="space-y-8">
@@ -37,7 +61,17 @@ export default function TrainingCenterPage() {
                   modules.map((mod, i) => {
                      const prog = progress.find((p) => p.module_id === mod.id) || { status: "locked", score: null };
                      return (
-                        <ModuleRow key={mod.id} index={i} mod={mod} prog={prog} />
+                        <ModuleRow 
+                           key={mod.id} 
+                           index={i} 
+                           mod={mod} 
+                           prog={prog} 
+                           onPlay={() => {
+                              if (prog.status !== "locked") {
+                                 setActiveVideo(mod);
+                              }
+                           }}
+                        />
                      );
                   })
                ) : (
@@ -71,19 +105,100 @@ export default function TrainingCenterPage() {
                      <HelpLink label="Technical Support" />
                   </CardContent>
                </Card>
+
+               <Card className="border-none shadow-xl bg-white dark:bg-gray-950 rounded-3xl">
+                  <CardHeader className="p-6 pb-2">
+                     <CardTitle className="text-lg font-black flex items-center gap-2">
+                        <FaVideo className="text-purple-500" /> Live Sessions
+                     </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6 pt-0 space-y-4">
+                     {liveSessions.length === 0 ? (
+                        <p className="text-xs text-gray-400 font-medium">No upcoming sessions.</p>
+                     ) : (
+                        liveSessions.map((session, i) => (
+                           <div key={i} className="p-4 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
+                              <h4 className="font-bold text-sm mb-1">{session.title}</h4>
+                              <p className="text-xs text-gray-500 mb-3 flex items-center gap-1">
+                                 <FaCalendarAlt /> {new Date(session.scheduled_time || session.scheduled_at).toLocaleString()}
+                              </p>
+                              <button 
+                                 onClick={async () => {
+                                    try {
+                                       const res = await fetch(`/api/proxy/pipeline/clusters/training/${session.id}/join`, { method: "POST" });
+                                       const data = await res.json();
+                                       if (res.ok && data.success) {
+                                          setActiveSession({
+                                             token: data.data.agoraToken,
+                                             channelName: data.data.channelName,
+                                             appId: data.data.appId,
+                                             trainingId: session.id,
+                                             isHost: false,
+                                             uid: data.data.uid,
+                                             trainingTitle: session.title,
+                                          });
+                                       } else {
+                                          toast.error(data.error || "Failed to join session");
+                                       }
+                                    } catch (e) {
+                                       toast.error("Network error");
+                                    }
+                                 }}
+                                 className="w-full py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 dark:text-purple-400 rounded-lg text-xs font-bold transition-colors"
+                              >
+                                 Join Session
+                              </button>
+                           </div>
+                        ))
+                     )}
+                  </CardContent>
+               </Card>
             </div>
          </div>
+
+         {/* Video Library Modal */}
+         {activeVideo && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+               <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl relative">
+                  <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-gray-800">
+                     <div>
+                        <h3 className="text-xl font-black text-(--foreground)">{activeVideo.title}</h3>
+                        <p className="text-sm text-gray-500 mt-1">{activeVideo.description || "Training Module Video"}</p>
+                     </div>
+                     <button onClick={() => setActiveVideo(null)} className="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20">
+                        <FaTimes size={20} />
+                     </button>
+                  </div>
+                  <div className="aspect-video bg-black flex items-center justify-center">
+                     {activeVideo.video_url ? (
+                        <video controls className="w-full h-full" autoPlay>
+                           <source src={activeVideo.video_url} type="video/mp4" />
+                           Your browser does not support the video tag.
+                        </video>
+                     ) : (
+                        <div className="text-center text-gray-500 flex flex-col items-center">
+                           <FaPlay className="text-4xl mb-4 opacity-50" />
+                           <p className="font-bold">Video content not available</p>
+                        </div>
+                     )}
+                  </div>
+               </div>
+            </div>
+         )}
       </div>
    );
 }
 
-function ModuleRow({ index, mod, prog }) {
+function ModuleRow({ index, mod, prog, onPlay }) {
    const isCompleted = prog.status === "completed";
    const isLocked = prog.status === "locked";
    const isInProgress = prog.status === "in_progress";
 
    return (
-      <div className={`group flex items-center justify-between p-6 bg-white dark:bg-gray-950 rounded-3xl border transition-all ${isLocked ? 'opacity-70 grayscale' : 'hover:shadow-2xl hover:border-green-500/50 hover:-translate-x-1 cursor-pointer shadow-xl'} border-gray-50 dark:border-gray-900`}>
+      <div 
+         onClick={onPlay}
+         className={`group flex items-center justify-between p-6 bg-white dark:bg-gray-950 rounded-3xl border transition-all ${isLocked ? 'opacity-70 grayscale' : 'hover:shadow-2xl hover:border-green-500/50 hover:-translate-x-1 cursor-pointer shadow-xl'} border-gray-50 dark:border-gray-900`}
+      >
          <div className="flex items-center gap-6">
             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl shadow-lg ${isCompleted ? 'bg-green-500 text-white' : isInProgress ? 'bg-amber-500 text-white animate-pulse' : 'bg-gray-100 text-gray-400'}`}>
                {isCompleted ? <FaCheckCircle /> : index + 1}

@@ -3,7 +3,7 @@
    "version": "0.1.0",
    "private": true,
    "scripts": {
-      "dev": "next dev --turbopack",
+      "dev": "next dev",
       "build": "next build",
       "start": "next start",
       "test": "jest",
@@ -11,6 +11,7 @@
    },
    "dependencies": {
       "@hookform/resolvers": "^5.4.0",
+      "@mapbox/mapbox-gl-draw": "^1.5.1",
       "@radix-ui/react-tabs": "^1.1.13",
       "@turf/turf": "^7.3.5",
       "agora-rtc-sdk-ng": "^4.24.3",
@@ -20,6 +21,7 @@
       "leaflet": "^1.9.4",
       "lodash": "^4.18.1",
       "lucide-react": "^0.542.0",
+      "mapbox-gl": "^3.25.0",
       "motion": "^12.23.24",
       "next": "^15.5.7",
       "plaiceholder": "^3.0.0",
@@ -31,6 +33,7 @@
       "react-phone-number-input": "^3.4.17",
       "react-toastify": "^11.0.5",
       "recharts": "^3.8.1",
+      "socket.io-client": "^4.8.3",
       "swr": "^2.3.6",
       "zod": "^4.1.7"
    },

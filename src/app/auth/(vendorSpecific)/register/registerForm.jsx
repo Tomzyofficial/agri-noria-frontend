@@ -17,90 +17,89 @@ import { verifyVendorSession } from "@/actions/session";
 // import { EmailVerification } from "@/components/auth/EmailVerification";
 
 const workspaceRoleCategories = {
-   ecosystem: [
-      {
-         name: "Institution",
-         roles: ["Government", "Bank", "NGO", "DFI", "Commodity Board", "Finance"],
-      },
-      {
-         name: "Insurance",
-         roles: ["Insurance"],
-      },
-      {
-         name: "Storage",
-         roles: ["Storage"],
-      },
-      {
-         name: "Logistics",
-         roles: ["Logistics"],
-      },
-      {
-         name: "Distributor",
-         roles: ["Distributor"],
-      },
-      {
-         name: "Program Management",
-         roles: ["Program Director", "Regional Manager", "Cluster Supervisor"],
-      },
-      {
-         name: "Field Operations",
-         roles: ["Field Officer", "Agronomist", "Inspector", "Enumerator"],
-      },
-      {
-         name: "Farmer",
-         roles: ["Farmer"],
-      },
-      {
-         name: "Buyer / Partner",
-         roles: ["Exporter", "Off-taker", "Warehouse Buyer", "Processor", "Logistics Partner"],
-      },
-      {
-         name: "Aggregator",
-         roles: ["Aggregator"],
-      },
-      {
-         name: "Sales & Distribution",
-         roles: ["Sales Manager", "Logistics Coordinator", "Warehouse Supervisor"],
-      },
-      {
-         name: "Intelligence & Monitoring",
-         roles: ["Data Analyst", "Satellite Monitor", "Field Auditor"],
-      },
-   ],
+  ecosystem: [
+    {
+      name: "Institution",
+      roles: [
+        "Government",
+        "Bank",
+        "NGO",
+        "DFI",
+        "Commodity Board",
+      ],
+    },
+    {
+      name: "Insurance",
+      roles: ["Insurance"],
+    },
+    {
+      name: "Storage",
+      roles: ["Storage"],
+    },
+    {
+      name: "Logistics",
+      roles: ["Logistics"],
+    },
+    {
+      name: "Distributor",
+      roles: ["Distributor"],
+    },
+    {
+      name: "Program Management",
+      roles: ["Program Director", "Regional Manager", "Cluster Supervisor"],
+    },
+    {
+      name: "Field Operations",
+      roles: ["Field Officer", "Agronomist", "Inspector", "Enumerator"],
+    },
+    {
+      name: "Farmer",
+      roles: ["Farmer"],
+    },
+    {
+      name: "Buyer / Partner",
+      roles: ["Exporter", "Off-taker", "Warehouse Buyer", "Processor", "Logistics Partner"],
+    },
+    {
+      name: "Aggregator",
+      roles: ["Aggregator"],
+    },
 
-   marketplace: [
-      {
-         name: "Marketplace Sellers",
-         roles: ["Seller"],
-      },
+    {
+      name: "Intelligence & Monitoring",
+      roles: ["Data Analyst", "Satellite Monitor", "Field Auditor"],
+    },
+  ],
 
-      {
-         name: "Logistics & Fulfillment",
-         roles: ["Logistics"],
-      },
-      {
-         name: "Drone Marketplace & Services",
-         roles: ["Drone"],
-      },
+  marketplace: [
+    {
+      name: "Marketplace Sellers",
+      roles: ["Seller"],
+    },
 
-      {
-         name: "Storage & Warehousing",
-         roles: ["Storage Facility"],
-      },
+    {
+      name: "Logistics & Fulfillment",
+      roles: ["Logistics"],
+    },
 
-      {
-         name: "Farmers",
-         roles: ["Farmer"],
-      },
-      {
-         name: "Agricultural Trainers",
-         roles: ["Trainer"],
-      },
-      {
-         name: "Farm Development",
-         roles: ["Farm Development"],
-      },
-   ],
+    {
+      name: "Storage & Warehousing",
+      roles: ["Storage Facility"],
+    },
+
+    {
+      name: "Farmers",
+      roles: ["Farmer"],
+    },
+    {
+      name: "Agricultural Trainers",
+      roles: ["Trainer"],
+    },
+    {
+      name: "Farm Development",
+      roles: ["Farm Development"],
+    },
+  ],
 };
 
 const workspaceOptions = [
@@ -116,18 +115,60 @@ const workspaceOptions = [
 ];
 
 export function RegisterForm() {
-   const router = useRouter();
-   const [showPassword, setShowPassword] = useState(false);
-   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-   const [isLoading, setIsLoading] = useState(false);
-   const [errors, setErrors] = useState({});
+  const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
-   // Email verification state
-   //   const [showEmailVerification, setShowEmailVerification] = useState(false);
-   //   const [emailVerified, setEmailVerified] = useState(false);
+  // Email verification state
+  //   const [showEmailVerification, setShowEmailVerification] = useState(false);
+  //   const [emailVerified, setEmailVerified] = useState(false);
 
-   const [formData, setFormData] = useState({
-      workspace: "",
+  const [formData, setFormData] = useState({
+    workspace: "",
+    role: "",
+    fname: "",
+    lname: "",
+    email: "",
+    phone: "",
+    //  role: "",
+    pword: "",
+    confirmPword: "",
+    terms_of_service: false,
+    country_name: "",
+    country_code: "",
+    state_code: "",
+    state_name: "",
+    currency: "",
+    appointment_letter_url: "",
+    id_card_url: "",
+    optional_document_url: "",
+  });
+
+  // Handle email verification
+  //   const handleEmailVerified = (verified) => {
+  //     setEmailVerified(verified);
+  //     setShowEmailVerification(false);
+  //   };
+
+  // Multistep state
+  const [currentStep, setCurrentStep] = useState(0); // Step 0 is Role Selection
+  const [expandedCategory, setExpandedCategory] = useState(null);
+
+  const totalSteps = 4;
+
+  const selectedWorkspaceTitle = workspaceOptions.find((workspace) => workspace.id === formData.workspace)?.title || "";
+
+  const selectedRoleCategories = workspaceRoleCategories[formData.workspace] || [];
+
+  const fieldOpsRoles = ["Field Officer", "Agronomist", "Inspector", "Enumerator"];
+  const isFieldOps = fieldOpsRoles.includes(formData.role);
+
+  const handleWorkspaceSelect = (workspaceId) => {
+    setFormData((prev) => ({
+      ...prev,
+      workspace: workspaceId,
       role: "",
       fname: "",
       lname: "",
@@ -202,47 +243,134 @@ export function RegisterForm() {
          schemaForStep = registerFormSchema.pick({ terms_of_service: true });
       }
 
-      const result = schemaForStep.safeParse(formData);
+      return newFormData;
+    });
+    setErrors({}); // Clear error on change
+  };
 
-      if (!result.success) {
-         const fieldErrors = result.error.flatten().fieldErrors;
-         setErrors({ err: fieldErrors });
+  // Handle file input manuallyear error on change
+  // Schema-based validation per step and final submit
+  //   const validateWithSchemaForStep = (step) => {
+  //     let schemaForStep = registerFormSchema;
+  //     if (step === 1) {
+  //       schemaForStep = registerFormSchema.pick({
+  //         fname: true,
+  //         lname: true,
+  //         email: true,
+  //       });
+  //     } else if (step === 2) {
+  //       schemaForStep = registerFormSchema.pick({
+  //         phone: true,
+  //         role: true,
+  //         country_code: true,
+  //         state_code: true,
+  //       });
+  //     } else if (step === 3) {
+  //       schemaForStep = registerFormSchema
+  //         .pick({ pword: true, confirmPword: true })
+  //         .refine((data) => data.pword === data.confirmPword, {
+  //           path: ["confirmPword"],
+  //           message: "Passwords do not match",
+  //         });
+  //     } else if (step === 4) {
+  //       schemaForStep = registerFormSchema.pick({ terms_of_service: true });
+  //     }
 
-         const firstMsg = Object.values(fieldErrors).flat().filter(Boolean)[0];
-         if (firstMsg) toast.error(firstMsg);
+  //     const result = schemaForStep.safeParse(formData);
+  //     if (!result.success) {
+  //       const fieldErrors = result.error.flatten().fieldErrors;
+  //       setErrors({ err: fieldErrors });
+  //       // Show the first error message if available
+  //       const firstMsg = Object.values(fieldErrors).flat().filter(Boolean)[0];
+  //       if (firstMsg) toast.error(firstMsg);
+  //       return false;
+  //     }
+  //     setErrors({});
+  //     return true;
+  //   };
 
-         return false;
+  // Navigation handlers
+  const handleNext = () => {
+    //  if (currentStep === 2 && !emailVerified && formData.email) {
+    //    setShowEmailVerification(true);
+    //    return;
+    //  }
+
+    if (validateStep(currentStep)) {
+      setCurrentStep((s) => Math.min(totalSteps, s + 1));
+    }
+  };
+
+  const handleBack = () => {
+    setErrors({});
+    setCurrentStep((step) => Math.max(0, step - 1));
+  };
+
+  // Handle form submission (final step)
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const normalizedData = {
+      ...formData,
+      fname: formData.fname.trim(),
+      lname: formData.lname.trim(),
+      email: formData.email.trim().toLowerCase(),
+      role: formData.role.toLowerCase(),
+      phone: formData.phone.trim(),
+      pword: formData.pword.trim(),
+    };
+
+    // If not last step, advance instead of submitting
+    if (currentStep < totalSteps) {
+      handleNext();
+      return;
+    }
+
+    // Clear prev errors
+    setErrors({});
+
+    // Final full-schema validation before submit
+    const finalCheck = registerFormSchema.safeParse(normalizedData);
+    if (!finalCheck.success) {
+      const fieldErrors = finalCheck.error.flatten().fieldErrors;
+      setErrors({ err: fieldErrors });
+      const firstMsg = Object.values(fieldErrors).flat().filter(Boolean);
+      if (firstMsg) toast.error(firstMsg);
+      return;
+    }
+
+    // Call register-auth endpoint to perform registration
+    setIsLoading(true);
+    try {
+      const res = await registerBridge(normalizedData);
+
+      if (!res?.success) {
+        setIsLoading(false);
+        toast.error([res.error].join(" ") || "Failed to register");
+        return;
       }
 
       setErrors({});
-      return true;
-   };
 
-   const validateStep = (step) => {
-      if (step === 0) return !!formData.workspace;
-      if (step === 1) return !!formData.role;
-      return validateWithSchemaForStep(step);
-   };
-
-   // Handle input field change
-   const handleInputChange = (e) => {
-      const { name, value } = e.target;
-      setFormData((prev) => {
-         const newFormData = { ...prev, [name]: value };
-
-         // Auto-populate country utils when country or state changes
-         if (name === "country_code") {
-            const country = Country.getCountryByCode(value);
-            newFormData.country_name = country?.name || "";
-            newFormData.currency = country?.currency || "";
-            newFormData.state_code = ""; // Reset state when country changes
-            newFormData.state_name = ""; // Reset state name
-         } else if (name === "state_code") {
-            const state = State.getStatesOfCountry(newFormData.country_code).find((state) => state.isoCode === value);
-            newFormData.state_name = state?.name || "";
-         }
-
-         return newFormData;
+      // clear form fields value on successful submission and registration
+      setFormData({
+        workspace: "",
+        role: "",
+        fname: "",
+        lname: "",
+        email: "",
+        phone: "",
+        state_code: "",
+        country_name: "",
+        country_code: "",
+        state_name: "",
+        currency: "",
+        pword: "",
+        confirmPword: "",
+        terms_of_service: false,
+        appointment_letter_url: "",
+        id_card_url: "",
+        optional_document_url: "",
       });
       setErrors({}); // Clear error on change
    };
@@ -299,42 +427,23 @@ export function RegisterForm() {
       }
    };
 
-   const handleBack = () => {
-      setErrors({});
-      setCurrentStep((step) => Math.max(0, step - 1));
-   };
+      setShowPassword(false);
+      setShowConfirmPassword(false);
+      toast.success("Account created successfully!");
 
-   // Handle form submission (final step)
-   const handleSubmit = async (e) => {
-      e.preventDefault();
+      const session = await verifyVendorSession();
 
-      const normalizedData = {
-         ...formData,
-         fname: formData.fname.trim(),
-         lname: formData.lname.trim(),
-         email: formData.email.trim().toLowerCase(),
-         role: formData.role.toLowerCase(),
-         phone: formData.phone.trim(),
-         pword: formData.pword.trim(),
-      };
-
-      // If not last step, advance instead of submitting
-      if (currentStep < totalSteps) {
-         handleNext();
-         return;
-      }
-
-      // Clear prev errors
-      setErrors({});
-
-      // Final full-schema validation before submit
-      const finalCheck = registerFormSchema.safeParse(normalizedData);
-      if (!finalCheck.success) {
-         const fieldErrors = finalCheck.error.flatten().fieldErrors;
-         setErrors({ err: fieldErrors });
-         const firstMsg = Object.values(fieldErrors).flat().filter(Boolean);
-         if (firstMsg) toast.error(firstMsg);
-         return;
+      if (session.authenticated) {
+        const { workspace, role, onboarding_status } = session;
+        if (workspace === "ecosystem" && role?.toLowerCase() === "farmer") {
+          router.push("/ecosystem/farmer/onboarding");
+        } else if (onboarding_status === "pending") {
+          router.push("/onboarding");
+        } else if (workspace === "ecosystem") {
+          router.push("/dashboard");
+        } else {
+          router.push(`/${workspace}/${role.toLowerCase().replace(/\s+/g, "-")}`);
+        }
       }
 
       // Call register-auth endpoint to perform registration
@@ -650,9 +759,116 @@ export function RegisterForm() {
                         </Link>
                      </p>
                   </div>
-               </CardContent>
-            </Card>
-         </div>
+                </div>
+              )}
+
+              {/* Field ops documents removed from registration, handled in onboarding */}
+
+              {/* Step 3: Security */}
+              {currentStep === 3 && (
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="pword" className="block text-start">
+                      Password
+                    </Label>
+                    <div className="relative">
+                      <Input autoFocus id="pword" autoComplete="off" type={showPassword ? "text" : "password"} placeholder="Create a strong password" className={isLoading ? "opacity-50" : ""} disabled={isLoading} name="pword" value={formData.pword} onChange={handleInputChange} required />
+                      <Button type="button" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8" onClick={() => setShowPassword(!showPassword)}>
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    {errors.err?.pword && <p className="text-start text-red-400 dark:text-red-300 text-sm">{errors.err.pword[0] || errors.err.pword}</p>}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="confirmPword" className="block text-start">
+                      Confirm Password
+                    </Label>
+                    <div className="relative">
+                      <Input id="confirmPword" type={showConfirmPassword ? "text" : "password"} placeholder="Confirm your password" className={isLoading ? "opacity-50" : ""} disabled={isLoading} name="confirmPword" value={formData.confirmPword} onChange={handleInputChange} required />
+                      <Button type="button" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    {errors.err?.confirmPword && <p className="text-start text-red-400 dark:text-red-300 text-sm">{errors.err.confirmPword[0] || errors.err.confirmPword}</p>}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 4: Terms & Submit */}
+              {currentStep === 4 && (
+                <div>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <Input
+                      type="checkbox"
+                      id="terms_of_service"
+                      checked={formData.terms_of_service}
+                      disabled={isLoading}
+                      name="terms_of_service"
+                      className={isLoading ? "opacity-50" : ""}
+                      value=""
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          terms_of_service: e.target.checked,
+                        }))
+                      }
+                    />
+                    <Label htmlFor="terms_of_service" className="specialLabel">
+                      I agree to the{" "}
+                      <Link href="" className="text-sm text-blue-500 hover:underline">
+                        Terms of Service
+                      </Link>{" "}
+                      and{" "}
+                      <Link href="" className="text-sm text-blue-500 hover:underline ">
+                        Privacy Policy
+                      </Link>
+                    </Label>
+                  </div>
+                  {errors.err?.terms_of_service && <p className="text-start text-red-400 dark:text-red-300 text-sm mb-5">{errors.err.terms_of_service[0] || errors.err.terms_of_service}</p>}
+                </div>
+              )}
+
+              {errors.general && <p className="text-start text-red-400 dark:text-red-300 text-sm">{errors.general}</p>}
+
+              {/* Navigation Buttons */}
+              {currentStep > 0 && (
+                <div className="mt-6 flex items-center justify-between gap-3">
+                  <Button type="button" className={`${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} bg-gray-200 dark:bg-gray-500 text-(--foreground) px-4 py-2 rounded-md`} onClick={handleBack} disabled={isLoading}>
+                    Back
+                  </Button>
+
+                  {currentStep < totalSteps ? (
+                    <Button type="button" className={`${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} bg-(--greenish-color) text-(--white-fff) px-4 py-2 rounded-md`} onClick={handleNext} disabled={isLoading}>
+                      Next
+                    </Button>
+                  ) : (
+                    <Button type="submit" className={`${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} transition transition-background w-full bg-(--greenish-color) hover:bg-(--dark-green-color) text-(--white-fff) font-normal p-2 rounded-md`} disabled={isLoading}>
+                      {isLoading ? (
+                        <span className="flex justify-center items-center gap-2">
+                          <FaSpinner className="h-4 w-4 animate-spin" />
+                          <span>Please wait...</span>
+                        </span>
+                      ) : (
+                        "Create Account"
+                      )}
+                    </Button>
+                  )}
+                </div>
+              )}
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                Already have an account?{" "}
+                <Link href="/auth/signin" className="text-blue-500 hover:underline">
+                  Sign In
+                </Link>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
          {/* Email Verification Overlay */}
          {/* {showEmailVerification && (

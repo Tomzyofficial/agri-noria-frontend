@@ -70,62 +70,62 @@ export default function InstitutionLayout({ children }) {
     return () => clearInterval(interval);
   }, []);
 
-  let navMenu = [
-    {
-      label: "Overview",
-      href: "/ecosystem/institution",
-      icon: <LayoutDashboard className="w-4 h-4" />,
-    },
-    {
-      label: "Programs",
-      href: "/ecosystem/institution/programs",
-      icon: <Landmark className="w-4 h-4" />,
-    },
-    {
-      label: "Portfolio Monitoring",
-      href: "/ecosystem/institution/portfolio",
-      icon: <Activity className="w-4 h-4" />,
-    },
-    {
-      label: "Impact Tracking",
-      href: "/ecosystem/institution/impact",
-      icon: <Activity className="w-4 h-4" />,
-    },
-    {
-      label: "Risk Management",
-      href: "/ecosystem/institution/risk",
-      icon: <ShieldAlert className="w-4 h-4" />,
-    },
-    {
-      label: "My Wallet",
-      href: "/ecosystem/institution/wallet",
-      icon: <Wallet className="w-4 h-4" />,
-    },
-  ];
+  let navMenu = [];
 
-  if (accountType === "finance") {
-    navMenu.splice(3, 0, {
-      label: "Approvals",
-      href: "/ecosystem/institution/approvals",
-      icon: <Coins className="w-4 h-4" />,
-    });
-  }
-
-  if (accountType === "distributor") {
-    navMenu.splice(2, 0, {
-      label: "Distributions",
-      href: "/ecosystem/institution/distributions",
-      icon: <Truck className="w-4 h-4" />,
-    });
-  }
-
-  // Add Platform Wallet for Finance role
-  if (accountType === "finance") {
-    navMenu.splice(4, 0, {
-      label: "Platform Wallet",
-      href: "/ecosystem/institution/platform-wallet",
-      icon: <Coins className="w-4 h-4 text-emerald-500" />,
-    });
+  switch (accountType) {
+    case "government":
+      navMenu = [
+        { label: "National Dashboard", href: "/ecosystem/institution", icon: <LayoutDashboard className="w-4 h-4" /> },
+        { label: "Farmer Registry", href: "/ecosystem/institution/farmers", icon: <Globe className="w-4 h-4" /> },
+        { label: "Programme Management", href: "/ecosystem/institution/programs", icon: <Landmark className="w-4 h-4" /> },
+        { label: "Monitoring", href: "/ecosystem/institution/monitoring", icon: <Activity className="w-4 h-4" /> },
+      ];
+      break;
+    case "finance":
+      navMenu = [
+        { label: "Financial Dashboard", href: "/ecosystem/institution", icon: <LayoutDashboard className="w-4 h-4" /> },
+        { label: "Approvals Center", href: "/ecosystem/institution/approvals", icon: <Coins className="w-4 h-4" /> },
+      ];
+      break;
+    case "bank":
+      navMenu = [
+        { label: "Portfolio", href: "/ecosystem/institution", icon: <LayoutDashboard className="w-4 h-4" /> },
+        { label: "Farmer Profiles", href: "/ecosystem/institution/farmers", icon: <Globe className="w-4 h-4" /> },
+        { label: "Lending", href: "/ecosystem/institution/programs", icon: <Landmark className="w-4 h-4" /> },
+        { label: "Escrow", href: "/ecosystem/institution/escrow", icon: <Wallet className="w-4 h-4" /> },
+      ];
+      break;
+    case "commodity board":
+      navMenu = [
+        { label: "Dashboard", href: "/ecosystem/institution", icon: <LayoutDashboard className="w-4 h-4" /> },
+        { label: "Farmer View", href: "/ecosystem/institution/farmers", icon: <Globe className="w-4 h-4" /> },
+        { label: "Procurement", href: "/ecosystem/institution/procurement", icon: <Landmark className="w-4 h-4" /> },
+        { label: "Traceability", href: "/ecosystem/institution/traceability", icon: <Activity className="w-4 h-4" /> },
+      ];
+      break;
+    case "dfi":
+      navMenu = [
+        { label: "Dashboard", href: "/ecosystem/institution", icon: <LayoutDashboard className="w-4 h-4" /> },
+        { label: "Projects", href: "/ecosystem/institution/programs", icon: <Landmark className="w-4 h-4" /> },
+        { label: "Monitoring", href: "/ecosystem/institution/monitoring", icon: <Activity className="w-4 h-4" /> },
+        { label: "Reports", href: "/ecosystem/institution/reports", icon: <Globe className="w-4 h-4" /> },
+      ];
+      break;
+    case "ngo":
+      navMenu = [
+        { label: "Dashboard", href: "/ecosystem/institution", icon: <LayoutDashboard className="w-4 h-4" /> },
+        { label: "Beneficiaries", href: "/ecosystem/institution/farmers", icon: <Globe className="w-4 h-4" /> },
+        { label: "Projects", href: "/ecosystem/institution/programs", icon: <Landmark className="w-4 h-4" /> },
+        { label: "Extension Services", href: "/ecosystem/institution/extension", icon: <Activity className="w-4 h-4" /> },
+        { label: "Distribution", href: "/ecosystem/institution/ngo-distribution", icon: <Truck className="w-4 h-4" /> },
+      ];
+      break;
+    default:
+      // Fallback or generic institution menu
+      navMenu = [
+        { label: "Overview", href: "/ecosystem/institution", icon: <LayoutDashboard className="w-4 h-4" /> },
+        { label: "Programs", href: "/ecosystem/institution/programs", icon: <Landmark className="w-4 h-4" /> },
+      ];
   }
 
   navMenu.push({

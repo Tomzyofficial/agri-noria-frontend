@@ -26,6 +26,17 @@ export function LiveVideoSession({ sessionData, onEndSession }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [connectionState, setConnectionState] = useState("Connecting");
 
+  const formatUidToName = (uid) => {
+    if (typeof uid !== "string") return "Participant";
+    const parts = uid.split("_");
+    if (parts.length >= 2) {
+      const role = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+      const idStr = parts[1].slice(0, 4);
+      return `${role} (${idStr})`;
+    }
+    return "Participant";
+  };
+
   const localVideoRef = useRef(null);
   const clientRef = useRef(null);
   const initializedRef = useRef(false);
@@ -133,7 +144,7 @@ export function LiveVideoSession({ sessionData, onEndSession }) {
       client.on("user-unpublished", (user, mediaType) => {
         if (mediaType === "video") {
           user.videoTrack?.stop();
-          setRemoteUsers((prev) => prev.filter((u) => u.uid !== user.uid));
+          // We DO NOT remove the user from remoteUsers here, they just turned off video
         }
       });
 
@@ -347,8 +358,15 @@ export function LiveVideoSession({ sessionData, onEndSession }) {
                   id={getRemoteVideoId(user.uid)}
                   className="relative aspect-video overflow-hidden rounded-lg border border-white/10 bg-slate-900 [&_*]:!h-full [&_*]:!w-full [&_video]:!h-full [&_video]:!w-full [&_video]:!object-cover"
                 >
-                  <span className="absolute bottom-2 left-2 rounded bg-black/55 px-2 py-1 text-xs text-white">
-                    Participant
+                  {!user.videoTrack && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-slate-900 z-10">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-800 text-xl font-semibold text-slate-200">
+                        {formatUidToName(user.uid).charAt(0)}
+                      </div>
+                    </div>
+                  )}
+                  <span className="absolute bottom-2 left-2 rounded bg-black/55 px-2 py-1 text-xs text-white z-20">
+                    {formatUidToName(user.uid)}
                   </span>
                 </div>
               ))
@@ -390,6 +408,18 @@ export function LiveVideoSession({ sessionData, onEndSession }) {
               <dt className="text-slate-500">Participants</dt>
               <dd className="mt-1 font-medium text-slate-200">
                 {participantCount}
+                <div className="mt-3 flex flex-col gap-2">
+                   <div className="flex items-center gap-2 text-xs bg-slate-800/50 px-3 py-2 rounded">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                      You ({roleLabel})
+                   </div>
+                   {remoteUsers.map(u => (
+                      <div key={u.uid} className="flex items-center gap-2 text-xs bg-slate-800/50 px-3 py-2 rounded">
+                         <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                         {formatUidToName(u.uid)}
+                      </div>
+                   ))}
+                </div>
               </dd>
             </div>
           </dl>
