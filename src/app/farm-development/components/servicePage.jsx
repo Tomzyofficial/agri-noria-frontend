@@ -1,26 +1,25 @@
 "use client";
 import { apiUrl } from "@/_lib/api";
-import { ServiceCard } from "../components/Cards";
+import { ServiceCard } from "./Cards";
 import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
 import { Search, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-async function getData(searchParams) {
-  const params = new URLSearchParams();
-  if (searchParams.category) params.set("category", searchParams.category);
-  if (searchParams.search) params.set("search", searchParams.search);
-  if (searchParams.page) params.set("page", searchParams.page);
-  params.set("limit", "12");
+// async function getData(searchParams) {
+//   const params = new URLSearchParams();
+//   if (searchParams.category) params.set("category", searchParams.category);
+//   if (searchParams.search) params.set("search", searchParams.search);
+//   if (searchParams.page) params.set("page", searchParams.page);
+//   params.set("limit", "12");
 
-  const serviceRes = await fetch(apiUrl(`/api/farm-development/public/service-list?${params}`), { cache: "no-store" });
-  if (!serviceRes.ok) {
-    console.error("Error with servies", serviceRes.status, serviceRes.statusText);
-  }
+//   const serviceRes = await fetch(apiUrl(`/api/farm-development/public/service-list?${params}`), { cache: "no-store" });
+//   if (!serviceRes.ok) {
+//     console.error("Error with servies", serviceRes.status, serviceRes.statusText);
+//   }
 
-  const services = await serviceRes.json();
-  return services;
-}
+//   const services = await serviceRes.json();
+//   return services;
+// }
 
 export default function ServicesPage({ services }) {
   const [searchInput, setSearchInput] = useState("");

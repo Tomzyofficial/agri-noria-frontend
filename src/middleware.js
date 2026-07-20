@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const vendorKey = new TextEncoder().encode(
-  process.env.VENDOR_SESSION_SECRET_KEY,
-);
+const vendorKey = new TextEncoder().encode(process.env.VENDOR_SESSION_SECRET_KEY);
 const buyerKey = new TextEncoder().encode(process.env.BUYER_SESSION_SECRET_KEY);
 
 const LOCATION_COOKIE_NAME = "user_location";
+
+function getClientIp(request) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("cf-connecting-ip") || request.headers.get("x-real-ip");
+
+  if (!ip || ip === "::1" || ip === "127.0.0.1" || ip.startsWith("192.168.") || ip.startsWith("10.")) {
+    return null;
+  }
+
+  return ip;
+}
 
 const setLocationCookie = (response, location) => {
   response.cookies.set(LOCATION_COOKIE_NAME, JSON.stringify(location), {
@@ -29,18 +37,14 @@ const getLocationCookie = (request) => {
   }
 };
 
-async function getLocation() {
-  if (!process.env.NEXT_PUBLIC_IPINFO_TOKEN) {
+async function getLocation(request) {
+  const ip = getClientIp(request);
+  if (!process.env.IPINFO_TOKEN) {
     return null;
   }
 
   try {
-    const response = await fetch(
-      `https://api.ipinfo.io/lite/me?token=${process.env.NEXT_PUBLIC_IPINFO_TOKEN}`,
-      {
-        next: { revalidate: 3600 }, // Cache for 1 hour
-      },
-    );
+    const response = await fetch(`https://api.ipinfo.io/lite/${ip || "me"}?token=${process.env.IPINFO_TOKEN}`);
 
     if (!response.ok) {
       console.log("Failed to fetch location data");
@@ -61,9 +65,8 @@ export default async function middleware(request) {
   const pathname = request.nextUrl.pathname;
   const requestHeaders = new Headers(request.headers);
   const existingLocation = getLocationCookie(request);
-  const shouldDetectLocation = pathname === "/" && !existingLocation;
-  const countryData =
-    existingLocation || (shouldDetectLocation ? await getLocation() : null);
+  const shouldDetectLocation = !existingLocation;
+  const countryData = existingLocation || (shouldDetectLocation ? await getLocation(request) : null);
 
   if (countryData) {
     requestHeaders.set("x-user-location", JSON.stringify(countryData));
@@ -147,7 +150,7 @@ export default async function middleware(request) {
             // Redirect root /ecosystem to their specific dashboard
             if (pathname === "/ecosystem" || pathname === "/ecosystem/") {
               return NextResponse.redirect(new URL(allowedBaseRoute, request.url));
-            } 
+            }
             // Block access to other ecosystem routes
             else if (!pathname.startsWith(allowedBaseRoute)) {
               return NextResponse.redirect(new URL(allowedBaseRoute, request.url));
@@ -172,10 +175,7 @@ export default async function middleware(request) {
       try {
         await jwtVerify(token, buyerKey);
       } catch (jwtError) {
-        console.error(
-          "Middleware: Buyer JWT verification failed:",
-          jwtError.message,
-        );
+        console.error("Middleware: Buyer JWT verification failed:", jwtError.message);
         return NextResponse.redirect(new URL("/", request.url));
       }
     }

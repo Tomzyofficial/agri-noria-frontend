@@ -3,6 +3,7 @@ import { formatPrice } from "@/utils/formatPrice";
 import { formatLabel } from "@/utils/otherUtils";
 import { FaRegWindowMinimize } from "react-icons/fa";
 import Image from "next/image";
+import { oppositeFormatLabel } from "@/utils/otherUtils";
 import Link from "next/link";
 
 // export function ProviderCard({ provider }) {
@@ -162,7 +163,7 @@ export function ServiceCard({ service, showProvider = true }) {
         </div>
         {showProvider && (
           <Link
-            href={`/farm-development/provider/${service.business_name}`}
+            href={`/farm-development/provider/${oppositeFormatLabel(service.business_name)}`}
             style={{
               fontSize: "12px",
               fontWeight: "600",

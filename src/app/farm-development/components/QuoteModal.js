@@ -1,5 +1,8 @@
 "use client";
 import { useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { formatLabel } from "@/utils/otherUtils";
+import { IoIosClose } from "react-icons/io";
 
 export default function QuoteModal({ provider, service, onClose }) {
   const [form, setForm] = useState({
@@ -26,7 +29,6 @@ export default function QuoteModal({ provider, service, onClose }) {
   };
 
   const handleSubmit = async () => {
-    //  console.log("target id", service.id);
     setLoading(true);
     setErrors({});
     try {
@@ -115,10 +117,10 @@ export default function QuoteModal({ provider, service, onClose }) {
             <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: "22px", color: "#2C1A0E" }}>Request a Quote</h2>
             <p style={{ fontSize: "13px", color: "#8B5E3C", marginTop: "2px" }}>
               {provider.business_name}
-              {service ? ` · ${service.title}` : ""}
+              {service ? ` · ${formatLabel(service.title)}` : ""}
             </p>
           </div>
-          <button
+          <Button
             onClick={onClose}
             style={{
               width: "32px",
@@ -134,18 +136,16 @@ export default function QuoteModal({ provider, service, onClose }) {
               justifyContent: "center",
             }}
           >
-            ×
-          </button>
+            <IoIosClose size={160} />
+          </Button>
         </div>
 
         {success ? (
           <div style={{ padding: "48px 28px", textAlign: "center" }}>
             <div style={{ fontSize: "56px", marginBottom: "16px" }}>🌱</div>
             <h3 style={{ fontFamily: "Playfair Display, serif", fontSize: "22px", color: "#2C1A0E", marginBottom: "8px" }}>Quote Request Sent!</h3>
-            <p style={{ color: "#5C3D1E", marginBottom: "24px" }}>
-              {provider.name} will review your request and get back to you within {provider.response_time || "48 hours"}.
-            </p>
-            <button
+            <p style={{ color: "#5C3D1E", marginBottom: "24px" }}>{provider.business_name} will review your request and get back to you within 48 hours.</p>
+            <Button
               onClick={onClose}
               style={{
                 background: "#3D6B45",
@@ -159,7 +159,7 @@ export default function QuoteModal({ provider, service, onClose }) {
               }}
             >
               Done
-            </button>
+            </Button>
           </div>
         ) : (
           <div style={{ padding: "24px 28px" }}>
@@ -249,7 +249,7 @@ export default function QuoteModal({ provider, service, onClose }) {
             </div> */}
 
             <div style={{ marginTop: "20px", display: "flex", gap: "12px" }}>
-              <button
+              <Button
                 onClick={onClose}
                 style={{
                   flex: 1,
@@ -264,8 +264,8 @@ export default function QuoteModal({ provider, service, onClose }) {
                 }}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleSubmit}
                 disabled={loading}
                 style={{
@@ -282,7 +282,7 @@ export default function QuoteModal({ provider, service, onClose }) {
                 }}
               >
                 {loading ? "Submitting..." : "Submit Quote Request"}
-              </button>
+              </Button>
             </div>
           </div>
         )}

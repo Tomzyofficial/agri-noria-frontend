@@ -4,9 +4,7 @@ import { cookieStoreFnc } from "@/actions/session";
 export const getMarketplaceProducts = async (countryCode) => {
   const cookieHeader = await cookieStoreFnc();
   const cookieStr = typeof cookieHeader === "string" ? cookieHeader : "";
-  const query = countryCode
-    ? `?country=${encodeURIComponent(countryCode)}`
-    : "";
+  const query = countryCode ? `?country=${encodeURIComponent(countryCode)}` : "";
   try {
     const res = await fetch(apiUrl(`/api/marketplace${query}`), {
       method: "GET",

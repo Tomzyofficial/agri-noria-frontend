@@ -1,5 +1,6 @@
-import { JobsPageClient } from "./jobsPageClient";
+import { JobsPageClient } from "./components/jobsPageClient";
 import { apiUrl } from "@/_lib/api";
+import NavBar from "@/components/ui/NavBar/NavBar";
 
 export const metadata = {
   title: "Agricultural employment",
@@ -36,5 +37,10 @@ async function getJobs(searchParams = {}) {
 export default async function Page({ searchParams }) {
   const sp = await searchParams;
   const jobs = await getJobs(sp);
-  return <JobsPageClient jobs={jobs} />;
+  return (
+    <>
+      <NavBar />
+      <JobsPageClient jobs={jobs} />
+    </>
+  );
 }
