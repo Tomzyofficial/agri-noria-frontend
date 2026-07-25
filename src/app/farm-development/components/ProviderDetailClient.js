@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import QuoteModal from "./QuoteModal";
-import { ServiceCard } from "./Cards";
+import { ServiceCard } from "./ServiceCard";
 import { FaLongArrowAltLeft } from "react-icons/fa";
 import { FaLocationDot } from "react-icons/fa6";
 import { CiClock2 } from "react-icons/ci";
@@ -60,27 +60,17 @@ export default function ProviderDetailClient({ provider }) {
             }}
          >
             {/* Cover gradient */}
-            <div
+            {/* <div
                style={{
                   height: "160px",
                   background: "linear-gradient(135deg, #2C1A0E 0%, #3D6B45 50%, #8B5E3C 100%)",
                   position: "relative",
                }}
-            >
-               <div
-                  style={{
-                     position: "absolute",
-                     inset: 0,
-                     opacity: 0.1,
-                     backgroundImage: "radial-gradient(circle, #F2D078 1px, transparent 1px)",
-                     backgroundSize: "30px 30px",
-                  }}
-               />
-            </div>
+            /> */}
 
-            <div style={{ padding: "0 32px 32px" }}>
+            <div style={{ padding: "32px 32px" }}>
                {/* Avatar & badges */}
-               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "-40px", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
+               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "12px" }}>
                   <div
                      style={{
                         width: "80px",

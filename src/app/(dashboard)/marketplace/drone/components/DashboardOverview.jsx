@@ -11,7 +11,7 @@ import { fetcher } from "@/utils/otherUtils";
 export function DashboardOverview({ user }) {
    const { data, error, isLoading } = useSWR("/api/proxy/vendor/drone/get-stats", fetcher);
 
-   const stats = data?.getStats;
+   const stats = data?.data || {};
 
    const { data: sellerStatsData, error: sellerStatsError, isLoading: sellerStatsLoading } = useSWR("/api/proxy/buyer/orders/seller/stats", fetcher);
 

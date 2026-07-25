@@ -7,20 +7,11 @@ export default function CartItems({ cart, removeItem, increaseQuantity, decrease
       <div className="w-full md:w-[70%]">
          {cart.map((item) => (
             <div key={item.listing_name} className="mb-4 py-2 bg-(--white-fff) dark:bg-(--card-dark) rounded h-fit ">
-               <p className="font-semibold p-3 text-(--foreground) text-lg border-b border-(--background)">
-                  Cart ({item.quantity})
-               </p>
+               <p className="font-semibold p-3 text-(--foreground) text-lg border-b border-(--background)">Cart ({item.quantity})</p>
                <div className="flex relative justify-between p-3 pb-15">
                   <div className="flex gap-3">
                      <div>
-                        <Image
-                           priority
-                           src={item.product_image}
-                           alt={`${item.listing_name} Image`}
-                           width={500}
-                           height={500}
-                           style={{ objectFit: "cover", width: "100px", height: "auto", borderRadius: "5px" }}
-                        />
+                        <Image priority src={item.product_image} alt={`${item.listing_name} Image`} width={500} height={500} style={{ objectFit: "cover", width: "100px", height: "auto", borderRadius: "5px" }} />
                      </div>
                      <div className="text-lg">
                         <p className="font-semibold">{item.listing_name}</p>

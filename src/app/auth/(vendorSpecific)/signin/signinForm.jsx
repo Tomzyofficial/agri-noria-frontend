@@ -160,15 +160,15 @@ export function SigninForm() {
       "field auditor": "intelligence-&-monitoring",
    };
 
-   const marketplaceRoleRoutes = {
-      seller: "store",
-      farmer: "store",
-      drone: "drone",
-      logistics: "logistics",
-      "logistics partner": "logistics",
-      "storage facility": "storage-facility",
-      trainer: "trainer",
-   };
+   // const marketplaceRoleRoutes = {
+   //    seller: "store",
+   //    farmer: "store",
+   //    drone: "drone",
+   //    logistics: "logistics",
+   //    "logistics partner": "logistics",
+   //    "storage facility": "storage-facility",
+   //    trainer: "trainer",
+   // };
 
    const toRouteSegment = (value) =>
       value
@@ -185,7 +185,7 @@ export function SigninForm() {
 
    const resolveRedirectPath = (role, workspace) => {
       const normalizedRole = role?.toLowerCase().trim();
-      const normalizedWorkspace = workspace?.toLowerCase().trim() || getDefaultWorkspace(normalizedRole);
+      const normalizedWorkspace = workspace?.toLowerCase().trim();
 
       if (normalizedWorkspace === "ecosystem") {
          const rolePath = ecosystemRoleRoutes[normalizedRole];
@@ -195,11 +195,11 @@ export function SigninForm() {
       }
 
       if (normalizedWorkspace === "marketplace") {
-         const rolePath = marketplaceRoleRoutes[normalizedRole];
-         return `/${normalizedWorkspace}/${rolePath || "store"}`;
+         // const rolePath = normalizedWorkspace[normalizedRole];
+         return `/${normalizedWorkspace}/${toRouteSegment(normalizedRole)}`;
       }
 
-      return `/${normalizedWorkspace}/${toRouteSegment(normalizedRole) || "dashboard"}`;
+      // return `/${normalizedWorkspace}/${toRouteSegment(normalizedRole)}`;
    };
 
    // Handle input field change

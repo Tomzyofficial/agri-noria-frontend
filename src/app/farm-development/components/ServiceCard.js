@@ -118,85 +118,85 @@ import Link from "next/link";
 // }
 
 export function ServiceCard({ service, showProvider = true }) {
-  return (
-    <div className="border border-gray-200 rounded-lg p-6 transition-shadow hover:shadow-md bg-white">
-      <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", marginBottom: "12px" }}>
-        <div className="w-20 h-20 rounded-lg bg-gradient-to-r from-[#F2D078] to-[#C8873A] flex items-center shrink-0">
-          <Image src={service.featured_image} alt={service.title} width={40} height={40} className="rounded-md w-full h-full object-cover" />
-        </div>
-        <div style={{ flex: 1 }}>
-          <span
-            style={{
-              display: "inline-block",
-              fontSize: "11px",
-              fontWeight: "600",
-              color: "#3D6B45",
-              background: "#EBF5EB",
-              padding: "2px 8px",
-              borderRadius: "99px",
-              marginBottom: "4px",
-            }}
-          >
-            {formatLabel(service.category)}
-          </span>
-          <h4 style={{ fontFamily: "Playfair Display, serif", fontSize: "15px", fontWeight: "700", color: "#2C1A0E", lineHeight: "1.3" }}>{formatLabel(service.title)}</h4>
-        </div>
-      </div>
+   return (
+      <div className="border border-gray-200 rounded-lg p-6 transition-shadow hover:shadow-md bg-white">
+         <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", marginBottom: "12px" }}>
+            <div className="w-20 h-20 rounded-lg bg-gradient-to-r from-[#F2D078] to-[#C8873A] flex items-center shrink-0">
+               <Image src={service.featured_image} alt={service.title} width={40} height={40} className="rounded-md w-full h-full object-cover" />
+            </div>
+            <div style={{ flex: 1 }}>
+               <span
+                  style={{
+                     display: "inline-block",
+                     fontSize: "11px",
+                     fontWeight: "600",
+                     color: "#3D6B45",
+                     background: "#EBF5EB",
+                     padding: "2px 8px",
+                     borderRadius: "99px",
+                     marginBottom: "4px",
+                  }}
+               >
+                  {formatLabel(service.category)}
+               </span>
+               <h4 style={{ fontFamily: "Playfair Display, serif", fontSize: "15px", fontWeight: "700", color: "#2C1A0E", lineHeight: "1.3" }}>{formatLabel(service.title)}</h4>
+            </div>
+         </div>
 
-      <p style={{ fontSize: "13px", color: "#5C3D1E", lineHeight: "1.6", marginBottom: "14px" }}>{service.description.substring(0, 160)}...</p>
+         <p style={{ fontSize: "13px", color: "#5C3D1E", lineHeight: "1.6", marginBottom: "14px" }}>{service.description.substring(0, 160)}...</p>
 
-      {/* Details */}
-      {/* <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "12px" }}>
+         {/* Details */}
+         {/* <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "12px" }}>
         {service.min_budget && <span style={{ fontSize: "12px", color: "#8B5E3C", background: "#FAF5EC", padding: "3px 10px", borderRadius: "99px" }}>{service.min_budget}+ NGN</span>}
         {service.max_budget && <span style={{ fontSize: "12px", color: "#8B5E3C", background: "#FAF5EC", padding: "3px 10px", borderRadius: "99px" }}>~{service.max_budget} </span>}
       </div> */}
 
-      <div style={{ borderTop: "1px solid #F0E8DC", paddingTop: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <div className="text-sm font-semibold text-gray-400 flex gap-1">
-            {service.min_budget && formatPrice(service.min_budget, service.country_code, service.currency)}
-            {service.min_budget && service.max_budget && <FaRegWindowMinimize size="10" />}
-            {service.max_budget && formatPrice(service.max_budget, service.country_code, service.currency)}
-            <p className="text-[#2C1A0E] font-semibold text-[13px]">{formatLabel(service.price_type)}</p>
-          </div>
-          {showProvider && <div style={{ fontSize: "12px", color: "#8B5E3C" }}>By {service.business_name || service.fname}</div>}
-        </div>
-        {showProvider && (
-          <Link
-            href={`/farm-development/provider/${oppositeFormatLabel(service.business_name)}`}
-            style={{
-              fontSize: "12px",
-              fontWeight: "600",
-              color: "#3D6B45",
-              textDecoration: "none",
-              padding: "6px 14px",
-              border: "1px solid #9DC07A",
-              borderRadius: "8px",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#3D6B45";
-              e.currentTarget.style.color = "#fff";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.color = "#3D6B45";
-            }}
-          >
-            View Provider
-          </Link>
-        )}
+         <div style={{ borderTop: "1px solid #F0E8DC", paddingTop: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+               <div className="text-sm font-semibold text-gray-400 flex gap-1">
+                  {service.min_budget && formatPrice(service.min_budget, service.country_code, service.currency)}
+                  {service.min_budget && service.max_budget && <FaRegWindowMinimize size="10" />}
+                  {service.max_budget && formatPrice(service.max_budget, service.country_code, service.currency)}
+                  <p className="text-[#2C1A0E] font-semibold text-[13px]">{formatLabel(service.price_type)}</p>
+               </div>
+               {showProvider && <div style={{ fontSize: "12px", color: "#8B5E3C" }}>By {service.business_name || service.fname}</div>}
+            </div>
+            {showProvider && (
+               <Link
+                  href={`/farm-development/provider/${oppositeFormatLabel(service.business_name)}`}
+                  style={{
+                     fontSize: "12px",
+                     fontWeight: "600",
+                     color: "#3D6B45",
+                     textDecoration: "none",
+                     padding: "6px 14px",
+                     border: "1px solid #9DC07A",
+                     borderRadius: "8px",
+                     transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                     e.currentTarget.style.background = "#3D6B45";
+                     e.currentTarget.style.color = "#fff";
+                  }}
+                  onMouseLeave={(e) => {
+                     e.currentTarget.style.background = "transparent";
+                     e.currentTarget.style.color = "#3D6B45";
+                  }}
+               >
+                  View Provider
+               </Link>
+            )}
+         </div>
       </div>
-    </div>
-  );
+   );
 }
 
 export function StatBadge({ value, label, icon }) {
-  return (
-    <div style={{ textAlign: "center" }}>
-      <div style={{ fontSize: "40px", marginBottom: "4px" }}>{icon}</div>
-      <div style={{ fontFamily: "Playfair Display, serif", fontSize: "36px", fontWeight: "900", color: "#2C1A0E", lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: "14px", color: "#8B5E3C", marginTop: "4px" }}>{label}</div>
-    </div>
-  );
+   return (
+      <div style={{ textAlign: "center" }}>
+         <div style={{ fontSize: "40px", marginBottom: "4px" }}>{icon}</div>
+         <div style={{ fontFamily: "Playfair Display, serif", fontSize: "36px", fontWeight: "900", color: "#2C1A0E", lineHeight: 1 }}>{value}</div>
+         <div style={{ fontSize: "14px", color: "#8B5E3C", marginTop: "4px" }}>{label}</div>
+      </div>
+   );
 }

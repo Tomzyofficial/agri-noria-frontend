@@ -1,24 +1,29 @@
+import DroneListingDetail from "../components/detail-component/DroneListingDetail";
+import { notFound } from "next/navigation";
 import { apiUrl } from "@/_lib/api";
-import { ProductInfo } from "../components/sale-component/ProductInfo";
 import NavBar from "@/components/ui/NavBar/NavBar";
 
-export default async function Page({ params }) {
+async function getListing(id) {
+   const response = await fetch(apiUrl(`/api/drone-marketplace/public/listings/${id}`), {
+      cache: "no-store",
+   });
+
+   if (response.status === 404) return null;
+   if (!response.ok) throw new Error("Couldn't load this listing.");
+
+   return response.json();
+}
+
+export default async function ListingPage({ params }) {
    const { id } = await params;
-   console.log("from client", id);
-   const res = await fetch(apiUrl(`/api/drone-marketplace/public/listings/${id}`));
-   if (!res.ok) {
-      console.log("Error");
-   }
-   {
-      /* {data.data.listing_type === "sale" ? <p>Sale</p> : data.data.listing_type === "rent" ? <p>rent</p> : <p>both</p>} */
-   }
-   const data = await res.json();
+   const listing = await getListing(id);
+   console.log(listing.data);
+   if (!listing) notFound();
+
    return (
       <>
          <NavBar />
-         <section className="m-4 md:m-10 mb-10 flex flex-col lg:flex-row gap-4">
-            <ProductInfo product={data.data} />
-         </section>
+         <DroneListingDetail listing={listing.data} />
       </>
    );
 }

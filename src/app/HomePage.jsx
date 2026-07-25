@@ -11,7 +11,6 @@ import { formatPrice } from "../utils/formatPrice";
 import { EcosystemPopup } from "@/components/ui/EcosystemPopup";
 
 export function HomePage({ marketPlace, error }) {
-   const [activeParent, setActiveParent] = useState(null);
    const [searchTerm, setSearchTerm] = useState("");
 
    // Side memu navigation
@@ -74,9 +73,9 @@ export function HomePage({ marketPlace, error }) {
                      filteredProducts.map((prod) => (
                         <Link href={`/products/${prod.id}`} key={prod.id}>
                            <div className="rounded-lg bg-(--gray-color) shadow hover:shadow-lg h-70 transition dark:bg-(--card-dark)">
-                              <Image priority src={prod.product_image} alt={`${prod.listing_name} Image`} width={300} height={200} className="object-cover shrink-0 w-full h-40 rounded-t-lg" />
+                              <Image priority src={prod.product_image[0]} alt={`${prod.listing_name} Image`} width={300} height={200} className="object-cover shrink-0 w-full h-40 rounded-t-lg" />
                               <div className="p-2 space-y-2">
-                                 <p className="text-green-700 font-bold">{formatPrice(prod.price, prod.country_code, prod.currency)}</p>
+                                 <p className="text-green-700 font-bold">{formatPrice(prod.price || prod.rental_price, prod.country_code, prod.currency)}</p>
                                  <p className="font-semibold">{prod.listing_name ? prod.listing_name.charAt(0).toUpperCase() + prod.listing_name.slice(1) : ""}</p>
                                  <p className="line-clamp-2 text-pretty text-gray-500 dark:text-gray-300 leading-4">{prod.description}</p>
                               </div>
