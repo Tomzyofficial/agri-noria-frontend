@@ -83,7 +83,7 @@ export function ViewListingPage({ listing }) {
                   <CardContent className="p-0">
                      <div onClick={() => setIsModalOpen(true)} className="relative w-full h-[300px] bg-stone-100 dark:bg-stone-800 group cursor-zoom-in">
                         {(() => {
-                           const src = listing.image[0];
+                           const src = listing?.product_image[0];
                            return src ? (
                               <>
                                  <Image src={src} fill alt={`${listing.listing_name} service image`} className="object-cover transition-transform duration-300 group-hover:scale-105" priority />
@@ -95,8 +95,8 @@ export function ViewListingPage({ listing }) {
                         })()}
                      </div>
                      <div className="flex gap-4 overflow-x-auto p-2">
-                        {listing?.image?.length > 1 &&
-                           listing.image.map((src) => (
+                        {listing?.product_image?.length > 1 &&
+                           listing.product_image.map((src) => (
                               <div key={src}>
                                  <Image src={src} width={200} height={200} alt={`Gallery images for ${listing.title}`} className="rounded-md w-[120px] h-[120px] object-fill" />
                               </div>
@@ -167,8 +167,8 @@ export function ViewListingPage({ listing }) {
                      <div className="grid grid-cols-1 text-start gap-2">
                         <div className="flex justify-between">
                            <span className="font-medium">Current Status:</span>
-                           <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${listing.status === "active" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"}`}>
-                              {listing.status === "active" ? "Active" : "Inactive"}
+                           <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${listing.product_status === "active" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"}`}>
+                              {listing.product_status === "active" ? "Active" : "Inactive"}
                            </span>
                         </div>
                         {/* <div className="flex justify-between">
@@ -218,7 +218,7 @@ export function ViewListingPage({ listing }) {
                      </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                     <DetailItem label="Sale Price" value={listing.sale_price ? formatPrice(listing.sale_price, listing.country_code, listing.currency) : "N/A"} />
+                     <DetailItem label="Sale Price" value={listing.price ? formatPrice(listing.price, listing.country_code, listing.currency) : "N/A"} />
                      <DetailItem label="Rental Price" value={`${listing.rental_price ? formatPrice(listing.rental_price, listing.country_code, listing.currency) : "N/A"} - ${listing.rental_period ? formatLabel(listing.rental_period) : "N/A"}`} />
                   </CardContent>
                </Card>
@@ -226,7 +226,7 @@ export function ViewListingPage({ listing }) {
          </div>
 
          {/* Image enlargement Modal */}
-         {isModalOpen && <ImageEnlargementModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} name={`${listing.listing_name} - Enlarged Image View`} src={listing.image[0]} />}
+         {isModalOpen && <ImageEnlargementModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} name={`${listing.listing_name} - Enlarged Image View`} src={listing.product_image[0]} />}
       </div>
    );
 }

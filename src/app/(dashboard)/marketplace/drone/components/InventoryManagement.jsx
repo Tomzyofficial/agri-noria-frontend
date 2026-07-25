@@ -34,10 +34,8 @@ export function InventoryManagement({ inventoryUrl, deleteUrl, addNewHref, viewH
 
    const { data: productsData, mutate, error: productsError, isLoading: productsLoading } = useSWR(inventoryUrl, fetcher);
 
-   const productsDataArray = productsData?.data?.listings || [];
-   console.log("productsDataArray", productsData ? productsData : "nothing");
-
-   const filteredProducts = productsDataArray.filter((product) => {
+   const productsDataArray = productsData?.data.listings || [];
+   const filteredProducts = productsDataArray?.filter((product) => {
       const matchesSearch = product.listing_name.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesSearch;
    });
@@ -102,7 +100,7 @@ export function InventoryManagement({ inventoryUrl, deleteUrl, addNewHref, viewH
                   ) : (
                      filteredProducts.length > 0 &&
                      filteredProducts.map((product) => {
-                        const src = product.image[0];
+                        const src = product.product_image?.[0];
                         return (
                            <Card key={product.id} className="max-w-2xl min-h-70">
                               <div className="aspect-square rounded-t-lg ">
@@ -111,7 +109,7 @@ export function InventoryManagement({ inventoryUrl, deleteUrl, addNewHref, viewH
 
                               <div className="p-2 relative">
                                  <div className="flex items-center justify-between">
-                                    <Badge className="text-green-700 bg-green-100 dark:bg-(--darker-green-color) dark:text-(--background) py-0 px-1 rounded">{product.status.charAt(0).toUpperCase() + product.status.slice(1)}</Badge>
+                                    <Badge className="text-green-700 bg-green-100 dark:bg-(--darker-green-color) dark:text-(--background) py-0 px-1 rounded">{product.product_status.charAt(0).toUpperCase() + product.product_status.slice(1)}</Badge>
                                     <Button className="hover:bg-(--greenish-color) transition transition-background rounded hover:text-(--background) p-1 text-neutral-500" onClick={() => handleActionClick(product.id)}>
                                        <Ellipsis />
                                     </Button>
@@ -120,7 +118,7 @@ export function InventoryManagement({ inventoryUrl, deleteUrl, addNewHref, viewH
                                  <div className="text-start space-y-2">
                                     <h2 className="text-md font-semibold">{product.listing_name.charAt(0).toUpperCase() + product.listing_name.slice(1)}</h2>
                                     <p className="text-sm line-clamp-1">{product.description}</p>
-                                    <p className="text-(--greenish-color) font-semibold">{formatPrice(product.sale_price || product.rental_price, product.country_code, product.currency)}</p>
+                                    <p className="text-(--greenish-color) font-semibold">{formatPrice(product.price || product.rental_price, product.country_code, product.currency)}</p>
                                  </div>
 
                                  <div className={`${openActionId === product.id ? "absolute rounded right-0 top-10 bg-(--background) w-1/2 p-1 space-y-2" : "hidden"}`}>

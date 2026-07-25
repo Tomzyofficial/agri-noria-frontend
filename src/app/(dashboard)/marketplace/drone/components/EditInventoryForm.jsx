@@ -13,9 +13,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function EditInventoryForm({ inventory }) {
+   // console.log(inventory);
    const router = useRouter();
    const [loading, setLoading] = useState(false);
-   const [existingImages] = useState(inventory?.image || []);
+   const [existingImages] = useState(inventory?.product_image || []);
 
    const { register, watch, handleSubmit } = useForm({
       resolver: zodResolver(updateDroneListingSchema),
