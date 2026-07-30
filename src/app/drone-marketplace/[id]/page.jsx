@@ -16,14 +16,35 @@ async function getListing(id) {
 
 export default async function ListingPage({ params }) {
    const { id } = await params;
-   const listing = await getListing(id);
-   console.log(listing.data);
-   if (!listing) notFound();
+   let productData = null;
+
+   try {
+      const res = await fetch(apiUrl(`/api/drone-marketplace/public/listings/${id}`), { cache: 'no-store' });
+      if (res.ok) {
+         const data = await res.json();
+         if (data?.data) {
+            productData = data.data;
+         }
+      }
+   } catch (error) {
+      console.error("Build fetch error for drone listing:", error);
+   }
+
+   if (!productData) {
+      return (
+         <>
+            <NavBar />
+            <div className="p-10 text-center text-gray-500">Product not found</div>
+         </>
+      );
+   }
 
    return (
       <>
          <NavBar />
-         <DroneListingDetail listing={listing.data} />
+         <section className="m-4 md:m-10 mb-10 flex flex-col lg:flex-row gap-4">
+            <ProductInfo product={productData} />
+         </section>
       </>
    );
 }

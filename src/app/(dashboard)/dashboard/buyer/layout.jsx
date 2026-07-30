@@ -34,7 +34,8 @@ export default function DashboardLayout({ children }) {
   // Signout
   const handleSignout = async () => {
     try {
-      const res = await buyerSignoutBridge();
+      toast.info("Signing out...", { autoClose: 2000, toastId: "signout" });
+        const res = await buyerSignoutBridge();
 
       if (!res) {
         throw new Error("Signout failed");

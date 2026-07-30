@@ -32,7 +32,7 @@ import { FaGlobe } from "react-icons/fa";
 
 export const sidebarMenu = [
   {
-    href: "/dashboard",
+    href: "/auth/signin",
     title: "Ecosystem Mode",
     icon: <FaGlobe className="h-4 w-4 text-blue-500" />,
   },

@@ -35,7 +35,7 @@ export default function ProgramsPage() {
       const fetchData = async () => {
          try {
             const [progRes, userRes] = await Promise.all([
-               fetch("/api/proxy/programs"),
+               fetch("/api/proxy/programs/mine"),
                fetch("/api/proxy/auth/verify-vendor")
             ]);
             
@@ -103,7 +103,7 @@ export default function ProgramsPage() {
             toast.success(`Program ${isEditing ? 'updated' : 'created'} successfully`);
             setIsModalOpen(false);
             // Refresh list
-            const updatedRes = await fetch("/api/proxy/programs");
+            const updatedRes = await fetch("/api/proxy/programs/mine");
             const updatedJson = await updatedRes.json();
             if (updatedJson.success) setPrograms(updatedJson.data);
          } else {

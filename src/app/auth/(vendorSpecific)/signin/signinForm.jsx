@@ -16,7 +16,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { FaSpinner } from "react-icons/fa6";
 import { signinBridge } from "@/actions/authActions";
 import { verifyVendorSession } from "@/actions/session";
-
+import { resolveRedirectPath } from "@/utils/routeResolver";
 export function SigninForm() {
    const router = useRouter();
    const [showPassword, setShowPassword] = useState(false);
