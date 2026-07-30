@@ -199,7 +199,7 @@ header.sticky {
    top: 0;
    left: 0;
    right: 0;
-   z-index: 1;
+   z-index: 10;
    transform: translateY(-4px) scale(1.01);
    transition:
       background 0.5s cubic-bezier(0.4, 0, 0.2, 1),

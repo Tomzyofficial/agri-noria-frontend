@@ -63,18 +63,10 @@ export default function CreateListingForm() {
    // Handle single file input (featured image)
    const handleFeaturedImageChange = (e) => {
       const file = e.target.files?.[0];
+      console.log(file);
       setFormData((prev) => ({
          ...prev,
          featured_image: file || null,
-      }));
-   };
-
-   // Handle multiple file inputs (gallery images)
-   const handleGalleryImagesChange = (e) => {
-      const files = e.target.files ? Array.from(e.target.files) : [];
-      setFormData((prev) => ({
-         ...prev,
-         gallery_images: files,
       }));
    };
 
@@ -138,9 +130,7 @@ export default function CreateListingForm() {
             submitData.append("featured_image", formData.featured_image);
          }
 
-         formData.gallery_images.forEach((file) => {
-            submitData.append("gallery_images", file);
-         });
+         console.log("file", submitData.get("featured_image"));
 
          const response = await fetch("/api/proxy/farm-development/create-listing", {
             method: "POST",
@@ -156,21 +146,20 @@ export default function CreateListingForm() {
          toast.success("Listing created successfully!");
 
          // Reset form
-         setFormData({
-            title: "",
-            slug: "",
-            category: "",
-            description: "",
-            location: "",
-            scope: [],
-            price_type: "",
-            min_budget: "",
-            max_budget: "",
-            duration: "",
-            featured_image: null,
-            gallery_images: [],
-         });
-         setCurrentStep(1);
+         // // setFormData({
+         // //    title: "",
+         // //    slug: "",
+         // //    category: "",
+         // //    description: "",
+         // //    location: "",
+         // //    scope: [],
+         // //    price_type: "",
+         // //    min_budget: "",
+         // //    max_budget: "",
+         // //    duration: "",
+         // //    featured_image: null,
+         // // });
+         // setCurrentStep(1);
       } catch (error) {
          console.error("Error submitting listing:", error);
          toast.error(error.message || "Failed to create listing");
@@ -186,7 +175,7 @@ export default function CreateListingForm() {
          {/* STEP INDICATOR */}
          <div className="flex gap-2 mb-6 text-sm">
             {[1, 2, 3, 4].map((s) => (
-               <div key={s} className={`px-3 py-1 rounded-full ${currentStep === s ? "bg-green-600 text-white" : "bg-gray-200"}`}>
+               <div key={s} className={`px-3 py-1 text-gray-700 bg-gray-200 rounded-full ${currentStep === s && "bg-green-600 text-white"}`}>
                   Step {s}
                </div>
             ))}
@@ -278,10 +267,10 @@ export default function CreateListingForm() {
                      <Label className="block font-medium">Duration</Label>
                      <select name="duration" type="text" value={formData.duration} onChange={handleChange} placeholder="e.g. 2 - 4 weeks" className="w-full border p-2 rounded">
                         <option value="">Choose duration</option>
-                        <option value="">1 - 2 weeks</option>
-                        <option value="">3 - 4 weeks</option>
-                        <option value="">1 - 2 months</option>
-                        <option value="">3+ months</option>
+                        <option value="1 - 2 weeks">1 - 2 weeks</option>
+                        <option value="3 - 4 weeks">3 - 4 weeks</option>
+                        <option value="1 - 2 months">1 - 2 months</option>
+                        <option value="3+ months">3+ months</option>
                      </select>
                   </div>
                </div>
@@ -303,28 +292,13 @@ export default function CreateListingForm() {
                         </p>
                      )}
                   </div>
-
-                  <div>
-                     <Label className="block font-medium">Gallery Images</Label>
-                     <Input type="file" accept="image/*" multiple onChange={handleGalleryImagesChange} className="w-full border p-2 rounded" />
-                     {formData.gallery_images.length > 0 && (
-                        <p className="text-sm flex items-center text-green-600 mt-1">
-                           {" "}
-                           <span>
-                              <Check className="w-4 h-4" />
-                           </span>{" "}
-                           {formData.gallery_images.length} file(s) selected
-                        </p>
-                     )}
-                     <p className="text-xs text-gray-500 mt-1">Upload multiple project images</p>
-                  </div>
                </div>
             )}
 
             {/* NAVIGATION BUTTONS */}
             <div className="flex justify-between pt-6">
                {currentStep > 1 ? (
-                  <Button type="button" onClick={handleBack} disabled={loading} className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50">
+                  <Button type="button" onClick={handleBack} disabled={loading} className="px-4 py-2 text-gray-700 bg-gray-200 rounded disabled:opacity-50">
                      Back
                   </Button>
                ) : (
