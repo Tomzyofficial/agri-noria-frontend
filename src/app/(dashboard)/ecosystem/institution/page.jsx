@@ -321,11 +321,11 @@ export default function InstitutionDashboard() {
             Program-Centric Command Center
           </p>
         </div>
-        <Link href="/ecosystem/institution/programs">
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center gap-2">
-            <Plus size={18} /> New Programme
-          </Button>
-        </Link>
+          <Link href="/ecosystem/institution/programs">
+            <Button className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-600/40 font-black rounded-full px-6 py-5 flex items-center gap-2 transition-all duration-300 hover:scale-105">
+              <Plus size={20} strokeWidth={3} /> New Programme
+            </Button>
+          </Link>
       </div>
 
       {userRole === "government" && <GovernmentDashboard stats={stats} />}
