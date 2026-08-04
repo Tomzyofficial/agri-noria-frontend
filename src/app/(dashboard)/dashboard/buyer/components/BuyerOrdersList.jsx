@@ -8,6 +8,8 @@ import { toast } from "react-toastify";
 import { MapPin, Truck, ArrowLeft, ThumbsUp } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import React from "react";
+import { fetcher } from "@/utils/otherUtils";
+import { formatLabel } from "@/utils/otherUtils";
 import { ORDER_STATUS_CONFIG, getStatusBadgeClass } from "@/app/(dashboard)/dashboard/components/orders/OrderStatusUtils";
 import { BuyerOrderDetailModal } from "./BuyerOrderDetailModal";
 import { OTPVerificationModal } from "../../../marketplace/logistics/components/OTPVerificationModal";
@@ -28,7 +30,7 @@ export function BuyerOrdersList() {
       return `/api/proxy/buyer/orders${qs ? `?${qs}` : ""}`;
    }, [statusFilter]);
 
-   const { data, error, isLoading, mutate } = useSWR(ordersUrl, logisticsFetcher);
+   const { data, error, isLoading, mutate } = useSWR(ordersUrl, fetcher);
    const orders = data?.data ?? [];
 
    // console.log(orders);
@@ -152,7 +154,7 @@ export function BuyerOrdersList() {
                                  </div>
                               </td>
                               <td className="px-4 py-4 whitespace-nowrap">
-                                 <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${getStatusBadgeClass(order.status)}`}>{formatStatusLabel(order.status)}</span>
+                                 <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${getStatusBadgeClass(order.status)}`}>{formatLabel(order.status)}</span>
                               </td>
                               <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">{order.created_at ? new Date(order.created_at).toLocaleDateString() : "—"}</td>
                               <td className="px-4 py-4 whitespace-nowrap">

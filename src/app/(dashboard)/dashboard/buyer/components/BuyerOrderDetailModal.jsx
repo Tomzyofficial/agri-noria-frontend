@@ -1,7 +1,8 @@
 "use client";
 
 import { X, Store, Truck, Package, MapPin, Phone, Mail } from "lucide-react";
-import { formatStatusLabel, getStatusBadgeClass } from "./BuyerOrderUtils";
+import { formatLabel } from "@/utils/otherUtils";
+import { getStatusBadgeClass } from "../../components/orders/OrderStatusUtils";
 import { formatPrice } from "@/utils/formatPrice";
 import Image from "next/image";
 
@@ -43,7 +44,7 @@ export function BuyerOrderDetailModal({ selectedOrder, open, onClose }) {
                {/* Order id + status */}
                <div className="flex flex-wrap items-center gap-3">
                   <span className="font-mono text-sm text-gray-600 dark:text-gray-400">{selectedOrder.id}</span>
-                  <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${getStatusBadgeClass(selectedOrder.status)}`}>{formatStatusLabel(selectedOrder.status)}</span>
+                  <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${getStatusBadgeClass(selectedOrder.status)}`}>{formatLabel(selectedOrder.status)}</span>
                </div>
 
                {/* Buyer */}
