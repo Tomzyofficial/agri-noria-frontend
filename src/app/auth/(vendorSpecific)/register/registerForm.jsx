@@ -13,7 +13,7 @@ import { FaSpinner } from "react-icons/fa6";
 import { registerBridge } from "@/actions/authActions";
 import { Country, State } from "country-state-city";
 import { verifyVendorSession } from "@/actions/session";
-// import { EmailInputWithVerification } from "@/components/auth/EmailInputWithVerification";
+import { resolveRedirectPath } from "@/utils/routeResolver";
 // import { EmailVerification } from "@/components/auth/EmailVerification";
 
 const workspaceRoleCategories = {
@@ -376,12 +376,10 @@ export function RegisterForm() {
 
          if (session.authenticated) {
             const { workspace, role } = session;
-            if (workspace === "ecosystem" && role?.toLowerCase() === "farmer") {
+            if (workspace?.toLowerCase() === "ecosystem" && role?.toLowerCase() === "farmer") {
                router.push("/ecosystem/farmer/onboarding");
-            } else if (workspace === "ecosystem") {
-               router.push("/dashboard");
             } else {
-               router.push(`/${workspace}/${role.toLowerCase().replace(/\s+/g, "-")}`);
+               router.push(resolveRedirectPath(role, workspace));
             }
          }
          router.refresh();

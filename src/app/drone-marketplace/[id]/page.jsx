@@ -22,7 +22,9 @@ export default async function ListingPage({ params }) {
    return (
       <>
          <NavBar />
-         <DroneListingDetail listing={listing.data} />
+         <section className="m-4 md:m-10 mb-10 flex flex-col lg:flex-row gap-4">
+            <ProductInfo product={productData} />
+         </section>
       </>
    );
 }

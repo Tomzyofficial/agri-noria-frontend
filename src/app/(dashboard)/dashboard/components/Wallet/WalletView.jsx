@@ -1,10 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownLeft, Clock, Search, Coins, RefreshCw } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownLeft, Clock, Search, Coins, RefreshCw, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 import { toast } from "react-toastify";
+import { Modal } from "@/components/ui/Modal";
 
 export default function WalletView({ role, walletType = "personal" }) {
    const [walletData, setWalletData] = useState({
@@ -14,6 +16,9 @@ export default function WalletView({ role, walletType = "personal" }) {
    });
    const [loading, setLoading] = useState(true);
    const [searchTerm, setSearchTerm] = useState("");
+   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+   const [transferAmount, setTransferAmount] = useState("");
+   const [isTransferring, setIsTransferring] = useState(false);
 
    const fetchWallet = async () => {
       setLoading(true);
@@ -47,6 +52,42 @@ export default function WalletView({ role, walletType = "personal" }) {
       return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(amount);
    };
 
+   const handleTransfer = async () => {
+      if (!transferAmount || isNaN(transferAmount) || parseFloat(transferAmount) <= 0) {
+         return toast.error("Please enter a valid amount");
+      }
+      if (parseFloat(transferAmount) > walletData.balance) {
+         return toast.error("Insufficient balance");
+      }
+
+      setIsTransferring(true);
+      try {
+         const response = await fetch("/api/proxy/pipeline/wallet/transfer/ecosystem", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+               amount: transferAmount,
+               wallet_type: role 
+            })
+         });
+         
+         const data = await response.json();
+         if (response.ok && data.success) {
+            toast.success(data.message || "Transfer successful!");
+            setIsTransferModalOpen(false);
+            setTransferAmount("");
+            fetchWallet();
+         } else {
+            toast.error(data.error || "Transfer failed");
+         }
+      } catch (error) {
+         console.error("Transfer error:", error);
+         toast.error("Failed to process transfer");
+      } finally {
+         setIsTransferring(false);
+      }
+   };
+
    const filteredTransactions = walletData.transactions.filter(tx => 
       tx.description?.toLowerCase().includes(searchTerm.toLowerCase())
    );
@@ -63,6 +104,46 @@ export default function WalletView({ role, walletType = "personal" }) {
             </Button>
          </div>
 
+         {/* Transfer Modal */}
+         <Modal isOpen={isTransferModalOpen} onClick={() => setIsTransferModalOpen(false)}>
+            <div className="p-6">
+               <div className="mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                     Transfer to Ecosystem Treasury
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                     Contribute directly from your institutional wallet balance.
+                  </p>
+               </div>
+               
+               <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Available Balance</span>
+                  <span className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(walletData.balance)}</span>
+               </div>
+
+               <div className="mb-6">
+                  <Label htmlFor="transferAmount" className="text-gray-700 dark:text-gray-300 font-medium">Amount (₦)</Label>
+                  <Input 
+                     id="transferAmount"
+                     type="number" 
+                     placeholder="e.g. 50000"
+                     value={transferAmount}
+                     onChange={(e) => setTransferAmount(e.target.value)}
+                     className="mt-2 text-lg"
+                     max={walletData.balance}
+                  />
+               </div>
+               
+               <Button 
+                  onClick={handleTransfer} 
+                  className="w-full h-12 text-base font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
+                  disabled={isTransferring || !transferAmount || walletData.balance <= 0}
+               >
+                  {isTransferring ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Confirm Transfer"}
+               </Button>
+            </div>
+         </Modal>
+
          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Balance Card */}
             <Card className="p-8 bg-black text-white border-none shadow-2xl relative overflow-hidden group">
@@ -74,7 +155,13 @@ export default function WalletView({ role, walletType = "personal" }) {
                   <h2 className="text-5xl font-black mb-6">{formatCurrency(walletData.balance)}</h2>
                   <div className="flex gap-4">
                      <Button className="bg-white text-black hover:bg-gray-200 border-none font-black px-8">Withdraw</Button>
-                     <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 font-black">Transfer</Button>
+                     <Button 
+                        onClick={() => setIsTransferModalOpen(true)}
+                        variant="outline" 
+                        className="border-white/20 text-white hover:bg-white/10 font-black"
+                     >
+                        Transfer
+                     </Button>
                   </div>
                </div>
             </Card>

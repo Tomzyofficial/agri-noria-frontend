@@ -84,14 +84,14 @@ export default function DashboardLayout({ children }) {
   // Signout
   const handleSignout = async () => {
     try {
-      const res = await signoutBridge();
+      toast.info("Signing out...", { autoClose: 2000, toastId: "signout" });
+        const res = await signoutBridge();
 
       if (!res) {
         toast.error("Signout failed. Try again.");
         return;
       }
-      router.push("/");
-      router.refresh();
+      window.location.href = "/";
     } catch (error) {
       toast.error("Signout failed");
     }

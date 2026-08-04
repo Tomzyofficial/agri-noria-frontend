@@ -11,6 +11,7 @@ import {
   Building2,
   ChevronRight,
   AlertCircle,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
@@ -112,6 +113,7 @@ export default function FinanceApprovalsPage() {
     rejectedCount: 0,
     rejectedValue: 0,
   });
+  const [ecosystemTreasury, setEcosystemTreasury] = useState(0);
   const [stage1, setStage1] = useState([]);
   const [stage2, setStage2] = useState([]);
   const [stage3, setStage3] = useState([]);
@@ -134,21 +136,24 @@ export default function FinanceApprovalsPage() {
         router.replace("/ecosystem/institution");
         return;
       }
-      const [statsRes, pendingRes, distRes, allRes, ordersRes] = await Promise.all([
+      const [statsRes, pendingRes, distRes, allRes, ordersRes, treasuryRes] = await Promise.all([
         fetch("/api/proxy/admin/institution/analytics"),
         fetch("/api/proxy/admin/institution/pending-requests"),
         fetch("/api/proxy/admin/institution/distributors"),
         fetch("/api/proxy/pipeline/inputs/all"),
         fetch("/api/proxy/pipeline/buyer-orders/all"),
+        fetch("/api/proxy/pipeline/stats/platform-wallet")
       ]);
-      const [statsJson, pendingJson, distJson, allJson, ordersJson] = await Promise.all([
+      const [statsJson, pendingJson, distJson, allJson, ordersJson, treasuryJson] = await Promise.all([
         statsRes.json(),
         pendingRes.json(),
         distRes.json(),
         allRes.json(),
         ordersRes.json(),
+        treasuryRes.json()
       ]);
       if (statsJson.success) setStats(statsJson.data.disbursements);
+      if (treasuryJson.success) setEcosystemTreasury(treasuryJson.data.ecosystem_treasury || 0);
       if (distJson.success) setDistributors(distJson.data);
       const pending = pendingJson.success ? pendingJson.data || [] : [];
       setStage1(
@@ -340,6 +345,14 @@ export default function FinanceApprovalsPage() {
     },
   ];
 
+  const treasuryCard = {
+    label: "Ecosystem Treasury",
+    value: `₦${ecosystemTreasury.toLocaleString()}`,
+    sub: "Total Global Funds",
+    icon: <Wallet className="w-5 h-5" />,
+    color: "emerald",
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Header */}
@@ -353,8 +366,8 @@ export default function FinanceApprovalsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((s, i) => (
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        {[treasuryCard, ...statCards].map((s, i) => (
           <Card key={i} className="border-none shadow-sm">
             <CardContent className="p-5">
               <div

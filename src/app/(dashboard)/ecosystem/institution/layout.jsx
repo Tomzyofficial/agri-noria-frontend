@@ -16,6 +16,7 @@ import {
   Globe,
   Wallet,
   Truck,
+  Banknote,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
@@ -34,13 +35,13 @@ export default function InstitutionLayout({ children }) {
 
   const handleSignout = async () => {
     try {
-      const res = await signoutBridge();
+      toast.info("Signing out...", { autoClose: 2000, toastId: "signout" });
+        const res = await signoutBridge();
       if (!res) {
         toast.error("Signout failed. Try again.");
         return;
       }
-      router.push("/");
-      router.refresh();
+      window.location.href = "/";
     } catch {
       toast.error("Signout failed");
     }
@@ -85,6 +86,7 @@ export default function InstitutionLayout({ children }) {
       navMenu = [
         { label: "Financial Dashboard", href: "/ecosystem/institution", icon: <LayoutDashboard className="w-4 h-4" /> },
         { label: "Approvals Center", href: "/ecosystem/institution/approvals", icon: <Coins className="w-4 h-4" /> },
+        { label: "Treasury Ledger", href: "/ecosystem/institution/treasury", icon: <Banknote className="w-4 h-4" /> },
       ];
       break;
     case "bank":
@@ -127,6 +129,12 @@ export default function InstitutionLayout({ children }) {
         { label: "Programs", href: "/ecosystem/institution/programs", icon: <Landmark className="w-4 h-4" /> },
       ];
   }
+
+  navMenu.push({
+    label: "Wallet",
+    href: "/ecosystem/institution/wallet",
+    icon: <Wallet className="w-4 h-4" />,
+  });
 
   navMenu.push({
     label: "Settings",

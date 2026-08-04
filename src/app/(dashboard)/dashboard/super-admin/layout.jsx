@@ -33,7 +33,8 @@ export default function SuperAdminLayout({ children }) {
 
   const handleSignout = async () => {
     try {
-      const res = await signoutBridge();
+      toast.info("Signing out...", { autoClose: 2000, toastId: "signout" });
+        const res = await signoutBridge();
       if (!res) {
         toast.error("Signout failed. Try again later.");
         return;
