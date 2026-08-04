@@ -2,6 +2,8 @@ import { apiUrl } from "@/_lib/api";
 import { DroneMarketplacePage } from "./components/DroneMarketplacePage";
 import NavBar from "@/components/ui/NavBar/NavBar";
 
+export const dynamic = 'force-dynamic';
+
 export default async function Page() {
    let listings = [];
    let total = 0;

@@ -1,67 +1,53 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import { toast } from "react-toastify";
 
+const fetcher = (url) => fetch(url).then((res) => res.json());
+
 export function useProgramData() {
-   const [loading, setLoading] = useState(true);
-   const [clusters, setClusters] = useState([]);
-   const [stats, setStats] = useState({});
-   const [clusterWallet, setClusterWallet] = useState(null);
-   const [clusterTransactions, setClusterTransactions] = useState([]);
-   const [pendingInputs, setPendingInputs] = useState([]);
-   const [programs, setPrograms] = useState([]);
-   const [currentUserId, setCurrentUserId] = useState(null);
-   const [currentUser, setCurrentUser] = useState(null);
-   const [userRole, setUserRole] = useState(null);
    const [eligibleFarmers, setEligibleFarmers] = useState([]);
    const [clusterMembers, setClusterMembers] = useState([]);
 
-   const fetchData = useCallback(async () => {
-      try {
-         const [clustersRes, statsRes, pendingRes, programsRes, sessionRes] = await Promise.all([
-            fetch("/api/proxy/pipeline/clusters"),
-            fetch("/api/proxy/pipeline/stats"),
-            fetch("/api/proxy/pipeline/inputs/pending"),
-            fetch("/api/proxy/programs"),
-            fetch("/api/proxy/auth/verify-vendor"),
-         ]);
-         
-         if (clustersRes.ok) {
-            const d = await clustersRes.json();
-            const clusterData = d.data || [];
-            setClusters(clusterData);
-            if (clusterData.length > 0) {
-               const walletRes = await fetch(`/api/proxy/pipeline/wallet?type=cluster&cluster_id=${clusterData[0].id}`);
-               if (walletRes.ok) {
-                  const wd = await walletRes.json();
-                  setClusterWallet(wd.data?.wallet);
-                  setClusterTransactions(wd.data?.transactions || []);
-               }
-            }
-         }
-         if (statsRes.ok) { const d = await statsRes.json(); setStats(d.data || {}); }
-         if (pendingRes.ok) { const d = await pendingRes.json(); setPendingInputs(d.data || []); }
-         if (programsRes.ok) { const d = await programsRes.json(); setPrograms(d.data || []); }
-         if (sessionRes.ok) {
-            const d = await sessionRes.json();
-            setCurrentUserId(d.userId);
-            setUserRole(d.role?.toLowerCase());
-            setCurrentUser(d);
-         }
-      } catch (err) {
-         console.error("Error fetching program data:", err);
-      } finally {
-         setLoading(false);
-      }
-   }, []);
+   const { data: clustersRes, isLoading: l1, mutate: mutateClusters } = useSWR("/api/proxy/pipeline/clusters", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+   const { data: statsRes, isLoading: l2, mutate: mutateStats } = useSWR("/api/proxy/pipeline/stats", fetcher, { refreshInterval: 10000 });
+   const { data: pendingRes, isLoading: l3, mutate: mutatePending } = useSWR("/api/proxy/pipeline/inputs/pending", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+   const { data: programsRes, isLoading: l4, mutate: mutatePrograms } = useSWR("/api/proxy/programs", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+   const { data: sessionRes, isLoading: l5 } = useSWR("/api/proxy/auth/verify-vendor", fetcher, { revalidateOnFocus: false });
 
-   useEffect(() => {
-      fetchData();
-   }, [fetchData]);
+   const clusters = clustersRes?.data || [];
+   const stats = statsRes?.data || {};
+   const pendingInputs = pendingRes?.data || [];
+   const programs = programsRes?.data || [];
+
+   const firstClusterId = clusters.length > 0 ? clusters[0].id : null;
+   const { data: walletRes, mutate: mutateWallet } = useSWR(
+      firstClusterId ? `/api/proxy/pipeline/wallet?type=cluster&cluster_id=${firstClusterId}` : null,
+      fetcher,
+      { refreshInterval: 5000, revalidateOnFocus: true }
+   );
+
+   const clusterWallet = walletRes?.data?.wallet || null;
+   const clusterTransactions = walletRes?.data?.transactions || [];
+
+   const currentUserId = sessionRes?.userId || null;
+   const userRole = sessionRes?.role?.toLowerCase() || null;
+   const currentUser = sessionRes || null;
+
+   const loading = l1 || l4 || l5;
+
+   const fetchData = async () => {
+      await Promise.all([
+         mutateClusters(),
+         mutateStats(),
+         mutatePending(),
+         mutatePrograms(),
+         mutateWallet(),
+      ]);
+   };
 
    const fetchClusters = async () => {
-      const res = await fetch("/api/proxy/pipeline/clusters");
-      if (res.ok) setClusters((await res.json()).data || []);
+      await mutateClusters();
    };
 
    const fetchClusterMembers = async (cluster) => {
@@ -83,6 +69,12 @@ export function useProgramData() {
          toast.error("Failed to fetch eligible farmers");
       }
    };
+
+   const setClusters = (data) => mutateClusters({ success: true, data }, false);
+   const setPrograms = (data) => mutatePrograms({ success: true, data }, false);
+   const setPendingInputs = (data) => mutatePending({ success: true, data }, false);
+   const setClusterWallet = (data) => mutateWallet({ success: true, data: { wallet: data, transactions: clusterTransactions } }, false);
+   const setClusterTransactions = (data) => mutateWallet({ success: true, data: { wallet: clusterWallet, transactions: data } }, false);
 
    return {
       loading, clusters, stats, clusterWallet, clusterTransactions, pendingInputs, programs,

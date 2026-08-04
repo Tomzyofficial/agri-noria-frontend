@@ -49,7 +49,7 @@ const GovernmentDashboard = ({ stats }) => (
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Irrigation Coverage</p>
-              <h3 className="text-3xl font-black mt-2 text-(--foreground)">12.4%</h3>
+              <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.irrigationCoverage || "0"}%</h3>
             </div>
             <div className="p-3 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 rounded-xl"><Droplets size={24} /></div>
           </div>
@@ -157,7 +157,7 @@ const CommodityBoardDashboard = ({ stats }) => (
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Production Forecast</p>
-              <h3 className="text-3xl font-black mt-2 text-(--foreground)">2,450 <span className="text-sm">MT</span></h3>
+              <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.totalHarvests?.toLocaleString() || "0"} <span className="text-sm">MT</span></h3>
             </div>
             <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl"><BarChart3 size={24} /></div>
           </div>
@@ -168,7 +168,7 @@ const CommodityBoardDashboard = ({ stats }) => (
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Export Readiness</p>
-              <h3 className="text-3xl font-black mt-2 text-(--foreground)">68%</h3>
+              <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.programKpi || "0"}%</h3>
             </div>
             <div className="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-xl"><ArrowUpRight size={24} /></div>
           </div>
@@ -209,7 +209,7 @@ const DFIDashboard = ({ stats }) => (
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Women Reached</p>
-              <h3 className="text-3xl font-black mt-2 text-(--foreground)">42%</h3>
+              <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.womenPercentage || "0"}%</h3>
             </div>
             <div className="p-3 bg-pink-50 dark:bg-pink-900/20 text-pink-600 rounded-xl"><Users size={24} /></div>
           </div>
@@ -264,7 +264,7 @@ const NGODashboard = ({ stats }) => (
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Training Adoption</p>
-              <h3 className="text-3xl font-black mt-2 text-(--foreground)">76%</h3>
+              <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.trainingAdoption || "0"}%</h3>
             </div>
             <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-xl"><Activity size={24} /></div>
           </div>
@@ -272,6 +272,159 @@ const NGODashboard = ({ stats }) => (
       </Card>
     </div>
     <Card className="border-none shadow-sm"><CardHeader><CardTitle>Communities Reached</CardTitle></CardHeader><CardContent className="h-64 flex items-center justify-center text-gray-400">Map Placeholder</CardContent></Card>
+  </div>
+);
+
+const ProducerAssociationDashboard = ({ stats }) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Total Members</p>
+              <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.totalFarmers?.toLocaleString() || "0"}</h3>
+            </div>
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-xl"><Users size={24} /></div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Cooperatives</p>
+              <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.totalCooperatives?.toLocaleString() || "0"}</h3>
+            </div>
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl"><Globe size={24} /></div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Active Programmes</p>
+              <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.activePrograms || "0"}</h3>
+            </div>
+            <div className="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-xl"><Landmark size={24} /></div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Programme KPIs</p>
+              <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.programKpi || "0"}%</h3>
+            </div>
+            <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-xl"><Activity size={24} /></div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+);
+
+const CooperativeDashboard = ({ stats }) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Members</p>
+              <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.totalFarmers?.toLocaleString() || "0"}</h3>
+            </div>
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-xl"><Users size={24} /></div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Total Hectares</p>
+              <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.totalHectares?.toLocaleString() || "0"}</h3>
+            </div>
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl"><Globe size={24} /></div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Active Loans</p>
+              <h3 className="text-3xl font-black mt-2 text-(--foreground)">₦{stats.overview?.totalDeployed?.toLocaleString() || "0"}</h3>
+            </div>
+            <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-xl"><Activity size={24} /></div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Harvests</p>
+              <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.totalHarvests?.toLocaleString() || "0"} MT</h3>
+            </div>
+            <div className="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-xl"><Leaf size={24} /></div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+);
+
+const ResearchInstitutionDashboard = ({ stats }) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Active Projects</p>
+              <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.activePrograms || "0"}</h3>
+            </div>
+            <div className="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-xl"><Landmark size={24} /></div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Trial Plots</p>
+              <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.totalTrialPlots || "0"}</h3>
+            </div>
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl"><Globe size={24} /></div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Publications</p>
+              <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.totalPublications || "0"}</h3>
+            </div>
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-xl"><FileText size={24} /></div>
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Active Alerts</p>
+              <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.researchAlerts || "0"}</h3>
+            </div>
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-xl"><ShieldAlert size={24} /></div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   </div>
 );
 
@@ -334,8 +487,12 @@ export default function InstitutionDashboard() {
       {userRole === "dfi" && <DFIDashboard stats={stats} />}
       {userRole === "ngo" && <NGODashboard stats={stats} />}
       
+      {userRole === "producer association" && <ProducerAssociationDashboard stats={stats} />}
+      {userRole === "cooperative" && <CooperativeDashboard stats={stats} />}
+      {userRole === "research institution" && <ResearchInstitutionDashboard stats={stats} />}
+      
       {/* Fallback for Generic Institution Role */}
-      {(!["government", "bank", "commodity board", "dfi", "ngo"].includes(userRole)) && (
+      {(!["government", "bank", "commodity board", "dfi", "ngo", "producer association", "cooperative", "research institution"].includes(userRole)) && (
          <GovernmentDashboard stats={stats} />
       )}
     </div>

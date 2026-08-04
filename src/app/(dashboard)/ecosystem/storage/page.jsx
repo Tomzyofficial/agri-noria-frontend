@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Box, Package, FileText, CheckCircle } from "lucide-react";
 import { FaSpinner } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 export default function StorageDashboard() {
   const [loading, setLoading] = useState(true);
@@ -47,11 +48,14 @@ export default function StorageDashboard() {
       });
       const data = await res.json();
       if (data.success) {
-        // Refresh data
+        toast.success("Storage batch verified and accepted!");
         fetchData();
+      } else {
+        toast.error(data.error || "Failed to accept storage ticket.");
       }
     } catch (error) {
       console.error("Error accepting ticket:", error);
+      toast.error("Network error while accepting ticket.");
     }
   };
 

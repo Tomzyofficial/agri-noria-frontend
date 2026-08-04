@@ -7,6 +7,9 @@ export const roleConfig = {
   "insurance firm": { category: "Institution" },
   "commodity board": { category: "Institution" },
   finance: { category: "Institution" },
+  "producer association": { category: "Institution" },
+  cooperative: { category: "Institution" },
+  "research institution": { category: "Institution" },
   distributor: { category: "Distributor" },
   // Program Management
   "program director": { category: "Program Management" },

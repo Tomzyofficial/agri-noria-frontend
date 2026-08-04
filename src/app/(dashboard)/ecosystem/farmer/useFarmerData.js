@@ -1,88 +1,56 @@
 "use client";
-import { useState, useEffect, useCallback, createContext, useContext } from "react";
+import { useState, createContext, useContext } from "react";
+import useSWR from "swr";
 import { toast } from "react-toastify";
 
 const FarmerDataContext = createContext();
 
+const fetcher = (url) => fetch(url).then((res) => res.json());
+
 export function FarmerDataProvider({ children }) {
-   const [loading, setLoading] = useState(true);
-   const [profile, setProfile] = useState(null);
-   const [wallet, setWallet] = useState(null);
-   const [transactions, setTransactions] = useState([]);
-   const [inputRequests, setInputRequests] = useState([]);
-   const [plantingData, setPlantingData] = useState([]);
-   const [stats, setStats] = useState({});
-   const [availablePrograms, setAvailablePrograms] = useState([]);
-   const [trainingData, setTrainingData] = useState({ modules: [], progress: [] });
-   const [clusterTrainings, setClusterTrainings] = useState([]);
-   const [myCluster, setMyCluster] = useState(null);
    const [enrollingProgramId, setEnrollingProgramId] = useState(null);
 
-   const fetchData = useCallback(async () => {
-      setLoading(true);
-      try {
-         const [profileRes, walletRes, inputsRes, plantingRes, statsRes, programsRes, trainingRes, clusterRes] =
-            await Promise.all([
-               fetch("/api/proxy/pipeline/farmer-profile/me"),
-               fetch("/api/proxy/pipeline/wallet?type=farmer"),
-               fetch("/api/proxy/pipeline/inputs/mine"),
-               fetch("/api/proxy/pipeline/planting/mine"),
-               fetch("/api/proxy/pipeline/stats"),
-               fetch("/api/proxy/programs"),
-               fetch("/api/proxy/pipeline/training"),
-               fetch("/api/proxy/pipeline/clusters/mine"),
-            ]);
+   const { data: profileRes, isLoading: l1, mutate: mutateProfile } = useSWR("/api/proxy/pipeline/farmer-profile/me", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+   const { data: walletRes, isLoading: l2, mutate: mutateWallet } = useSWR("/api/proxy/pipeline/wallet?type=farmer", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+   const { data: inputsRes, isLoading: l3, mutate: mutateInputs } = useSWR("/api/proxy/pipeline/inputs/mine", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+   const { data: plantingRes, isLoading: l4, mutate: mutatePlanting } = useSWR("/api/proxy/pipeline/planting/mine", fetcher, { refreshInterval: 5000 });
+   const { data: statsRes, isLoading: l5, mutate: mutateStats } = useSWR("/api/proxy/pipeline/stats", fetcher, { refreshInterval: 10000 });
+   const { data: programsRes, isLoading: l6, mutate: mutatePrograms } = useSWR("/api/proxy/programs", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+   const { data: trainingRes, mutate: mutateTraining } = useSWR("/api/proxy/pipeline/training", fetcher, { refreshInterval: 15000 });
+   const { data: clusterRes, isLoading: l8, mutate: mutateCluster } = useSWR("/api/proxy/pipeline/clusters/mine", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
 
-         if (profileRes.ok) {
-            const d = await profileRes.json();
-            setProfile(d.data);
-         }
-         if (walletRes.ok) {
-            const d = await walletRes.json();
-            setWallet(d.data?.wallet);
-            setTransactions(d.data?.transactions || []);
-         }
-         if (inputsRes.ok) {
-            const d = await inputsRes.json();
-            setInputRequests(d.data || []);
-         }
-         if (plantingRes.ok) {
-            const d = await plantingRes.json();
-            setPlantingData(d.data || []);
-         }
-         if (statsRes.ok) {
-            const d = await statsRes.json();
-            setStats(d.data || {});
-         }
-         if (programsRes.ok) {
-            const d = await programsRes.json();
-            setAvailablePrograms(d.data || []);
-         }
-         if (trainingRes.ok) {
-            const d = await trainingRes.json();
-            setTrainingData(d.data || { modules: [], progress: [] });
-         }
-         if (clusterRes.ok) {
-            const d = await clusterRes.json();
-            setMyCluster(d.data);
-            if (d.data?.id) {
-               const trRes = await fetch(`/api/proxy/pipeline/clusters/${d.data.id}/training`);
-               if (trRes.ok) {
-                  const trD = await trRes.json();
-                  setClusterTrainings(trD.data || []);
-               }
-            }
-         }
-      } catch (err) {
-         console.error("Error fetching farmer data:", err);
-      } finally {
-         setLoading(false);
-      }
-   }, []);
+   const profile = profileRes?.data || null;
+   const wallet = walletRes?.data?.wallet || null;
+   const transactions = walletRes?.data?.transactions || [];
+   const inputRequests = inputsRes?.data || [];
+   const plantingData = plantingRes?.data || [];
+   const stats = statsRes?.data || {};
+   const availablePrograms = programsRes?.data || [];
+   const trainingData = trainingRes?.data || { modules: [], progress: [] };
+   const myCluster = clusterRes?.data || null;
 
-   useEffect(() => {
-      fetchData();
-   }, [fetchData]);
+   const { data: clusterTrainingsRes, mutate: mutateClusterTrainings } = useSWR(
+      myCluster?.id ? `/api/proxy/pipeline/clusters/${myCluster.id}/training` : null, 
+      fetcher, 
+      { refreshInterval: 15000 }
+   );
+   const clusterTrainings = clusterTrainingsRes?.data || [];
+
+   const loading = l1 || l2 || l6;
+
+   const refreshData = async () => {
+      await Promise.all([
+         mutateProfile(),
+         mutateWallet(),
+         mutateInputs(),
+         mutatePlanting(),
+         mutateStats(),
+         mutatePrograms(),
+         mutateTraining(),
+         mutateCluster(),
+         mutateClusterTrainings(),
+      ]);
+   };
 
    const handleEnroll = async (programId) => {
       setEnrollingProgramId(programId);
@@ -94,7 +62,7 @@ export function FarmerDataProvider({ children }) {
          });
          if (res.ok) {
             toast.success("Successfully enrolled in program!");
-            await fetchData();
+            await refreshData();
          } else {
             toast.error("Failed to enroll");
          }
@@ -105,9 +73,12 @@ export function FarmerDataProvider({ children }) {
       }
    };
 
+   const isVerified = profile?.is_verified === true || profile?.vendor_is_verified === true || profile?.onboarding_status === "verified" || profile?.onboarding_status === "completed" || profile?.vendor_onboarding_status === "verified" || (profile?.onboarding_level >= 2) || (profile?.vendor_onboarding_level >= 2);
+
    const value = {
       loading,
       profile,
+      isVerified,
       wallet,
       transactions,
       inputRequests,
@@ -118,7 +89,8 @@ export function FarmerDataProvider({ children }) {
       clusterTrainings,
       myCluster,
       enrollingProgramId,
-      refreshData: fetchData,
+      refreshData,
+      fetchData: refreshData,
       handleEnroll,
    };
 

@@ -4,7 +4,8 @@ import { FaSeedling, FaMapMarkerAlt, FaCalendarAlt } from "react-icons/fa";
 import { useFarmerData } from "../useFarmerData";
 
 export default function EnrolledProgramsPage() {
-  const { loading, profile } = useFarmerData();
+  const { loading, profile, availablePrograms } = useFarmerData();
+  const enrolledProgram = availablePrograms?.find(p => p.id === profile?.program_id);
 
   if (loading)
     return (
@@ -51,7 +52,11 @@ export default function EnrolledProgramsPage() {
             </span>
           </CardHeader>
           <CardContent className="p-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+              <ProgramStat
+                label="Program Fund Balance"
+                value={`₦${parseFloat(enrolledProgram?.wallet_balance || 0).toLocaleString()}`}
+              />
               <ProgramStat label="Commodity" value={profile.commodity || "—"} />
               <ProgramStat
                 label="Assigned Hectares"

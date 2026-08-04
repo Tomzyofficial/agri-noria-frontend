@@ -7,14 +7,18 @@ import {
    FaTractor,
    FaMapMarkerAlt,
    FaCloudSun,
-   FaCheckCircle
+   FaCheckCircle,
+   FaExclamationTriangle,
+   FaLock
 } from "react-icons/fa";
 import { useFarmerData } from "./useFarmerData";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 export default function FarmerOverview() {
-   const { loading, profile, wallet, transactions, availablePrograms, enrollingProgramId, handleEnroll, myCluster } = useFarmerData();
+   const { loading, profile, isVerified, wallet, transactions, availablePrograms, enrollingProgramId, handleEnroll, myCluster } = useFarmerData();
+   const router = useRouter();
    const [isLocating, setIsLocating] = useState(false);
    const [nearbyClusters, setNearbyClusters] = useState([]);
 
@@ -85,11 +89,43 @@ export default function FarmerOverview() {
             <p className="text-sm text-gray-500 font-bold uppercase tracking-widest mt-1">Monitor your farm, training, wallet, and marketplace activity.</p>
          </div>
 
+         {!isVerified && (
+            <div className="relative overflow-hidden bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-amber-500/15 border border-amber-500/30 dark:border-amber-500/20 rounded-3xl p-6 md:p-8 shadow-xl">
+               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                  <div className="flex items-start gap-4">
+                     <div className="p-3 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-2xl shrink-0 mt-1">
+                        <FaExclamationTriangle size={28} />
+                     </div>
+                     <div>
+                        <div className="flex items-center gap-2 mb-1">
+                           <span className="inline-block px-3 py-0.5 text-[10px] font-black bg-amber-500 text-white dark:text-gray-950 rounded-full uppercase tracking-wider">
+                              Unverified Status
+                           </span>
+                           <span className="text-xs font-bold text-gray-500 dark:text-gray-400">• Action Required</span>
+                        </div>
+                        <h3 className="text-xl font-black text-gray-900 dark:text-white mt-2">
+                           Complete Farm Mapping to Verify Account
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 max-w-2xl leading-relaxed">
+                           Your registration basic info is complete, but your farm is currently <strong className="text-amber-600 dark:text-amber-400 font-bold">Unverified</strong>. To unlock cluster enrollment, team participation, input financing, storage, and logistics, please complete your Farm Mapping and verification.
+                        </p>
+                     </div>
+                  </div>
+                  <Button
+                     onClick={() => router.push("/ecosystem/farmer/onboarding?step=8")}
+                     className="w-full md:w-auto px-6 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black shadow-lg shadow-orange-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 uppercase tracking-wider text-xs shrink-0 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                     Resume Onboarding & Map Farm →
+                  </Button>
+               </div>
+            </div>
+         )}
+
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard label="Farm Size" value={`${farmSize} Ha`} icon={<FaSeedling size={24} />} color="green" />
             <StatCard label="Commodity" value={profile?.commodity || "—"} icon={<FaCloudSun size={24} />} color="sky" />
             <StatCard label="Wallet Balance" value={`₦${(walletBalance + lockedBalance).toLocaleString()}`} icon={<FaWallet size={24} />} color="amber" subValue={lockedBalance > 0 ? `₦${lockedBalance.toLocaleString()} locked` : null} />
-            <StatCard label="Status" value={profile?.onboarding_status === "completed" ? "Active" : "Pending"} icon={<FaTractor size={24} />} color="emerald" />
+            <StatCard label="Verification Status" value={isVerified ? "Verified" : "Unverified"} icon={isVerified ? <FaCheckCircle size={24} /> : <FaExclamationTriangle size={24} />} color={isVerified ? "emerald" : "amber"} />
          </div>
 
          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -107,8 +143,8 @@ export default function FarmerOverview() {
                         <ProfileItem label="Experience" value={profile?.experience_level || "—"} />
                         <div className="flex justify-between items-center pt-4">
                            <span className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Status</span>
-                           <span className={`px-4 py-1.5 text-[10px] rounded-full font-black uppercase tracking-widest ${profile ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : "bg-gray-100 text-gray-500"}`}>
-                              {profile ? "Active" : "Not Onboarded"}
+                           <span className={`px-4 py-1.5 text-[10px] rounded-full font-black uppercase tracking-widest ${isVerified ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"}`}>
+                              {isVerified ? "Verified" : "Unverified (Map Farm)"}
                            </span>
                         </div>
                      </div>
@@ -137,6 +173,7 @@ export default function FarmerOverview() {
                                     canEnroll={!profile?.program_id}
                                     enrolling={enrollingProgramId === prog.id}
                                     onEnroll={() => handleEnroll(prog.id)}
+                                    isVerified={isVerified}
                                  />
                               ))
                         )}
@@ -254,7 +291,7 @@ function ProfileItem({ label, value }) {
    );
 }
 
-function ProgramRow({ prog, isEnrolled, canEnroll, enrolling, onEnroll }) {
+function ProgramRow({ prog, isEnrolled, canEnroll, enrolling, onEnroll, isVerified = true }) {
    return (
       <div className={`flex flex-col sm:flex-row sm:items-center justify-between p-6 rounded-3xl border transition-all ${isEnrolled ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 shadow-lg" : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 hover:shadow-xl hover:-translate-y-1"} gap-4`}>
          <div className="flex items-start gap-4">
@@ -263,18 +300,34 @@ function ProgramRow({ prog, isEnrolled, canEnroll, enrolling, onEnroll }) {
             </div>
             <div>
                <h3 className={`font-black text-lg ${isEnrolled ? "text-emerald-900 dark:text-emerald-300" : "text-gray-900 dark:text-white"}`}>{prog.name}</h3>
-               <p className="text-[10px] font-black text-gray-500 mt-1 flex items-center gap-2 uppercase tracking-widest">
-                  <FaMapMarkerAlt className={isEnrolled ? "text-emerald-500" : "text-orange-400"} /> 
-                  {prog.region} • {prog.commodity} • {parseFloat(prog.target_hectares || 0).toLocaleString()} HA
+               <p className="text-[10px] font-black text-gray-500 mt-1 flex flex-wrap items-center gap-2 uppercase tracking-widest">
+                  <span className="flex items-center gap-1">
+                     <FaMapMarkerAlt className={isEnrolled ? "text-emerald-500" : "text-orange-400"} /> 
+                     {prog.region}
+                  </span>
+                  <span>•</span>
+                  <span>{prog.commodity}</span>
+                  <span>•</span>
+                  <span>{parseFloat(prog.target_hectares || 0).toLocaleString()} HA</span>
+                  <span>•</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-extrabold bg-emerald-100 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md">
+                     ₦{parseFloat(prog.wallet_balance || 0).toLocaleString()} PROGRAM FUND
+                  </span>
                </p>
             </div>
          </div>
          <Button
-            onClick={onEnroll}
-            disabled={!canEnroll || enrolling || isEnrolled}
-            className={`px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${isEnrolled ? "bg-emerald-100 text-emerald-600 shadow-none cursor-default" : canEnroll ? "bg-orange-600 text-white shadow-xl shadow-orange-500/20 hover:scale-105" : "bg-gray-100 text-gray-400 shadow-none cursor-not-allowed"}`}
+            onClick={() => {
+               if (!isVerified) {
+                  toast.warning("🔒 Please complete farm mapping & verification first.");
+                  return;
+               }
+               onEnroll();
+            }}
+            disabled={!canEnroll || enrolling || isEnrolled || !isVerified}
+            className={`px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${isEnrolled ? "bg-emerald-100 text-emerald-600 shadow-none cursor-default" : !isVerified ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 shadow-none cursor-not-allowed" : canEnroll ? "bg-orange-600 text-white shadow-xl shadow-orange-500/20 hover:scale-105" : "bg-gray-100 text-gray-400 shadow-none cursor-not-allowed"}`}
          >
-            {isEnrolled ? "Enrolled ✓" : enrolling ? "Enrolling..." : "Enroll Now"}
+            {isEnrolled ? "Enrolled ✓" : !isVerified ? "🔒 Verify to Enroll" : enrolling ? "Enrolling..." : "Enroll Now"}
          </Button>
       </div>
    );
