@@ -1,21 +1,21 @@
-import { VehicleManagement } from "./DashboardVehicleMngmennt";
 import { verifyVendorSession } from "@/actions/session";
 import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
+import { VehicleManagement } from "../components/DashboardVehicleMngment";
 
 export const metadata = {
-  title: "Dashboard Vehicle Management",
-  description: "Manage your products",
+   title: "Dashboard Vehicle Management",
+   description: "Manage your products",
 };
 
 export default async function ProductsPage() {
-  const session = await verifyVendorSession();
-  if (!session?.authenticated && session.role !== "Logistics_Partner") {
-    return <Unauthorized />;
-  }
+   const session = await verifyVendorSession();
+   if (!session?.authenticated || session.role !== "logistics" || session.workspace !== "marketplace") {
+      return <Unauthorized />;
+   }
 
-  return (
-    <div>
-      <VehicleManagement />
-    </div>
-  );
+   return (
+      <div>
+         <VehicleManagement />
+      </div>
+   );
 }

@@ -2,10 +2,6 @@ import { z } from "zod";
 
 const imageFileTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
 
-// Empty strings/null come from unselected or hidden form fields.
-// Without this, .optional() never kicks in because "" !== undefined,
-// which caused salePrice/condition/rentalPrice/rentalPeriod to be
-// validated even when the field wasn't relevant to the chosen listingType.
 const emptyToUndefined = (val) => (val === "" || val === null ? undefined : val);
 
 const optionalPositiveNumber = (message) => z.preprocess(emptyToUndefined, z.coerce.number().positive(message).optional());
@@ -94,7 +90,7 @@ export const createDroneListingSchema = droneListingFields
          .refine((files) => files && files.length > 0, "At least one image file is required")
          .refine((files) => files?.length <= 5, "Maximum 5 images allowed")
          .refine((files) => Array.from(files).every((file) => imageFileTypes.includes(file.type)), "Only JPG, JPEG, PNG or WEBP images are allowed")
-         .refine((files) => Array.from(files).every((file) => file.size <= 10 * 1024 * 1024), "Each image must not exceed 10MB"),
+         .refine((files) => Array.from(files).every((file) => file.size <= 5 * 1024 * 1024), "Each image must not exceed 5MB"),
    })
    .superRefine(listingRefinement);
 

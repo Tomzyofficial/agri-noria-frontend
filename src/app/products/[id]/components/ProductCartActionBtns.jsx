@@ -8,7 +8,7 @@ import { CiTrash } from "react-icons/ci";
 export function ProductCartActions({ product }) {
    const { cart, addToCart, removeItem, increaseQuantity, decreaseQuantity, loading } = useCartContext();
 
-   const image = product.product_image[0];
+   const image = product.image[0];
 
    const itemForCart = {
       listing_id: product.listing_id,

@@ -13,45 +13,56 @@ async function getBuyerCheckoutData(buyerId) {
          method: "POST",
          headers: {
             "Content-Type": "application/json",
-            cookie: cookieHeader,
+            Cookie: cookieHeader,
          },
          body: JSON.stringify({ buyerId }),
       });
 
       const data = await res.json();
 
-      if (res.ok) {
-         return { data };
+      if (!res.ok) {
+         return {
+            success: false,
+            data: null,
+         };
       }
+
+      return {
+         success: true,
+         data,
+      };
    } catch (error) {
       return { data: null };
    }
 }
 
 export default async function Summary() {
-   const user = await verifyBuyerSession();
+   const session = await verifyBuyerSession();
 
-   if (!user?.authenticated) {
+   if (!session.authenticated) {
+      console.log("false redirecting");
       redirect("/auth/identification/signin?return=/checkout/summary");
    }
 
    try {
-      const result = await getBuyerCheckoutData(user.buyerId);
+      const result = await getBuyerCheckoutData(session.buyerId);
       if (!result.data.hasItems) {
          redirect("/cart");
       }
 
-      const { buyer, items, vendors } = result.data;
+      const { buyer, vendors } = result.data;
+
+      const cart = vendors.flatMap((v) => v.items);
 
       return (
          <>
             <NavBar />
             <Suspense fallback={<p className="p-6 text-center">Loading checkout...</p>}>
-               <CheckoutSummaryPage buyer={buyer} cart={items} vendors={vendors} />
+               <CheckoutSummaryPage buyer={buyer} cart={cart} vendors={vendors} />
             </Suspense>
          </>
       );
-   } catch (err) {
+   } catch {
       return redirect("/cart");
    }
 }

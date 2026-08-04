@@ -7,7 +7,7 @@ export function useProductForm() {
    const [preview, setPreview] = useState(null);
 
    const [formData, setFormData] = useState({
-      product_image: null,
+      image: null,
       listing_name: "",
       location: "",
       price: "",
@@ -38,6 +38,8 @@ export function useProductForm() {
 
    const MAX_FILE_SIZE = 5 * 1024 * 1024;
    const handleChange = (e) => {
+      const imageFileTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+
       const { name, type, value, files } = e.target;
 
       if (type === "file") {
@@ -53,7 +55,12 @@ export function useProductForm() {
          }
 
          // Also worth validating type here if you accept specific formats
-         // const invalidFile = selectedFiles.find((f) => !ACCEPTED_TYPES.includes(f.type));
+         const invalidFile = selectedFiles.find((f) => !imageFileTypes.includes(f.type));
+
+         if (invalidFile) {
+            toast.error("You can only upload image files (JPEG, PNG, JPG, WebP)");
+            return;
+         }
 
          if (e.target.multiple) {
             setFormData((prev) => ({ ...prev, [name]: selectedFiles }));
@@ -87,7 +94,7 @@ export function useProductForm() {
 
       try {
          // Client-side validation
-         if (!formData.product_image) {
+         if (!formData.image) {
             throw new Error("Product image is required");
          }
          if (!formData.listing_name || formData.listing_name.trim() === "") {
@@ -196,12 +203,6 @@ export function useProductForm() {
             formDataToSend.append("attributes", JSON.stringify(formData.attributes));
          }
 
-         console.log("product_image entry:", formData.product_image);
-         console.log("is array?", Array.isArray(formData.product_image));
-         for (const [key, val] of formDataToSend.entries()) {
-            console.log(key, val, val instanceof File);
-         }
-
          const response = await fetch("/api/proxy/vendor/products/add-item", {
             method: "POST",
             body: formDataToSend,
@@ -214,7 +215,7 @@ export function useProductForm() {
          }
 
          toast.success(data.message || "Product listed successfully.");
-         // Object.keys(formData).forEach((key) => setFormData((prev) => ({ ...prev, [key]: "" })));
+         Object.keys(formData).forEach((key) => setFormData((prev) => ({ ...prev, [key]: "" })));
          setPreview(null);
       } catch (err) {
          toast.error(err.message || "Something went wrong. Try again.");

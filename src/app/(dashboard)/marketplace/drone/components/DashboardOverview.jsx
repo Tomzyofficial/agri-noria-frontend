@@ -2,13 +2,19 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import Link from "next/link";
-import { Plus, TrendingUp, Package, DollarSign, Users, ArrowRight } from "lucide-react";
+import { Plus, Package, DollarSign, Users, ArrowRight } from "lucide-react";
 import useSWR from "swr";
 import { formatPrice } from "@/utils/formatPrice";
 import { StatCard } from "@/app/(dashboard)/dashboard/components/ui/StatCard";
 import { fetcher } from "@/utils/otherUtils";
+import { useState } from "react";
+import { QuoteRequestTable } from "@/app/(dashboard)/dashboard/components/QuoteRequestTable";
+import { Modal } from "@/components/ui/Modal";
+import { QuoteRequestDetails } from "./QuoteRequestDetails";
 
 export function DashboardOverview({ user }) {
+   const [showModal, setShowModal] = useState(false);
+   const [selectedRequest, setSelectedRequest] = useState(null);
    const { data, error, isLoading } = useSWR("/api/proxy/vendor/drone/get-stats", fetcher);
 
    const stats = data?.data || {};
@@ -72,6 +78,19 @@ export function DashboardOverview({ user }) {
                </CardContent>
             </Card>
          </div>
+
+         <QuoteRequestTable url="/api/proxy/vendor/drone/quote-request" setSelectedRequest={setSelectedRequest} setShowModal={setShowModal} />
+
+         <Modal
+            isOpen={showModal}
+            onClick={() => {
+               setShowModal(false);
+               setSelectedRequest(null);
+            }}
+            title="Quote Request Details"
+         >
+            {selectedRequest && QuoteRequestDetails(selectedRequest)}
+         </Modal>
       </div>
    );
 }
