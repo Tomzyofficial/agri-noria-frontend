@@ -20,7 +20,7 @@ const workspaceRoleCategories = {
    ecosystem: [
       {
          name: "Institution",
-         roles: ["Government", "Bank", "NGO", "DFI", "Commodity Board", "Finance"],
+         roles: ["Government", "Bank", "NGO", "DFI", "Commodity Board", "Finance", "Producer Association", "Cooperative", "Research Institution"],
       },
       {
          name: "Insurance",

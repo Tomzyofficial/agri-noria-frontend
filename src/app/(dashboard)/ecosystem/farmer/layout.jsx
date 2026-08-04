@@ -18,6 +18,7 @@ import {
   CreditCard,
   Truck,
   Users,
+  Lock,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
@@ -27,6 +28,7 @@ import { FarmerDataProvider } from "./useFarmerData";
 export default function FarmerLayout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [isVerified, setIsVerified] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -61,9 +63,17 @@ export default function FarmerLayout({ children }) {
         }
         // Check onboarding level
         if (session?.authenticated && session?.role?.toLowerCase() === "farmer") {
-          const isCompleted = session?.onboarding_level >= 3 || session?.onboarding_status === "completed" || session?.onboarding_status === "verified";
-          if (!isCompleted && pathname !== "/ecosystem/farmer/onboarding") {
+          const hasBasicInfo = session?.onboarding_level >= 1 || (session?.onboarding_status && session?.onboarding_status !== "pending");
+          if (!hasBasicInfo && pathname !== "/ecosystem/farmer/onboarding") {
              router.replace("/ecosystem/farmer/onboarding");
+             return;
+          }
+          const verified = session?.is_verified === true || session?.onboarding_status === "verified" || session?.onboarding_status === "completed" || session?.onboarding_level >= 2;
+          setIsVerified(verified);
+          const allowedUnverifiedPaths = ["/ecosystem/farmer", "/ecosystem/farmer/settings", "/ecosystem/farmer/onboarding"];
+          if (!verified && !allowedUnverifiedPaths.includes(pathname)) {
+             toast.warning("🔒 Please complete farm mapping & verification to access this section.");
+             router.replace("/ecosystem/farmer");
              return;
           }
         }
@@ -104,21 +114,21 @@ export default function FarmerLayout({ children }) {
       href: "/ecosystem/farmer/training",
       icon: <GraduationCap className="w-4 h-4" />,
     },
-    // {
-    //   label: "My Farm",
-    //   href: "/ecosystem/farmer/farm",
-    //   icon: <Tractor className="w-4 h-4" />,
-    // },
+    {
+      label: "My Farm",
+      href: "/ecosystem/farmer/farm",
+      icon: <Tractor className="w-4 h-4" />,
+    },
     {
       label: "Distributors",
       href: "/ecosystem/farmer/distributors",
       icon: <Store className="w-4 h-4" />,
     },
-    // {
-    //   label: "Storage & Logistics",
-    //   href: "/ecosystem/farmer/logistics",
-    //   icon: <Truck className="w-4 h-4" />,
-    // },
+    {
+      label: "Storage & Logistics",
+      href: "/ecosystem/farmer/logistics",
+      icon: <Truck className="w-4 h-4" />,
+    },
     {
       label: "Financing",
       href: "/ecosystem/farmer/financing",
@@ -199,15 +209,33 @@ export default function FarmerLayout({ children }) {
             </div>
 
             <nav className="flex flex-col space-y-1 flex-grow overflow-y-auto pr-2 custom-scrollbar">
-              {navMenu.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={`flex items-center gap-3 font-bold text-sm ${navLinksStyle(item.href)}`}
-                >
-                  {item.icon} {item.label}
-                </Link>
-              ))}
+              {navMenu.map((item) => {
+                const isUnrestricted = item.href === "/ecosystem/farmer" || item.href === "/ecosystem/farmer/settings";
+                const isDisabled = !isVerified && !isUnrestricted;
+                if (isDisabled) {
+                  return (
+                    <div
+                      key={item.label}
+                      onClick={() => toast.warning("🔒 Complete farm mapping to verify your account and unlock this feature.")}
+                      className="flex items-center justify-between gap-3 font-bold text-sm text-gray-400 dark:text-gray-600 opacity-60 cursor-not-allowed p-3 rounded-xl ml-1 hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-all select-none"
+                    >
+                      <div className="flex items-center gap-3">
+                        {item.icon} {item.label}
+                      </div>
+                      <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" title="Locked until verified" />
+                    </div>
+                  );
+                }
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className={`flex items-center gap-3 font-bold text-sm ${navLinksStyle(item.href)}`}
+                  >
+                    {item.icon} {item.label}
+                  </Link>
+                );
+              })}
 
               <Button
                 onClick={handleSignout}

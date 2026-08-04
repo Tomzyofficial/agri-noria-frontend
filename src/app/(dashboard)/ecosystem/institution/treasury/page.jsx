@@ -1,44 +1,21 @@
 "use client";
 import { useState, useEffect } from "react";
+import useSWR from "swr";
+const fetcher = (url) => fetch(url).then((res) => res.json());
 import { Card, CardContent } from "@/components/ui/Card";
 import { Banknote, Wallet, ArrowUpRight, ArrowDownLeft, Clock, Search } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { toast } from "react-toastify";
 
 export default function TreasuryLedgerPage() {
-   const [transactions, setTransactions] = useState([]);
-   const [loading, setLoading] = useState(true);
    const [searchTerm, setSearchTerm] = useState("");
-   const [stats, setStats] = useState({ balance: 0 });
 
-   const fetchData = async () => {
-      setLoading(true);
-      try {
-         const [txRes, statsRes] = await Promise.all([
-            fetch("/api/proxy/pipeline/stats/platform-wallet/transactions"),
-            fetch("/api/proxy/pipeline/stats/platform-wallet")
-         ]);
-         
-         if (txRes.ok) {
-            const txData = await txRes.json();
-            if (txData.success) setTransactions(txData.data || []);
-         }
-         
-         if (statsRes.ok) {
-            const statsData = await statsRes.json();
-            if (statsData.success) setStats(statsData.data);
-         }
-      } catch (error) {
-         console.error("Failed to load treasury data:", error);
-         toast.error("Failed to load treasury data");
-      } finally {
-         setLoading(false);
-      }
-   };
+   const { data: txData, isLoading: l1 } = useSWR("/api/proxy/pipeline/stats/platform-wallet/transactions", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+   const { data: statsData, isLoading: l2 } = useSWR("/api/proxy/pipeline/stats/platform-wallet", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
 
-   useEffect(() => {
-      fetchData();
-   }, []);
+   const transactions = txData?.success ? (txData.data || []) : [];
+   const stats = statsData?.success ? statsData.data : { balance: 0 };
+   const loading = l1 || l2;
 
    const formatCurrency = (amount) => {
       return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(amount);

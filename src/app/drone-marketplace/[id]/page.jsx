@@ -14,6 +14,7 @@ async function getListing(id) {
    return response.json();
 }
 
+export const dynamic = 'force-dynamic';
 export default async function ListingPage({ params }) {
    const { id } = await params;
    let productData = null;

@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
+import useSWR from "swr";
 import { Card, CardContent } from "@/components/ui/Card";
+const fetcher = (url) => fetch(url).then((res) => res.json());
 import {
   CheckCircle2,
   XCircle,
@@ -106,92 +108,63 @@ function ItemBadge({ item }) {
 }
 
 export default function FinanceApprovalsPage() {
-  const [stats, setStats] = useState({
-    pendingCount: 0,
-    pendingValue: 0,
-    totalDisbursed: 0,
-    rejectedCount: 0,
-    rejectedValue: 0,
-  });
-  const [ecosystemTreasury, setEcosystemTreasury] = useState(0);
-  const [stage1, setStage1] = useState([]);
-  const [stage2, setStage2] = useState([]);
-  const [stage3, setStage3] = useState([]);
-  const [history, setHistory] = useState([]);
-  const [distributors, setDistributors] = useState([]);
-  const [marketplaceOrders, setMarketplaceOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState(null);
   const [selectedDistributor, setSelectedDistributor] = useState("");
   const [processingId, setProcessingId] = useState(null);
   const router = useRouter();
 
-  const fetchData = async () => {
-    try {
-      const authRes = await fetch("/api/proxy/auth/verify-vendor");
-      const authData = await authRes.json();
+  const { data: authData } = useSWR("/api/proxy/auth/verify-vendor", fetcher, { revalidateOnFocus: false });
+
+  useEffect(() => {
+    if (authData) {
       const role = authData.role?.toLowerCase();
       if (role !== "finance" && role !== "super admin" && role !== "admin") {
         toast.error("Access Denied: Finance role required");
         router.replace("/ecosystem/institution");
-        return;
       }
-      const [statsRes, pendingRes, distRes, allRes, ordersRes, treasuryRes] = await Promise.all([
-        fetch("/api/proxy/admin/institution/analytics"),
-        fetch("/api/proxy/admin/institution/pending-requests"),
-        fetch("/api/proxy/admin/institution/distributors"),
-        fetch("/api/proxy/pipeline/inputs/all"),
-        fetch("/api/proxy/pipeline/buyer-orders/all"),
-        fetch("/api/proxy/pipeline/stats/platform-wallet")
-      ]);
-      const [statsJson, pendingJson, distJson, allJson, ordersJson, treasuryJson] = await Promise.all([
-        statsRes.json(),
-        pendingRes.json(),
-        distRes.json(),
-        allRes.json(),
-        ordersRes.json(),
-        treasuryRes.json()
-      ]);
-      if (statsJson.success) setStats(statsJson.data.disbursements);
-      if (treasuryJson.success) setEcosystemTreasury(treasuryJson.data.ecosystem_treasury || 0);
-      if (distJson.success) setDistributors(distJson.data);
-      const pending = pendingJson.success ? pendingJson.data || [] : [];
-      setStage1(
-        pending.filter((r) => r.funds_status === "pending" || !r.funds_status),
-      );
-      setStage2(
-        pending.filter(
-          (r) => r.funds_status === "approved" && r.status === "items_selected",
-        ),
-      );
-      setStage3(
-        pending.filter(
-          (r) => r.funds_status === "approved" && r.items_status === "delivered",
-        ),
-      );
-      const all = allJson.success ? allJson.data || [] : [];
-      setHistory(all.filter((r) => r.status !== "pending"));
-
-      const allOrders = ordersJson.success ? ordersJson.data || [] : [];
-      setMarketplaceOrders(
-        allOrders.filter(
-          (o) =>
-            o.status === "payment_pending_finance" ||
-            o.payment_status === "paystack_verified" ||
-            o.status === "payment_processing"
-        )
-      );
-    } catch (e) {
-      console.error("Fetch error:", e);
-      toast.error("Failed to load approval data");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [authData, router]);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const { data: statsJson, isLoading: l1, mutate: m1 } = useSWR("/api/proxy/admin/institution/analytics", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+  const { data: pendingJson, isLoading: l2, mutate: m2 } = useSWR("/api/proxy/admin/institution/pending-requests", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+  const { data: distJson, isLoading: l3, mutate: m3 } = useSWR("/api/proxy/admin/institution/distributors", fetcher, { refreshInterval: 10000 });
+  const { data: allJson, isLoading: l4, mutate: m4 } = useSWR("/api/proxy/pipeline/inputs/all", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+  const { data: ordersJson, isLoading: l5, mutate: m5 } = useSWR("/api/proxy/pipeline/buyer-orders/all", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+  const { data: treasuryJson, isLoading: l6, mutate: m6 } = useSWR("/api/proxy/pipeline/stats/platform-wallet", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+  const { data: programsJson, isLoading: l7, mutate: m7 } = useSWR("/api/proxy/programs", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+
+  const stats = statsJson?.success ? statsJson.data.disbursements : {
+    pendingCount: 0,
+    pendingValue: 0,
+    totalDisbursed: 0,
+    rejectedCount: 0,
+    rejectedValue: 0,
+  };
+  const ecosystemTreasury = treasuryJson?.success ? treasuryJson.data.ecosystem_treasury || 0 : 0;
+  const distributors = distJson?.success ? distJson.data : [];
+  const programs = programsJson?.success ? programsJson.data || [] : [];
+
+  const pending = pendingJson?.success ? pendingJson.data || [] : [];
+  const stage1 = pending.filter((r) => r.funds_status === "pending" || !r.funds_status);
+  const stage2 = pending.filter((r) => r.funds_status === "approved" && r.status === "items_selected");
+  const stage3 = pending.filter((r) => r.funds_status === "approved" && r.items_status === "delivered");
+
+  const all = allJson?.success ? allJson.data || [] : [];
+  const history = all.filter((r) => r.status !== "pending");
+
+  const allOrders = ordersJson?.success ? ordersJson.data || [] : [];
+  const marketplaceOrders = allOrders.filter(
+    (o) =>
+      o.status === "payment_pending_finance" ||
+      o.payment_status === "paystack_verified" ||
+      o.status === "payment_processing"
+  );
+
+  const loading = l1 || l2 || l6 || l7;
+
+  const fetchData = async () => {
+    await Promise.all([m1(), m2(), m3(), m4(), m5(), m6(), m7()]);
+  };
 
   const handleConfirmOrderPayment = async (orderId) => {
     setProcessingId(`order-${orderId}`);
@@ -386,13 +359,90 @@ export default function FinanceApprovalsPage() {
       </div>
 
       <Tabs defaultValue="program_approvals" className="w-full mt-4">
-        <TabsList className="mb-6 grid w-full grid-cols-3 max-w-2xl bg-gray-100 dark:bg-gray-900 rounded-xl p-1">
+        <TabsList className="mb-6 grid w-full grid-cols-4 max-w-3xl bg-gray-100 dark:bg-gray-900 rounded-xl p-1">
           <TabsTrigger value="program_approvals" className="rounded-lg font-bold text-xs">Program Approvals</TabsTrigger>
+          <TabsTrigger value="active_programs" className="rounded-lg font-bold text-xs">Active Programme Funds</TabsTrigger>
           <TabsTrigger value="marketplace_orders" className="rounded-lg font-bold text-xs">Marketplace Orders</TabsTrigger>
           <TabsTrigger value="history" className="rounded-lg font-bold text-xs">Approval History</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="active_programs" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-black">Active Programme Fund Balances</h2>
+              <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">
+                Real-time programme treasury balances monitored for Stage 1 Fund Authorizations
+              </p>
+            </div>
+            <span className="px-4 py-2 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-black text-xs rounded-xl uppercase tracking-widest">
+              {programs.length} Active Programmes
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {programs.map((prog) => (
+              <Card key={prog.id} className="border-none shadow-lg bg-white dark:bg-gray-950 rounded-3xl overflow-hidden relative border-t-4 border-t-emerald-500">
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex justify-between items-start gap-3">
+                    <div>
+                      <h3 className="font-black text-lg text-(--foreground) line-clamp-1">{prog.name}</h3>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
+                        {prog.region || "National"} • {prog.commodity || "Multi-crop"}
+                      </p>
+                    </div>
+                    <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 rounded-lg font-black text-[10px] uppercase">
+                      Active
+                    </span>
+                  </div>
+                  <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Current Fund Balance</p>
+                    <p className="text-2xl font-black text-emerald-600 tracking-tighter mt-1">
+                      ₦{parseFloat(prog.wallet_balance || 0).toLocaleString()}
+                    </p>
+                    <p className="text-[10px] font-bold text-gray-400 mt-1">Available for input financing deductions</p>
+                  </div>
+                  <div className="flex justify-between items-center text-xs font-bold pt-2 border-t border-gray-100 dark:border-gray-900">
+                    <span className="text-gray-500">Target Hectares:</span>
+                    <span className="font-black">{parseFloat(prog.target_hectares || 0).toLocaleString()} HA</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {programs.length === 0 && (
+              <div className="col-span-3 text-center py-16 bg-gray-50 dark:bg-gray-900/50 rounded-3xl font-bold text-gray-400">
+                No active programmes found in the ecosystem.
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
         <TabsContent value="program_approvals" className="space-y-8">
+          {/* Quick Programme Balances Bar */}
+          {programs.length > 0 && (
+            <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-100 dark:border-emerald-800/50 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Wallet className="text-emerald-600 w-5 h-5 shrink-0" />
+                <div>
+                  <h3 className="font-black text-xs text-emerald-900 dark:text-emerald-300 uppercase tracking-widest">Programme Treasuries Available</h3>
+                  <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">Stage 1 approvals deduct strictly from these program balances</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 overflow-x-auto py-1">
+                {programs.slice(0, 3).map(p => (
+                  <div key={p.id} className="px-3 py-1.5 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-2">
+                    <span className="text-xs font-black text-gray-800 dark:text-gray-200 max-w-[120px] truncate">{p.name}:</span>
+                    <span className="text-xs font-black text-emerald-600">₦{parseFloat(p.wallet_balance || 0).toLocaleString()}</span>
+                  </div>
+                ))}
+                {programs.length > 3 && (
+                  <span className="text-[10px] font-black text-emerald-600 uppercase cursor-pointer" onClick={() => {
+                    const el = document.querySelector('[value="active_programs"]');
+                    if(el) el.click();
+                  }}>+{programs.length - 3} more</span>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* STAGE 1 — Fund Authorization */}
           <div>
         <div className="flex items-center gap-3 mb-4">

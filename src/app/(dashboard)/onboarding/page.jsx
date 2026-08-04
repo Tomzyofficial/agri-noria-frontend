@@ -58,6 +58,21 @@ const roleConfig = {
     color: "text-blue-500",
     category: "Institution",
   },
+  "producer association": {
+    icon: <FaLandmark />,
+    color: "text-amber-500",
+    category: "Institution",
+  },
+  cooperative: {
+    icon: <FaLandmark />,
+    color: "text-emerald-500",
+    category: "Institution",
+  },
+  "research institution": {
+    icon: <FaLandmark />,
+    color: "text-purple-500",
+    category: "Institution",
+  },
   distributor: {
     icon: <FaTruckMoving />,
     color: "text-amber-500",

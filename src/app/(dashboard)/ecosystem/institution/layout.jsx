@@ -17,6 +17,8 @@ import {
   Wallet,
   Truck,
   Banknote,
+  Users,
+  FileText
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
@@ -24,6 +26,7 @@ import { signoutBridge } from "@/actions/authActions";
 export default function InstitutionLayout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountType, setAccountType] = useState("");
+  const [notifications, setNotifications] = useState([]);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -51,7 +54,10 @@ export default function InstitutionLayout({ children }) {
   useEffect(() => {
     const checkExistingUser = async () => {
       try {
-        const response = await fetch("/api/proxy/auth/verify-vendor");
+        const [response, notifRes] = await Promise.all([
+          fetch("/api/proxy/auth/verify-vendor"),
+          fetch("/api/proxy/programs/notifications").catch(() => null)
+        ]);
         if (response.ok) {
           const data = await response.json();
           if (data?.authenticated) {
@@ -62,6 +68,11 @@ export default function InstitutionLayout({ children }) {
         } else if (response.status !== 500) {
           await handleSignout();
         }
+
+        if (notifRes && notifRes.ok) {
+          const notifData = await notifRes.json().catch(() => null);
+          if (notifData?.success) setNotifications(notifData.data || []);
+        }
       } catch {
         return;
       }
@@ -69,7 +80,7 @@ export default function InstitutionLayout({ children }) {
     checkExistingUser();
     const interval = setInterval(checkExistingUser, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [pathname]);
 
   let navMenu = [];
 
@@ -85,6 +96,7 @@ export default function InstitutionLayout({ children }) {
     case "finance":
       navMenu = [
         { label: "Financial Dashboard", href: "/ecosystem/institution", icon: <LayoutDashboard className="w-4 h-4" /> },
+        { label: "Active Programmes", href: "/ecosystem/institution/programs", icon: <Landmark className="w-4 h-4" /> },
         { label: "Approvals Center", href: "/ecosystem/institution/approvals", icon: <Coins className="w-4 h-4" /> },
         { label: "Treasury Ledger", href: "/ecosystem/institution/treasury", icon: <Banknote className="w-4 h-4" /> },
       ];
@@ -120,6 +132,33 @@ export default function InstitutionLayout({ children }) {
         { label: "Projects", href: "/ecosystem/institution/programs", icon: <Landmark className="w-4 h-4" /> },
         { label: "Extension Services", href: "/ecosystem/institution/extension", icon: <Activity className="w-4 h-4" /> },
         { label: "Distribution", href: "/ecosystem/institution/ngo-distribution", icon: <Truck className="w-4 h-4" /> },
+      ];
+      break;
+    case "producer association":
+      navMenu = [
+        { label: "Dashboard", href: "/ecosystem/institution", icon: <LayoutDashboard className="w-4 h-4" /> },
+        { label: "Programmes", href: "/ecosystem/institution/programs", icon: <Landmark className="w-4 h-4" /> },
+        { label: "Monitoring", href: "/ecosystem/institution/monitoring", icon: <Activity className="w-4 h-4" /> },
+        { label: "Cooperatives", href: "/ecosystem/institution/cooperatives", icon: <Users className="w-4 h-4" /> },
+        { label: "Farmers", href: "/ecosystem/institution/farmers", icon: <Globe className="w-4 h-4" /> },
+      ];
+      break;
+    case "cooperative":
+      navMenu = [
+        { label: "Dashboard", href: "/ecosystem/institution", icon: <LayoutDashboard className="w-4 h-4" /> },
+        { label: "Members", href: "/ecosystem/institution/farmers", icon: <Users className="w-4 h-4" /> },
+        { label: "Farms", href: "/ecosystem/institution/farms", icon: <Globe className="w-4 h-4" /> },
+        { label: "Requests", href: "/ecosystem/institution/approvals", icon: <Coins className="w-4 h-4" /> },
+        { label: "Reports", href: "/ecosystem/institution/reports", icon: <FileText className="w-4 h-4" /> },
+      ];
+      break;
+    case "research institution":
+      navMenu = [
+        { label: "Research Dashboard", href: "/ecosystem/institution", icon: <LayoutDashboard className="w-4 h-4" /> },
+        { label: "Projects", href: "/ecosystem/institution/programs", icon: <Landmark className="w-4 h-4" /> },
+        { label: "Trial Plots", href: "/ecosystem/institution/trial-plots", icon: <Activity className="w-4 h-4" /> },
+        { label: "Publications", href: "/ecosystem/institution/publications", icon: <FileText className="w-4 h-4" /> },
+        { label: "Alerts & Advisories", href: "/ecosystem/institution/advisories", icon: <ShieldAlert className="w-4 h-4" /> },
       ];
       break;
     default:
@@ -180,15 +219,12 @@ export default function InstitutionLayout({ children }) {
               <Link
                 key={item.label}
                 href={item.href}
+                prefetch={true}
                 className={`flex items-center gap-3 font-semibold text-sm ${navLinksStyle(item.href)}`}
               >
                 {item.icon} {item.label}
               </Link>
             ))}
-
-            {/* <div className="my-4 border-t border-gray-100 dark:border-gray-800 pt-4">
-                     
-                  </div> */}
 
             <Button
               onClick={handleSignout}
@@ -201,7 +237,31 @@ export default function InstitutionLayout({ children }) {
           </nav>
         </div>
       </aside>
-      <main className="lg:ml-64 w-full lg:p-8 p-4 bg-gray-50 dark:bg-(--background)">
+      <main className="lg:ml-64 w-full lg:p-8 p-4 bg-gray-50 dark:bg-(--background) transition-all duration-200">
+        {notifications.length > 0 && (
+          <div className="mb-6 p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800/50 shadow-sm flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-red-500 text-white shadow-sm">
+                <ShieldAlert className="w-5 h-5 animate-pulse" />
+              </div>
+              <div>
+                <p className="font-black text-red-900 dark:text-red-300 text-sm uppercase tracking-wide">
+                  {notifications[0].title || "Programme Attention Required"}
+                </p>
+                <p className="text-xs font-semibold text-red-700 dark:text-red-400 mt-0.5">
+                  {notifications[0].message}
+                </p>
+              </div>
+            </div>
+            <Link 
+              href="/ecosystem/institution/programs" 
+              prefetch={true}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all whitespace-nowrap shadow-sm"
+            >
+              Fund Programme
+            </Link>
+          </div>
+        )}
         {children}
       </main>
     </div>

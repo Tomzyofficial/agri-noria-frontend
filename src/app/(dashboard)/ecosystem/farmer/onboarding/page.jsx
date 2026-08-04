@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { CheckCircle, UploadCloud } from 'lucide-react';
 import styles from './onboarding.module.css';
+import { toast } from 'react-toastify';
 
 // Dynamic import for map to avoid SSR issues
 const MapComponent = dynamic(() => import('./MapComponent'), { ssr: false });
@@ -13,6 +14,14 @@ export default function FarmerOnboarding() {
     const router = useRouter();
     const [step, setStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const targetStep = parseInt(params.get('step'), 10);
+        if (targetStep && !isNaN(targetStep) && targetStep >= 1 && targetStep <= 20) {
+            setStep(targetStep);
+        }
+    }, []);
 
     const [localPreviews, setLocalPreviews] = useState({});
 
@@ -111,9 +120,19 @@ export default function FarmerOnboarding() {
 
             const result = await res.json();
             if (result.success) {
-                if (level === 1) setStep(8);
-                if (level === 2) setStep(14);
-                if (level === 3) setStep(20);
+                if (level === 1) {
+                    toast.success("Basic info submitted! Redirecting to dashboard...");
+                    router.push("/ecosystem/farmer");
+                    return;
+                }
+                if (level === 2) {
+                    toast.success("Farm mapping submitted! Verification completed.");
+                    setStep(14);
+                }
+                if (level === 3) {
+                    toast.success("Level 3 Full Passport verified!");
+                    setStep(20);
+                }
             } else {
                 alert(result.error || "Submission failed");
             }
