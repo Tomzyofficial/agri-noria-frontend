@@ -1,33 +1,6 @@
-import {
-  FaTruck,
-  FaCar,
-  FaMotorcycle,
-  FaShieldAlt,
-  FaWarehouse,
-  FaTools,
-  FaUserGraduate,
-  FaSchool,
-  FaSeedling,
-  FaHammer,
-  FaWrench,
-  FaBoxes,
-  FaHeartbeat,
-  FaBoxOpen,
-  FaConciergeBell,
-  FaLandmark,
-  FaHandsHelping,
-  FaClipboardCheck,
-  FaCogs,
-  FaSnowflake,
-  FaCommentDollar,
-} from "react-icons/fa";
-
-import { FaGears, FaSackDollar } from "react-icons/fa6";
-import { IoShieldHalfSharp } from "react-icons/io5";
-
-import { FaPeopleGroup, FaRobot, FaCow } from "react-icons/fa6";
-import { GiDeliveryDrone } from "react-icons/gi";
-
+import { FaMotorcycle, FaWarehouse, FaUserGraduate, FaClipboardCheck } from "react-icons/fa";
+import { LuConstruction } from "react-icons/lu";
+import { FaRobot } from "react-icons/fa6";
 import { FaGlobe } from "react-icons/fa";
 
 export const sidebarMenu = [

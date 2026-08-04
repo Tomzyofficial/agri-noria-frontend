@@ -83,10 +83,10 @@ export function ViewListingPage({ listing }) {
                   <CardContent className="p-0">
                      <div onClick={() => setIsModalOpen(true)} className="relative w-full h-[300px] bg-stone-100 dark:bg-stone-800 group cursor-zoom-in">
                         {(() => {
-                           const src = listing?.product_image[0];
+                           const src = listing?.image[0];
                            return src ? (
                               <>
-                                 <Image src={src} fill alt={`${listing.listing_name} service image`} className="object-cover transition-transform duration-300 group-hover:scale-105" priority />
+                                 <Image src={src} fill alt={`${listing.listing_name} image`} className="object-cover transition-transform duration-300 group-hover:scale-105" priority />
                                  <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
                                     <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                  </div>
@@ -95,10 +95,10 @@ export function ViewListingPage({ listing }) {
                         })()}
                      </div>
                      <div className="flex gap-4 overflow-x-auto p-2">
-                        {listing?.product_image?.length > 1 &&
-                           listing.product_image.map((src) => (
+                        {listing?.image?.length > 1 &&
+                           listing.image.map((src) => (
                               <div key={src}>
-                                 <Image src={src} width={200} height={200} alt={`Gallery images for ${listing.title}`} className="rounded-md w-[120px] h-[120px] object-fill" />
+                                 <Image src={src} width={200} height={200} alt={`Gallery images for ${listing.listing_name}`} className="rounded-md w-[120px] h-[120px] object-fill" />
                               </div>
                            ))}
                      </div>

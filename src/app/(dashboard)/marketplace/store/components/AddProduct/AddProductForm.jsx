@@ -15,7 +15,7 @@ export function AddProductForm() {
          <Card>
             <CardContent className="p-4 lg:p-6">
                <form onSubmit={handleSubmit} noValidate aria-busy={loading} className="space-y-8">
-                  <CommonFields formData={formData} handleChange={handleChange} loading={loading} preview={preview} />
+                  <CommonFields formData={formData} handleChange={handleChange} loading={loading} />
 
                   {formData.category === "farm_produce" ? (
                      <FarmerFields formData={formData} handleChange={handleChange} loading={loading} />

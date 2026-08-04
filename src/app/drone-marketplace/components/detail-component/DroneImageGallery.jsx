@@ -4,8 +4,8 @@ import { useState } from "react";
 import Image from "next/image";
 import DroneStatusPlate from "./DroneStatusPlate";
 
-export default function DroneImageGallery({ images, listingName, listingType, quantity }) {
-   const gallery = images && images.length > 0 ? images : null;
+export default function DroneImageGallery({ image, listingName, listingType, quantity }) {
+   const gallery = image && image.length > 0 ? image : null;
    const [activeIndex, setActiveIndex] = useState(0);
    const active = gallery[activeIndex];
 

@@ -196,6 +196,9 @@ export function SigninForm() {
 
       if (normalizedWorkspace === "marketplace") {
          // const rolePath = normalizedWorkspace[normalizedRole];
+         if (normalizedRole === "farmer" || normalizedRole === "seller") {
+            return `/${normalizedWorkspace}/store`;
+         }
          return `/${normalizedWorkspace}/${toRouteSegment(normalizedRole)}`;
       }
 
