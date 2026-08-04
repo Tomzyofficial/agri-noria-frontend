@@ -17,7 +17,6 @@ async function getListing(id) {
 export default async function ListingPage({ params }) {
    const { id } = await params;
    const listing = await getListing(id);
-   console.log(listing.data);
    if (!listing) notFound();
 
    return (

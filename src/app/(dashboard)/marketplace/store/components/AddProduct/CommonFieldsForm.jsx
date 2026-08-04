@@ -1,18 +1,21 @@
 "use client";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import Image from "next/image";
 import { Textarea } from "@/components/ui/Textarea";
 import ImageUploadPreview from "../../../../dashboard/components/ImageUploadPreview";
 
-export default function CommonFields({ formData, handleChange, loading, preview }) {
+export default function CommonFields({ formData, handleChange, loading }) {
+   // console.log(preview);
    return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
          <div className="col-span-2">
             {/* <ImageUploadPreview text="Product Image" preview={preview} previewText="No Image" name="product_image" id="product_image" loading={loading} handleChange={handleChange} /> */}
             {/* <div> */}
-            <Label htmlFor="product_image">Upload Image</Label>
+            {/* {preview.length > 0 && preview.map((img) => <Image src={img} alt="tex" width={100} height={100} />)} */}
+            <Label htmlFor="image">Upload Image</Label>
 
-            <Input type="file" id="product_image" name="product_image" className={` ${loading ? "cursor-not-allowed opacity-50" : ""}`} accept="image/*" multiple onChange={handleChange} disabled={loading} />
+            <Input type="file" id="image" name="image" className={` ${loading ? "cursor-not-allowed opacity-50" : ""}`} accept="image/*" multiple onChange={handleChange} disabled={loading} />
             {/* </div> */}
          </div>
 

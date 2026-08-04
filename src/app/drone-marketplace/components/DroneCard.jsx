@@ -11,9 +11,9 @@ import { formatLabel } from "@/utils/otherUtils";
 export function DroneCard({ listing }) {
    if (!listing) return null;
 
-   const { id, listing_name, manufacturer, model, listing_type, location, available_quantity, unit, price, rental_price, rental_period, condition, product_image, country_code, currency } = listing;
+   const { id, listing_name, manufacturer, model, listing_type, location, available_quantity, unit, price, rental_price, rental_period, condition, image, country_code, currency } = listing;
 
-   const mainImage = product_image && product_image.length > 0 ? product_image[0] : null;
+   const mainImage = image && image.length > 0 ? image[0] : null;
    const isSale = listing_type === "sale" || listing_type === "both";
    const isRent = listing_type === "rent" || listing_type === "both";
 
@@ -36,9 +36,9 @@ export function DroneCard({ listing }) {
 
                <div className="p-4 space-y-3">
                   <div>
-                     <h3 className="font-semibold text-lg text-(--foreground) line-clamp-1">{listing_name}</h3>
+                     <h3 className="font-semibold text-lg text-(--foreground) line-clamp-1">{formatLabel(listing_name)}</h3>
                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {manufacturer} {model}
+                        {formatLabel(manufacturer)} {formatLabel(model)}
                      </p>
                   </div>
 

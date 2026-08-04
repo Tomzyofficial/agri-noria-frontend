@@ -14,19 +14,10 @@ export function CartPage() {
       return <EmptyCart />;
    }
 
-   // const cartTotal = cart.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
-
    return (
-      <div className="m-4 md:m-10 gap-4 flex flex-col md:flex-row pb-10 text-(--foreground)">
-         {/* Left side */}
-         <CartItems
-            cart={cart}
-            removeItem={removeItem}
-            increaseQuantity={increaseQuantity}
-            decreaseQuantity={decreaseQuantity}
-         />
+      <div className="m-4 md:m-10 gap-4 flex flex-col md:flex-row text-(--foreground)">
+         <CartItems cart={cart} removeItem={removeItem} increaseQuantity={increaseQuantity} decreaseQuantity={decreaseQuantity} />
 
-         {/* Right side */}
          <CartItemSummary cartCount={cartCount} cart={cart} />
       </div>
    );

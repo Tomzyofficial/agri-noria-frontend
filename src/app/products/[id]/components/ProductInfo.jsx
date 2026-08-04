@@ -8,9 +8,8 @@ import { StarRating } from "@/app/products/opinions/[id]/components/StarRating";
 import { ImageEnlargementModal } from "@/components/ui/ImageEnlargementModal";
 
 export function ProductInfo({ product, summary }) {
-   // console.log("ProductInfo component received product:", product);
    const [isModalOpen, setIsModalOpen] = useState(false);
-   const gallery = product.product_image.length > 0 ? product.product_image : null;
+   const gallery = product.image.length > 0 ? product.image : null;
    const [activeIndex, setActiveIndex] = useState(0);
    const active = gallery[activeIndex];
 

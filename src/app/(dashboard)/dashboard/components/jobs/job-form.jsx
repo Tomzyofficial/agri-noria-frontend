@@ -14,7 +14,6 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Country, State } from "country-state-city";
 
 export function JobForm() {
-   const router = useRouter();
    const [loading, setLoading] = useState(false);
    const { register, handleSubmit, watch, reset } = useForm({
       resolver: zodResolver(createJobSchema),
@@ -61,7 +60,7 @@ export function JobForm() {
             <div className={fieldGrid}>
                <div className="space-y-2">
                   <Label htmlFor="title">Job Title</Label>
-                  <Input id="title" disabled={loading} className="disabled:opacity-50" {...register("title")} placeholder="Farm Manager" />
+                  <Input id="title" disabled={loading} className="disabled:opacity-50" {...register("title")} placeholder="e.g., Farm Manager" />
                </div>
 
                <div className="space-y-2">
@@ -91,7 +90,7 @@ export function JobForm() {
                   <div className="space-y-2 lg:col-span-2">
                      <Label htmlFor="customCategory">Specify Category</Label>
 
-                     <Input disabled={loading} className="disabled:opacity-50" id="customCategory" {...register("customCategory")} placeholder="Drone Operations" />
+                     <Input disabled={loading} className="disabled:opacity-50" id="customCategory" {...register("customCategory")} placeholder="e.g., Drone Operations" />
                   </div>
                )}
 
@@ -109,7 +108,7 @@ export function JobForm() {
 
                <div className="space-y-2">
                   <Label htmlFor="openings">Openings</Label>
-                  <Input disabled={loading} className="disabled:opacity-50" id="openings" type="number" placeholder="1" {...register("openings")} />
+                  <Input disabled={loading} className="disabled:opacity-50" id="openings" type="number" placeholder="e.g., 1" {...register("openings")} />
                </div>
             </div>
          </section>
@@ -141,14 +140,14 @@ export function JobForm() {
 
                <div className="space-y-2">
                   <Label htmlFor="city">City</Label>
-                  <Input disabled={loading} className="disabled:opacity-50" id="city" {...register("city")} />
+                  <Input disabled={loading} placeholder="Enter city name" className="disabled:opacity-50" id="city" {...register("city")} />
                </div>
 
                <div className="space-y-2">
                   <Label htmlFor="locationtype">Location Type</Label>
 
                   <select disabled={loading} className="disabled:opacity-50" id="locationtype" {...register("locationType")}>
-                     <option value="">Select</option>
+                     <option value="">Choose one</option>
                      <option value="remote">Remote</option>
                      <option value="onsite">Onsite</option>
                      <option value="hybrid">Hybrid</option>
@@ -168,7 +167,7 @@ export function JobForm() {
 
             <div className={fieldGrid}>
                <div className="space-y-2">
-                  <Label htmlFor="salaryType">Salary Type</Label>
+                  <Label htmlFor="salaryType">Choose one</Label>
 
                   <select disabled={loading} className="disabled:opacity-50" id="salaryType" {...register("salaryType")}>
                      <option value="">Select</option>

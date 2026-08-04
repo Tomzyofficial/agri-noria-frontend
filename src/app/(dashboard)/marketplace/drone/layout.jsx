@@ -105,12 +105,12 @@ export default function DashboardLayout({ children }) {
       // },
       {
          label: "Orders",
-         href: "/marketplace/logistics/orders",
+         href: "/marketplace/drone/orders",
          icon: <GiShoppingCart className="w-4 h-4" />,
       },
       {
          label: "Quote Requests",
-         href: "/marketplace/logistics/quote-requests",
+         href: "/marketplace/drone/quote-requests",
          icon: <MessageSquareMore className="w-4 h-4" />,
       },
       {
