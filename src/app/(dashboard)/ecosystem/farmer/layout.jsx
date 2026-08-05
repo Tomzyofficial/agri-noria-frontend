@@ -120,7 +120,7 @@ export default function FarmerLayout({ children }) {
       icon: <Tractor className="w-4 h-4" />,
     },
     {
-      label: "Distributors",
+      label: "Input Distributors",
       href: "/ecosystem/farmer/distributors",
       icon: <Store className="w-4 h-4" />,
     },

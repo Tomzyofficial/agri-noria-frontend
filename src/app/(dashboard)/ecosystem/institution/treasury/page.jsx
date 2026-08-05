@@ -1,24 +1,75 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import useSWR from "swr";
 const fetcher = (url) => fetch(url).then((res) => res.json());
-import { Card, CardContent } from "@/components/ui/Card";
-import { Banknote, Wallet, ArrowUpRight, ArrowDownLeft, Clock, Search } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Banknote, Wallet, ArrowUpRight, ArrowDownLeft, Clock, Search, Send, CheckCircle2, User } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { toast } from "react-toastify";
+import { FaSpinner } from "react-icons/fa6";
 
 export default function TreasuryLedgerPage() {
    const [searchTerm, setSearchTerm] = useState("");
+   const [selectedVendorId, setSelectedVendorId] = useState("");
+   const [creditAmount, setCreditAmount] = useState("");
+   const [creditNote, setCreditNote] = useState("");
+   const [funding, setFunding] = useState(false);
 
-   const { data: txData, isLoading: l1 } = useSWR("/api/proxy/pipeline/stats/platform-wallet/transactions", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
-   const { data: statsData, isLoading: l2 } = useSWR("/api/proxy/pipeline/stats/platform-wallet", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+   const { data: txData, isLoading: l1, mutate: mutateTx } = useSWR("/api/proxy/pipeline/stats/platform-wallet/transactions", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+   const { data: statsData, isLoading: l2, mutate: mutateStats } = useSWR("/api/proxy/pipeline/stats/platform-wallet", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+   const { data: walletsData, isLoading: l3, mutate: mutateWallets } = useSWR("/api/proxy/admin/institution/wallets", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
 
    const transactions = txData?.success ? (txData.data || []) : [];
    const stats = statsData?.success ? statsData.data : { balance: 0 };
+   const walletsList = walletsData?.success ? (walletsData.data || []) : [];
    const loading = l1 || l2;
 
+   const selectedUser = walletsList.find(w => w.vendor_id === selectedVendorId);
+
    const formatCurrency = (amount) => {
-      return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(amount);
+      return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(amount || 0);
+   };
+
+   const handleCreditWallet = async (e) => {
+      e.preventDefault();
+      if (!selectedVendorId) {
+         toast.error("Please select a user wallet to fund.");
+         return;
+      }
+      const val = parseFloat(creditAmount);
+      if (isNaN(val) || val <= 0) {
+         toast.error("Please enter a valid credit amount greater than zero.");
+         return;
+      }
+
+      setFunding(true);
+      try {
+         const res = await fetch("/api/proxy/admin/institution/treasury/credit-wallet", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+               vendor_id: selectedVendorId,
+               amount: val,
+               note: creditNote || "Ecosystem Treasury Funding"
+            })
+         });
+         const data = await res.json();
+         if (data.success) {
+            toast.success(`Successfully credited ${formatCurrency(val)} to ${selectedUser?.name || 'wallet'}!`);
+            setCreditAmount("");
+            setCreditNote("");
+            mutateStats();
+            mutateTx();
+            mutateWallets();
+         } else {
+            toast.error(data.error || "Failed to credit wallet.");
+         }
+      } catch (error) {
+         console.error("Error crediting wallet:", error);
+         toast.error("Network error while crediting wallet.");
+      } finally {
+         setFunding(false);
+      }
    };
 
    const filteredTx = transactions.filter(tx => 
@@ -28,7 +79,7 @@ export default function TreasuryLedgerPage() {
    );
 
    return (
-      <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="space-y-8 animate-in fade-in duration-500 pb-12">
          {/* Header */}
          <div className="flex justify-between items-center">
             <div>
@@ -36,7 +87,7 @@ export default function TreasuryLedgerPage() {
                   <Banknote className="w-8 h-8 text-emerald-500" /> Ecosystem Treasury Ledger
                </h1>
                <p className="text-gray-500 dark:text-gray-400 mt-1">
-                  Global transaction history and funding log.
+                  Global transaction history, platform wallet management, and direct wallet credit.
                </p>
             </div>
          </div>
@@ -50,6 +101,103 @@ export default function TreasuryLedgerPage() {
                <p className="text-gray-400 font-bold uppercase tracking-widest text-xs mb-2">Available Treasury Funds</p>
                <h2 className="text-5xl font-black">{formatCurrency(stats.ecosystem_treasury || 0)}</h2>
             </div>
+         </Card>
+
+         {/* Fund Ecosystem User Wallet Section */}
+         <Card className="border border-emerald-500/20 bg-white dark:bg-gray-950 shadow-md">
+            <CardHeader className="border-b border-gray-100 dark:border-gray-900 pb-4">
+               <CardTitle className="text-xl font-bold flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                  <Send className="w-5 h-5" /> Direct Wallet Credit from Treasury
+               </CardTitle>
+               <p className="text-xs text-gray-500 mt-1">
+                  Select any verified ecosystem user, view their live balance, and credit their wallet directly from the Treasury.
+               </p>
+            </CardHeader>
+            <CardContent className="p-6">
+               <form onSubmit={handleCreditWallet} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     {/* Select User Dropdown */}
+                     <div>
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                           Select Ecosystem Wallet / Verified User
+                        </label>
+                        {l3 ? (
+                           <div className="p-3 text-sm text-gray-500 animate-pulse">Loading ecosystem wallets...</div>
+                        ) : (
+                           <select
+                              value={selectedVendorId}
+                              onChange={(e) => setSelectedVendorId(e.target.value)}
+                              className="w-full p-3 border border-gray-200 dark:border-gray-800 rounded-xl bg-gray-50 dark:bg-gray-900 font-semibold focus:ring-2 focus:ring-emerald-500"
+                              required
+                           >
+                              <option value="">-- Choose User Wallet ({walletsList.length} Available) --</option>
+                              {walletsList.map((w) => (
+                                 <option key={w.vendor_id} value={w.vendor_id}>
+                                    {w.name} ({w.role}) - {w.email} | Balance: ₦{Number(w.balance).toLocaleString()}
+                                 </option>
+                              ))}
+                           </select>
+                        )}
+                     </div>
+
+                     {/* Credit Amount */}
+                     <div>
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                           Credit Amount (₦)
+                        </label>
+                        <Input
+                           type="number"
+                           step="1000"
+                           placeholder="e.g. 250000"
+                           value={creditAmount}
+                           onChange={(e) => setCreditAmount(e.target.value)}
+                           className="h-12 border-gray-200 dark:border-gray-800 font-bold text-lg focus:ring-emerald-500"
+                           required
+                        />
+                     </div>
+                  </div>
+
+                  {/* Selected User Details Box */}
+                  {selectedUser && (
+                     <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                           <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black">
+                              <User className="w-5 h-5" />
+                           </div>
+                           <div>
+                              <p className="font-bold text-gray-900 dark:text-white text-base">{selectedUser.name}</p>
+                              <p className="text-xs text-gray-500 capitalize">{selectedUser.role} • {selectedUser.email}</p>
+                           </div>
+                        </div>
+                        <div className="text-right">
+                           <p className="text-xs uppercase font-bold text-gray-400">Current Wallet Balance</p>
+                           <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                              {formatCurrency(selectedUser.balance)}
+                           </p>
+                        </div>
+                     </div>
+                  )}
+
+                  {/* Note & Submit Button */}
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                     <Input
+                        type="text"
+                        placeholder="Optional Note / Funding Purpose (e.g. Programme Advance, Grant, Emergency Operational Fund)"
+                        value={creditNote}
+                        onChange={(e) => setCreditNote(e.target.value)}
+                        className="h-12 border-gray-200 dark:border-gray-800 font-medium flex-1"
+                     />
+                     <button
+                        type="submit"
+                        disabled={funding || !selectedVendorId || !creditAmount}
+                        className="w-full sm:w-auto px-8 h-12 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/20"
+                     >
+                        {funding ? <FaSpinner className="animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+                        Fund Wallet
+                     </button>
+                  </div>
+               </form>
+            </CardContent>
          </Card>
 
          {/* Transactions */}
@@ -74,7 +222,7 @@ export default function TreasuryLedgerPage() {
                   <CardContent className="p-12 text-center">
                      <Clock className="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
                      <p className="font-bold text-gray-400">No transactions found</p>
-                     <p className="text-xs text-gray-500 mt-1">When the treasury receives funds, they will appear here.</p>
+                     <p className="text-xs text-gray-500 mt-1">When the treasury receives or transfers funds, they will appear here.</p>
                   </CardContent>
                </Card>
             ) : (

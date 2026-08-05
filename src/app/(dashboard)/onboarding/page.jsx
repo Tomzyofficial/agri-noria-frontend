@@ -76,7 +76,7 @@ const roleConfig = {
   distributor: {
     icon: <FaTruckMoving />,
     color: "text-amber-500",
-    category: "Distributor",
+    category: "Input Distributor",
   },
   // Program Management
   "program director": {

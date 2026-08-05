@@ -355,9 +355,10 @@ export default function FarmerHarvestPage() {
                   <option value="">-- Choose {requestModal.type} Provider --</option>
                   {providersList.map((p) => {
                     const name = p.company_name || `${p.fname || ''} ${p.lname || ''}`.trim() || `${requestModal.type} Provider`;
+                    const locationTag = p.location || p.workspace || 'Ecosystem';
                     return (
                       <option key={p.id} value={p.id}>
-                        {name} - {p.workspace || 'Ecosystem'} ({p.total_capacity_mt ? p.total_capacity_mt + ' MT Capacity' : 'Available'})
+                        {name} - {locationTag} ({p.total_capacity_mt ? p.total_capacity_mt + ' MT Capacity' : 'Available'})
                       </option>
                     );
                   })}
