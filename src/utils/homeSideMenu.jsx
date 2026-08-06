@@ -25,8 +25,8 @@ export const sidebarMenu = [
    //     icon: <FaSeedling className="h-4 w-4 text-green-600" />,
    //   },
    {
-      href: "/tech-farming",
-      title: "Tech Farming & Drone Services",
+      href: "/drone-markeplace",
+      title: "Drone Marketplace",
       icon: <FaRobot className="h-4 w-4 text-indigo-600" />,
    },
    {

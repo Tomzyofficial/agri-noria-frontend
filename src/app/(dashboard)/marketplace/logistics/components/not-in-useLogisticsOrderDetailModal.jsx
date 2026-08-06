@@ -6,34 +6,34 @@ import { getStatusBadgeClass } from "@/app/(dashboard)/dashboard/components/orde
 import { formatLabel } from "@/utils/otherUtils";
 import { fetcher } from "@/utils/otherUtils";
 
-export function LogisticsOrderDetailModal({ orderId, open, onClose }) {
+export function LogisticsOrderDetailModal({ selectedOrder, open, onClose }) {
    const [detail, setDetail] = useState(null);
    const [loading, setLoading] = useState(false);
    const [error, setError] = useState(null);
 
-   useEffect(() => {
-      if (!open || !orderId) return;
+   // useEffect(() => {
+   //    if (!open || !orderId) return;
 
-      const load = async () => {
-         setLoading(true);
-         setError(null);
-         try {
-            const data = await fetcher(`/api/proxy/vendor/logistics/orders/${orderId}/detail`);
-            setDetail(data.data);
-         } catch (err) {
-            setError(err.message || "Failed to load order");
-            setDetail(null);
-         } finally {
-            setLoading(false);
-         }
-      };
+   //    const load = async () => {
+   //       setLoading(true);
+   //       setError(null);
+   //       try {
+   //          const data = await fetcher(`/api/proxy/vendor/logistics/orders/${orderId}/detail`);
+   //          setDetail(data.data);
+   //       } catch (err) {
+   //          setError(err.message || "Failed to load order");
+   //          setDetail(null);
+   //       } finally {
+   //          setLoading(false);
+   //       }
+   //    };
 
-      load();
-   }, [open, orderId]);
+   //    load();
+   // }, [open, orderId]);
 
    if (!open) return null;
 
-   const buyerInfo = detail?.metadata?.buyer_info || {};
+   const buyerInfo = selectedOrder?.metadata?.buyer_info || {};
 
    return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">

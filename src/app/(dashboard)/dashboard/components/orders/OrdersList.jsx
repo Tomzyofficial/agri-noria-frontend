@@ -9,15 +9,17 @@ import { Button } from "@/components/ui/Button";
 
 import React from "react";
 import { ORDER_STATUS_CONFIG, getStatusBadgeClass } from "@/app/(dashboard)/dashboard/components/orders/OrderStatusUtils";
-import { fetcher, formatLabel } from "@/utils/otherUtils";
-import { LogisticsOrderDetailModal } from "@/app/(dashboard)/marketplace/logistics/components/LogisticsOrderDetailModal";
+import { fetcher, formatDate, formatLabel } from "@/utils/otherUtils";
+// import { LogisticsOrderDetailModal } from "@/app/(dashboard)/marketplace/logistics/components/LogisticsOrderDetailModal";
+import { OrderDetailModal } from "./OrderDetailModal";
 
 export function OrdersList() {
    const router = useRouter();
    const searchParams = useSearchParams();
    const statusFilter = searchParams.get("status") || "";
    const [selectedOrder, setSelectedOrder] = useState(null);
-   const [actingId, setActingId] = useState(null);
+
+   // console.log(selectedOrder);
 
    const ordersUrl = useMemo(() => {
       const params = new URLSearchParams();
@@ -28,6 +30,9 @@ export function OrdersList() {
 
    const { data, error, isLoading, mutate } = useSWR(ordersUrl, fetcher);
    const orders = data?.data ?? [];
+   const getVehicleTitle = (order) => {
+      return order.metadata?.logistics_provider?.vehicle_title || "—";
+   };
 
    /*  const handleAccept = async (orderId) => {
       if (!confirm("Accept this order and assign it for shipment?")) return;
@@ -103,7 +108,7 @@ export function OrdersList() {
 
             {isLoading && <div className="p-10 text-center text-gray-500">Loading orders...</div>}
 
-            {!isLoading && !error && orders.length === 0 && <div className="p-10 text-center text-gray-500">{statusFilter ? `No orders with status "${formatStatusLabel(statusFilter)}".` : "No orders to see yet."}</div>}
+            {!isLoading && !error && orders.length === 0 && <div className="p-10 text-center text-gray-500">{statusFilter ? `No orders with status "${formatLabel(statusFilter)}".` : "No orders to see yet."}</div>}
 
             {!isLoading && !error && orders.length > 0 && (
                <div className="overflow-x-auto">
@@ -111,7 +116,6 @@ export function OrdersList() {
                      <thead className="bg-gray-50 dark:bg-gray-800">
                         <tr>
                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
-                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Buyer</th>
                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vehicle</th>
                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Delivery</th>
                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -124,13 +128,9 @@ export function OrdersList() {
                            <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                               <td className="px-4 py-4 text-sm font-mono text-gray-900 dark:text-white">{order.id.slice(0, 8)}…</td>
                               <td className="px-4 py-4 text-sm text-gray-700 dark:text-gray-300">
-                                 <div>{order.buyer_name || "—"}</div>
-                                 <div className="text-xs text-gray-500">{order.buyer_email}</div>
-                              </td>
-                              <td className="px-4 py-4 text-sm text-gray-700 dark:text-gray-300">
                                  <div className="flex items-center gap-1">
                                     <Truck className="w-4 h-4 text-gray-400 shrink-0" />
-                                    {formatLabel(order.vehicle_title) || formatLabel(order.vehicle_type) || "—"}
+                                    {formatLabel(getVehicleTitle(order))}
                                  </div>
                               </td>
                               <td className="px-4 py-4 text-sm text-gray-600 max-w-[200px]">
@@ -142,11 +142,12 @@ export function OrdersList() {
                               <td className="px-4 py-4 whitespace-nowrap">
                                  <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${getStatusBadgeClass(order.status)}`}>{formatLabel(order.status)}</span>
                               </td>
-                              <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">{order.created_at ? new Date(order.created_at).toLocaleDateString() : "—"}</td>
+                              <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">{order.created_at ? formatDate(order.created_at) : "—"}</td>
                               <td className="px-4 py-4 whitespace-nowrap">
                                  <div className="flex flex-wrap gap-2">
-                                    <Button type="button" onClick={() => setViewOrderId(order.id)} className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                                    <Button type="button" onClick={() => setSelectedOrder(order)} className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
                                        <Eye className="w-3.5 h-3.5" />
+                                       View
                                     </Button>
                                     {/* {canRespond(order.status) && (
                                        <>
@@ -170,7 +171,7 @@ export function OrdersList() {
             )}
          </div>
 
-         <LogisticsOrderDetailModal orderId={selectedOrder} open={Boolean(selectedOrder)} onClose={() => setSelectedOrder(null)} />
+         <OrderDetailModal selectedOrder={selectedOrder} open={Boolean(selectedOrder)} onClose={() => setSelectedOrder(null)} />
       </div>
    );
 }

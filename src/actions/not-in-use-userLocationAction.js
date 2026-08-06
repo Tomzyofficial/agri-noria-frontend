@@ -1,22 +1,22 @@
-// "use server";
+"use server";
 
-// import { cookies } from "next/headers";
+import { cookies } from "next/headers";
 
-// export async function getUserLocation() {
-//   const cookieStore = await cookies();
-//   const locationCookie = cookieStore.get("user_location");
+export async function getUserLocation() {
+   const cookieStore = await cookies();
+   const locationCookie = cookieStore.get("user_location");
 
-//   if (locationCookie) {
-//     try {
-//       return JSON.parse(locationCookie.value);
-//     } catch (error) {
-//       console.error("Failed to parse location cookie:", error);
-//       return null;
-//     }
-//   }
+   if (locationCookie) {
+      try {
+         return JSON.parse(locationCookie.value);
+      } catch (error) {
+         console.error("Failed to parse location cookie:", error);
+         return null;
+      }
+   }
 
-//   return null;
-// }
+   return null;
+}
 
 // export async function setUserLocation(locationData) {
 //   const cookieStore = await cookies();

@@ -21,7 +21,6 @@ export function CheckoutSummaryPage({ buyer, cart, vendors }) {
    const searchParams = useSearchParams();
    // const cartByVendor = vendors.map((item) => ({ ...item }));
 
-   console.log(vendors);
    // const vendor = vendors.map((vendor) => ({
    //    seller_id: vendor.seller_id,
    //    seller_fname: vendor.seller_fname,
@@ -100,7 +99,7 @@ export function CheckoutSummaryPage({ buyer, cart, vendors }) {
             await deleteCartCookie();
 
             toast.success("Payment successful! Your order has been confirmed.");
-            window.location.href = "/";
+            window.location.href = "/dashboard/buyer/orders";
          } catch (error) {
             console.error("Payment verification error:", error);
             toast.error(error.message || "Payment verification failed");

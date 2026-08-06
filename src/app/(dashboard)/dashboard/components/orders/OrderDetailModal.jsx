@@ -1,16 +1,18 @@
 "use client";
 
-import { X, Store, Truck, Package, MapPin, Phone, Mail } from "lucide-react";
+import { X, Store, Truck, Package, MapPin, Phone, Mail, User } from "lucide-react";
 import { formatLabel } from "@/utils/otherUtils";
-import { getStatusBadgeClass } from "../../components/orders/OrderStatusUtils";
+import { getStatusBadgeClass } from "./OrderStatusUtils";
 import { formatPrice } from "@/utils/formatPrice";
 import Image from "next/image";
 
-export function BuyerOrderDetailModal({ selectedOrder, open, onClose }) {
+export function OrderDetailModal({ selectedOrder, open, onClose }) {
    if (!open || !selectedOrder) return null;
 
    // metadata can come back as a JSON string or an already-parsed object
    const metadata = typeof selectedOrder.metadata === "string" ? JSON.parse(selectedOrder.metadata) : selectedOrder.metadata || {};
+
+   console.log(metadata);
 
    const buyerInfo = metadata.buyer_info || {};
    const sellerBreakdown = metadata.seller_breakdown || []; // array of { seller_*, items: [...] }
@@ -50,7 +52,7 @@ export function BuyerOrderDetailModal({ selectedOrder, open, onClose }) {
                {/* Buyer */}
                <section className="rounded-lg border p-4 space-y-2">
                   <h3 className="font-semibold flex items-center gap-2">
-                     <Package className="w-4 h-4" />
+                     <User className="w-4 h-4" />
                      Buyer
                   </h3>
                   <p className="text-sm">
@@ -70,9 +72,6 @@ export function BuyerOrderDetailModal({ selectedOrder, open, onClose }) {
                {/* One card per seller, since an order can span multiple vendors */}
                {sellerBreakdown.map((seller) => {
                   const sellerName = [seller.seller_fname, seller.seller_lname].filter(Boolean).join(" ") || "—";
-                  const sellerItems = seller.items || [];
-                  const pickupLocation = sellerItems[0]?.listing_location;
-
                   return (
                      <section key={seller.seller_id} className="rounded-lg border overflow-hidden">
                         <div className="p-4 space-y-2 bg-gray-50 dark:bg-gray-800/40 border-b">
@@ -81,12 +80,10 @@ export function BuyerOrderDetailModal({ selectedOrder, open, onClose }) {
                               {sellerName}
                            </h3>
                            <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-600 dark:text-gray-400">
-                              {pickupLocation && (
-                                 <span className="flex items-center gap-1">
-                                    <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                                    {pickupLocation.trim()}
-                                 </span>
-                              )}
+                              <span className="flex items-center gap-1">
+                                 <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                                 {seller.listing_location}
+                              </span>
                            </div>
                         </div>
 
@@ -100,31 +97,17 @@ export function BuyerOrderDetailModal({ selectedOrder, open, onClose }) {
                               </tr>
                            </thead>
                            <tbody className="divide-y">
-                              {sellerItems.length > 0 ? (
-                                 sellerItems.map((item) => {
-                                    const qty = Number(item.quantity) || 0;
-                                    const price = Number(item.price) || 0;
-                                    return (
-                                       <tr key={item.listing_id}>
-                                          <td className="px-3 py-3">
-                                             <div className="flex items-center gap-3">
-                                                {item.product_image && <Image src={item.product_image} alt={item.listing_name || "Product image"} width={40} height={40} className="rounded object-cover w-10 h-10 shrink-0" />}
-                                                <span>{item.listing_name || "—"}</span>
-                                             </div>
-                                          </td>
-                                          <td className="px-3 py-3">{qty}</td>
-                                          <td className="px-3 py-3">{formatPrice(price, country_code, item.currency || currency)}</td>
-                                          <td className="px-3 py-3">{formatPrice(price * qty, country_code, item.currency || currency)}</td>
-                                       </tr>
-                                    );
-                                 })
-                              ) : (
-                                 <tr>
-                                    <td colSpan="4" className="px-3 py-4 text-center text-gray-500">
-                                       No items found
-                                    </td>
-                                 </tr>
-                              )}
+                              <tr>
+                                 <td className="px-3 py-3">
+                                    <div className="flex items-center gap-3">
+                                       {seller.product_image && <Image src={seller.product_image} alt={seller.listing_name || "Product image"} width={40} height={40} className="rounded object-cover w-10 h-10 shrink-0" />}
+                                       <span>{seller.listing_name || "—"}</span>
+                                    </div>
+                                 </td>
+                                 <td className="px-3 py-3">{seller.quantity}</td>
+                                 <td className="px-3 py-3">{formatPrice(seller.price, seller.country_code, seller.currency)}</td>
+                                 <td className="px-3 py-3">{formatPrice(seller.price * seller.quantity, seller.country_code, seller.currency)}</td>
+                              </tr>
                            </tbody>
                         </table>
                      </section>
