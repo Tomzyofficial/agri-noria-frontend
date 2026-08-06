@@ -33,6 +33,14 @@ export const ORDER_STATUS_CONFIG = [
       cardClass: "text-green-700",
       iconClass: "text-green-500",
    },
+   // {
+   //    key: "processing_orders",
+   //    label: "Processing",
+   //    status: "delivered",
+   //    icon: CheckCircle,
+   //    cardClass: "text-green-700",
+   //    iconClass: "text-green-500",
+   // },
    {
       key: "completed_orders",
       label: "Completed",

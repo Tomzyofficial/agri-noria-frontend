@@ -11,7 +11,7 @@ import React from "react";
 import { fetcher } from "@/utils/otherUtils";
 import { formatLabel } from "@/utils/otherUtils";
 import { ORDER_STATUS_CONFIG, getStatusBadgeClass } from "@/app/(dashboard)/dashboard/components/orders/OrderStatusUtils";
-import { BuyerOrderDetailModal } from "./BuyerOrderDetailModal";
+import { OrderDetailModal } from "../../components/orders/OrderDetailModal";
 import { OTPVerificationModal } from "../../../marketplace/logistics/components/OTPVerificationModal";
 
 export function BuyerOrdersList() {
@@ -45,7 +45,7 @@ export function BuyerOrdersList() {
 
    // Helper to extract vehicle title from order metadata
    const getVehicleTitle = (order) => {
-      return order.metadata?.logistics_provider?.vehicle_title || order.vehicle_title || "—";
+      return order.metadata?.logistics_provider?.vehicle_title || "—";
    };
 
    const handleSatisfied = (orderId) => {
@@ -117,7 +117,7 @@ export function BuyerOrdersList() {
 
             {isLoading && <div className="p-10 text-center text-gray-500">Loading orders...</div>}
 
-            {!isLoading && !error && orders.length === 0 && <div className="p-10 text-center text-gray-500">{statusFilter ? `No orders with status "${formatStatusLabel(statusFilter)}".` : "No orders assigned to your vehicles yet."}</div>}
+            {!isLoading && !error && orders.length === 0 && <div className="p-10 text-center text-gray-500">{statusFilter ? `No orders with status "${formatLabel(statusFilter)}".` : "No orders assigned to your vehicles yet."}</div>}
 
             {!isLoading && !error && orders.length > 0 && (
                <div className="overflow-x-auto">
@@ -145,7 +145,6 @@ export function BuyerOrdersList() {
                                     <Truck className="w-4 h-4 text-gray-400 shrink-0" />
                                     {getVehicleTitle(order)}
                                  </div>
-                                 <div className="text-xs text-gray-500 mt-0.5">Fee: ₦{Number(order.delivery_fee ?? 0).toLocaleString()}</div>
                               </td>
                               <td className="px-4 py-4 text-sm text-gray-600 max-w-[200px]">
                                  <div className="flex items-start gap-1">
@@ -179,7 +178,7 @@ export function BuyerOrdersList() {
             )}
          </div>
 
-         <BuyerOrderDetailModal selectedOrder={selectedOrder} open={Boolean(selectedOrder)} onClose={() => setSelectedOrder(null)} />
+         <OrderDetailModal selectedOrder={selectedOrder} open={Boolean(selectedOrder)} onClose={() => setSelectedOrder(null)} />
 
          <OTPVerificationModal
             open={Boolean(satisfiedOrderId)}

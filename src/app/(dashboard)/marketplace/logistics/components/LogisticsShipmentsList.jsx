@@ -9,15 +9,15 @@ import { Truck, MapPin, ArrowLeft, Play, CheckCircle } from "lucide-react";
 import { getStatusBadgeClass } from "@/app/(dashboard)/dashboard/components/orders/OrderStatusUtils";
 import { formatLabel } from "@/utils/otherUtils";
 import { fetcher } from "@/utils/otherUtils";
-import { LogisticsOrderDetailModal } from "./LogisticsOrderDetailModal";
 import { ShipmentStartModal } from "./ShipmentStartModal";
 import { OTPVerificationModal } from "./OTPVerificationModal";
+import { OrderDetailModal } from "@/app/(dashboard)/dashboard/components/orders/OrderDetailModal";
 
 export function LogisticsShipmentsList() {
    const router = useRouter();
-   const [viewOrderId, setViewOrderId] = useState(null);
+   const [selectedOrder, setSelectedOrder] = useState(null);
    const [shipmentStartOrderId, setShipmentStartOrderId] = useState(null);
-   const [shipmentStartOrderData, setShipmentStartOrderData] = useState(null);
+   // const [shipmentStartOrderData, setShipmentStartOrderData] = useState(null);
    const [completeDeliveryOrderId, setCompleteDeliveryOrderId] = useState(null);
    const [verifyingOTP, setVerifyingOTP] = useState(false);
    const [otpError, setOtpError] = useState(null);
@@ -28,13 +28,14 @@ export function LogisticsShipmentsList() {
 
    const handleStartShipment = (order) => {
       setShipmentStartOrderId(order.id);
-      setShipmentStartOrderData(order);
+      // setShipmentStartOrderData(order);
    };
 
    const handleShipmentStartSuccess = (result) => {
-      toast.success(`Shipment started successfully! Tracking number: ${result.tracking_number}`);
+      // toast.success(`Shipment started successfully! Tracking number: ${result.tracking_number}`);
+      toast.success("Shipment started successfully!");
       mutate();
-      router.push("/marketplace/logistics/orders?status=in_transit");
+      router.push("/marketplace/logistics/shipments?status=in_transit");
    };
 
    const handleCompleteDelivery = (orderId) => {
@@ -64,7 +65,7 @@ export function LogisticsShipmentsList() {
          toast.success("Delivery completed successfully!");
          setCompleteDeliveryOrderId(null);
          mutate();
-         router.push("/marketplace/logistics/orders?status=completed");
+         router.push("/marketplace/logistics/orders?status=delivered");
       } catch (err) {
          setOtpError(err.message || "Failed to verify OTP");
       } finally {
@@ -131,11 +132,11 @@ export function LogisticsShipmentsList() {
                               </td>
                               <td className="px-4 py-4">
                                  <div className="flex flex-wrap gap-2">
-                                    <button type="button" onClick={() => setViewOrderId(order.id)} className="text-sm text-blue-600 hover:underline">
+                                    <button type="button" onClick={() => setSelectedOrder(order)} className="text-sm text-blue-600 hover:underline">
                                        View
                                     </button>
                                     {order.status === "processing" && (
-                                       <button type="button" onClick={() => handleStartShipment(order)} className="inline-flex items-center gap-1 text-sm font-medium text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded">
+                                       <button type="button" onClick={() => setShipmentStartOrderId(order.id)} className="inline-flex items-center gap-1 text-sm font-medium text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded">
                                           <Play className="w-3.5 h-3.5" />
                                           Start shipment
                                        </button>
@@ -156,15 +157,17 @@ export function LogisticsShipmentsList() {
             )}
          </div>
 
-         <LogisticsOrderDetailModal orderId={viewOrderId} open={Boolean(viewOrderId)} onClose={() => setViewOrderId(null)} />
+         {/* <LogisticsOrderDetailModal selectedOrder={selectedOrder} open={Boolean(selectedOrder)} onClose={() => setSelectedOrder(null)} /> */}
+
+         <OrderDetailModal selectedOrder={selectedOrder} open={Boolean(selectedOrder)} onClose={() => setSelectedOrder(null)} />
 
          <ShipmentStartModal
             orderId={shipmentStartOrderId}
-            orderData={shipmentStartOrderData}
+            // orderData={shipmentStartOrderData}
             open={Boolean(shipmentStartOrderId)}
             onClose={() => {
                setShipmentStartOrderId(null);
-               setShipmentStartOrderData(null);
+               // setShipmentStartOrderData(null);
             }}
             onSuccess={handleShipmentStartSuccess}
          />

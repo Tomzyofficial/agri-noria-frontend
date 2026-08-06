@@ -13,6 +13,8 @@ export function BusinessBank({
   const { location } = useGeoLocation();
   const [banks, setBanks] = useState([]);
 
+  console.log(banks);
+
   useEffect(() => {
     const fetchPaystackBanksPerCountryName = async () => {
       const response = await fetch(

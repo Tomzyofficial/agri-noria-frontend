@@ -52,7 +52,9 @@ export default async function Summary() {
 
       const { buyer, vendors } = result.data;
 
-      const cart = vendors.flatMap((v) => v.items);
+      const cart = vendors.flatMap((v) => v);
+
+      console.log("cart", cart, "vendors", vendors);
 
       return (
          <>

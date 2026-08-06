@@ -10,14 +10,14 @@ import { Button } from "@/components/ui/Button";
 import React from "react";
 import { ORDER_STATUS_CONFIG, getStatusBadgeClass } from "@/app/(dashboard)/dashboard/components/orders/OrderStatusUtils";
 import { formatLabel } from "@/utils/otherUtils";
+import { OrderDetailModal } from "@/app/(dashboard)/dashboard/components/orders/OrderDetailModal";
 import { fetcher } from "@/utils/otherUtils";
-import { LogisticsOrderDetailModal } from "./LogisticsOrderDetailModal";
 
 export function LogisticsOrdersList() {
    const router = useRouter();
    const searchParams = useSearchParams();
    const statusFilter = searchParams.get("status") || "";
-   const [viewOrderId, setViewOrderId] = useState(null);
+   const [selectedOrder, setSelectedOrder] = useState(null);
    const [actingId, setActingId] = useState(null);
 
    const ordersUrl = useMemo(() => {
@@ -30,14 +30,18 @@ export function LogisticsOrdersList() {
    const { data, error, isLoading, mutate } = useSWR(ordersUrl, fetcher);
    const orders = data?.data ?? [];
 
+   const getVehicleTitle = (order) => {
+      return order.metadata?.logistics_provider?.vehicle_title || "—";
+   };
+
    const handleAccept = async (orderId) => {
       if (!confirm("Accept this order and assign it for shipment?")) return;
       setActingId(orderId);
       try {
          const res = await fetch(`/api/proxy/vendor/logistics/orders/${orderId}/accept`, { method: "POST" });
-         const body = await res.json();
-         if (!res.ok || !body.success) {
-            throw new Error(body.error || "Failed to accept order");
+         const data = await res.json();
+         if (!res.ok || !data.success) {
+            throw new Error(data.error || "Failed to accept order");
          }
          toast.success("Order accepted — moved to shipments");
          mutate();
@@ -112,8 +116,6 @@ export function LogisticsOrdersList() {
                      <thead className="bg-gray-50 dark:bg-gray-800">
                         <tr>
                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order</th>
-                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Buyer</th>
-                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Seller</th>
                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vehicle</th>
                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Delivery</th>
                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -126,16 +128,10 @@ export function LogisticsOrdersList() {
                            <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                               <td className="px-4 py-4 text-sm font-mono text-gray-900 dark:text-white">{order.id.slice(0, 8)}…</td>
                               <td className="px-4 py-4 text-sm text-gray-700 dark:text-gray-300">
-                                 <div>{order.buyer_name || "—"}</div>
-                                 <div className="text-xs text-gray-500">{order.buyer_email}</div>
-                              </td>
-                              <td className="px-4 py-4 text-sm text-gray-700 dark:text-gray-300">{[order.seller_fname, order.seller_lname].filter(Boolean).join(" ") || "—"}</td>
-                              <td className="px-4 py-4 text-sm text-gray-700 dark:text-gray-300">
                                  <div className="flex items-center gap-1">
                                     <Truck className="w-4 h-4 text-gray-400 shrink-0" />
-                                    {order.vehicle_title || order.vehicle_type || "—"}
+                                    {formatLabel(getVehicleTitle(order))}
                                  </div>
-                                 <div className="text-xs text-gray-500 mt-0.5">Fee: ₦{Number(order.delivery_fee ?? 0).toLocaleString()}</div>
                               </td>
                               <td className="px-4 py-4 text-sm text-gray-600 max-w-[200px]">
                                  <div className="flex items-start gap-1">
@@ -149,7 +145,7 @@ export function LogisticsOrdersList() {
                               <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">{order.created_at ? new Date(order.created_at).toLocaleDateString() : "—"}</td>
                               <td className="px-4 py-4 whitespace-nowrap">
                                  <div className="flex flex-wrap gap-2">
-                                    <Button type="button" onClick={() => setViewOrderId(order.id)} className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                                    <Button type="button" onClick={() => setSelectedOrder(order)} className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
                                        <Eye className="w-3.5 h-3.5" />
                                        View
                                     </Button>
@@ -175,7 +171,9 @@ export function LogisticsOrdersList() {
             )}
          </div>
 
-         <LogisticsOrderDetailModal orderId={viewOrderId} open={Boolean(viewOrderId)} onClose={() => setViewOrderId(null)} />
+         {/* <LogisticsOrderDetailModal orderId={viewOrderId} open={Boolean(viewOrderId)} onClose={() => setViewOrderId(null)} /> */}
+
+         <OrderDetailModal selectedOrder={selectedOrder} open={Boolean(selectedOrder)} onClose={() => setSelectedOrder(null)} />
       </div>
    );
 }
