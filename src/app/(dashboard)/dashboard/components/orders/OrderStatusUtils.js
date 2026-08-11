@@ -18,6 +18,14 @@ export const ORDER_STATUS_CONFIG = [
       iconClass: "text-blue-500",
    },
    {
+      key: "processing_orders",
+      label: "Processing",
+      status: "processing",
+      icon: Package,
+      cardClass: "text-green-700",
+      iconClass: "text-green-500",
+   },
+   {
       key: "in_transit_orders",
       label: "In transit",
       status: "in_transit",
@@ -33,14 +41,6 @@ export const ORDER_STATUS_CONFIG = [
       cardClass: "text-green-700",
       iconClass: "text-green-500",
    },
-   // {
-   //    key: "processing_orders",
-   //    label: "Processing",
-   //    status: "delivered",
-   //    icon: CheckCircle,
-   //    cardClass: "text-green-700",
-   //    iconClass: "text-green-500",
-   // },
    {
       key: "completed_orders",
       label: "Completed",
@@ -57,14 +57,6 @@ export const ORDER_STATUS_CONFIG = [
       cardClass: "text-orange-700",
       iconClass: "text-orange-500",
    },
-   //   {
-   //     key: "cancelled_orders",
-   //     label: "Cancelled",
-   //     status: "cancelled",
-   //     icon: XCircle,
-   //     cardClass: "text-red-700",
-   //     iconClass: "text-red-500",
-   //   },
    {
       key: "refunded_orders",
       label: "Refunded",
@@ -79,6 +71,7 @@ export function getStatusBadgeClass(status) {
    const colors = {
       pending: "bg-yellow-100 text-yellow-800",
       paid: "bg-blue-100 text-blue-800",
+      processing: "bg-green-100 text-green-800",
       shipped: "bg-indigo-100 text-indigo-800",
       in_transit: "bg-cyan-100 text-cyan-800",
       delivered: "bg-green-100 text-green-800",

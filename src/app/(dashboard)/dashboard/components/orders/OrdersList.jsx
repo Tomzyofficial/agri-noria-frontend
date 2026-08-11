@@ -30,50 +30,10 @@ export function OrdersList() {
 
    const { data, error, isLoading, mutate } = useSWR(ordersUrl, fetcher);
    const orders = data?.data ?? [];
+
    const getVehicleTitle = (order) => {
       return order.metadata?.logistics_provider?.vehicle_title || "—";
    };
-
-   /*  const handleAccept = async (orderId) => {
-      if (!confirm("Accept this order and assign it for shipment?")) return;
-      setActingId(orderId);
-      try {
-         const res = await fetch(`/api/proxy/vendor/logistics/orders/${orderId}/accept`, { method: "POST" });
-         const body = await res.json();
-         if (!res.ok || !body.success) {
-            throw new Error(body.error || "Failed to accept order");
-         }
-         toast.success("Order accepted — moved to shipments");
-         mutate();
-         router.push("/marketplace/logistics/shipments");
-      } catch (err) {
-         toast.error(err.message || "Failed to accept order");
-      } finally {
-         setActingId(null);
-      }
-   }; */
-
-   /*  const handleDecline = async (orderId) => {
-      if (!confirm("Decline this order? It will be marked declined and reassigned to the nearest available partner.")) {
-         return;
-      }
-      setActingId(orderId);
-      try {
-         const res = await fetch(`/api/proxy/vendor/logistics/orders/${orderId}/decline`, { method: "POST" });
-         const body = await res.json();
-         if (!res.ok || !body.success) {
-            throw new Error(body.error || "Failed to decline order");
-         }
-         toast.success(body.message || "Order declined");
-         mutate();
-      } catch (err) {
-         toast.error(err.message || "Failed to decline order");
-      } finally {
-         setActingId(null);
-      }
-   }; */
-
-   // const canRespond = (status) => status === "paid";
 
    return (
       <div className="space-y-6">
@@ -84,21 +44,17 @@ export function OrdersList() {
                   Back to overview
                </Link>
                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Purchased orders</h1>
-               {/* <p className="text-gray-600 dark:text-gray-400 mt-1">Review, accept, or decline delivery assignments for your fleet</p> */}
             </div>
-            {/* <Link href="/marketplace/logistics/shipments" className="text-sm font-medium text-green-700 hover:text-green-800">
-               Go to shipments →
-            </Link> */}
          </div>
 
          <div className="flex flex-wrap gap-2">
             <Button type="button" onClick={() => router.push("/marketplace/store/orders")} className={`px-3 cursor-pointer py-1.5 rounded-full text-sm border ${!statusFilter ? "bg-green-100 border-green-300 text-green-800" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
-               All
+               All {isLoading ? "—" : orders && orders.length > 0 ? orders[0].all_orders : 0}
             </Button>
             {ORDER_STATUS_CONFIG.map(({ status, icon, label }) => (
                <Link key={status} href={`/marketplace/store/orders?status=${status}`} className={`px-2 flex items-center gap-2 py-1.5 rounded-full text-sm border ${statusFilter === status ? "bg-green-100 border-green-300 text-green-800" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
                   {icon && React.createElement(icon, { className: "w-4 h-4" })}
-                  {label}
+                  {label} {isLoading ? "—" : orders && orders.length > 0 ? orders[0][status] : 0}
                </Link>
             ))}
          </div>
@@ -149,18 +105,6 @@ export function OrdersList() {
                                        <Eye className="w-3.5 h-3.5" />
                                        View
                                     </Button>
-                                    {/* {canRespond(order.status) && (
-                                       <>
-                                          <Button type="button" disabled={actingId === order.id} onClick={() => handleAccept(order.id)} className="cursor-pointer inline-flex items-center gap-1 text-sm text-green-700 hover:underline disabled:opacity-50">
-                                             <Check className="w-3.5 h-3.5" />
-                                             Accept
-                                          </Button>
-                                          <Button type="button" disabled={actingId === order.id} onClick={() => handleDecline(order.id)} className="cursor-pointer inline-flex items-center gap-1 text-sm text-red-600 hover:underline disabled:opacity-50">
-                                             <X className="w-3.5 h-3.5" />
-                                             Decline
-                                          </Button>
-                                       </>
-                                    )} */}
                                  </div>
                               </td>
                            </tr>

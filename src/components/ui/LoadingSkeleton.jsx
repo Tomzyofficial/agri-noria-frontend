@@ -1,5 +1,3 @@
-"use client";
-// components/Skeleton.js
 export default function Skeleton() {
    return (
       <div className="col-span-full flex items-center justify-center py-12">

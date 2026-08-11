@@ -54,8 +54,6 @@ export default async function Summary() {
 
       const cart = vendors.flatMap((v) => v);
 
-      console.log("cart", cart, "vendors", vendors);
-
       return (
          <>
             <NavBar />

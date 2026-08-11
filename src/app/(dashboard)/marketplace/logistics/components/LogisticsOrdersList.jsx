@@ -9,7 +9,7 @@ import { MapPin, Truck, ArrowLeft, Eye, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import React from "react";
 import { ORDER_STATUS_CONFIG, getStatusBadgeClass } from "@/app/(dashboard)/dashboard/components/orders/OrderStatusUtils";
-import { formatLabel } from "@/utils/otherUtils";
+import { formatLabel, formatDate } from "@/utils/otherUtils";
 import { OrderDetailModal } from "@/app/(dashboard)/dashboard/components/orders/OrderDetailModal";
 import { fetcher } from "@/utils/otherUtils";
 
@@ -142,7 +142,7 @@ export function LogisticsOrdersList() {
                               <td className="px-4 py-4 whitespace-nowrap">
                                  <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${getStatusBadgeClass(order.status)}`}>{formatLabel(order.status)}</span>
                               </td>
-                              <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">{order.created_at ? new Date(order.created_at).toLocaleDateString() : "—"}</td>
+                              <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">{order.created_at ? formatDate(order.created_at) : "—"}</td>
                               <td className="px-4 py-4 whitespace-nowrap">
                                  <div className="flex flex-wrap gap-2">
                                     <Button type="button" onClick={() => setSelectedOrder(order)} className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
@@ -170,8 +170,6 @@ export function LogisticsOrdersList() {
                </div>
             )}
          </div>
-
-         {/* <LogisticsOrderDetailModal orderId={viewOrderId} open={Boolean(viewOrderId)} onClose={() => setViewOrderId(null)} /> */}
 
          <OrderDetailModal selectedOrder={selectedOrder} open={Boolean(selectedOrder)} onClose={() => setSelectedOrder(null)} />
       </div>

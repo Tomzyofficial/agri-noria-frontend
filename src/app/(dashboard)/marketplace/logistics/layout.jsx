@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, X, Menu, UserPen, CreditCard, Truck, Package, Users, LayoutDashboard, MessageSquareMore } from "lucide-react";
+import { LogOut, X, Menu, UserPen, CreditCard, Truck, Package, WalletMinimal, LayoutDashboard, MessageSquareMore } from "lucide-react";
 import { toast } from "react-toastify";
 import { VerifyNotiBanner } from "@/app/(dashboard)/dashboard/components/VerifyNotiBanner";
 import { signoutBridge } from "@/actions/authActions";
@@ -119,16 +119,20 @@ export default function DashboardLayout({ children }) {
          icon: <Truck className="w-4 h-4" />,
       },
       {
+         label: "Job Management",
+         href: "/marketplace/logistics/job-management",
+         icon: <IoBriefcaseOutline className="w-4 h-4" />,
+      },
+      {
          label: "Profile",
          href: "/marketplace/logistics/profile",
          icon: <UserPen className="w-4 h-4" />,
       },
       {
-         label: "Job Management",
-         href: "/marketplace/logistics/job-management",
-         icon: <IoBriefcaseOutline className="w-4 h-4" />,
+         label: "Wallet",
+         href: "/marketplace/logistics/wallet",
+         icon: <WalletMinimal className="w-4 h-4" />,
       },
-
       {
          label: "Billing",
          href: "/marketplace/logistics/billing",

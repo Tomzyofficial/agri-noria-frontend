@@ -22,6 +22,7 @@ export function BuyerOrdersList() {
    const [satisfiedOrderId, setSatisfiedOrderId] = useState(null);
    const [verifyingOTP, setVerifyingOTP] = useState(false);
    const [otpError, setOtpError] = useState(null);
+   const [loading, setLoading] = useState(false);
 
    const ordersUrl = useMemo(() => {
       const params = new URLSearchParams();
@@ -53,22 +54,26 @@ export function BuyerOrdersList() {
       setOtpError(null);
    };
 
-   const handleOTPVerify = async (otp) => {
+   const handleOTPVerify = async (orderId) => {
       setVerifyingOTP(true);
       setOtpError(null);
+      setLoading(true);
 
       try {
-         const res = await fetch(`/api/proxy/buyer/orders/${satisfiedOrderId}/confirm-satisfaction`, {
-            method: "POST",
-            headers: {
-               "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ otp }),
+         const res = await fetch(`/api/proxy/buyer/orders/${orderId}/confirm-satisfaction`, {
+            method: "PATCH",
+            // headers: {
+            //    "Content-Type": "application/json",
+            // },
+            // body: JSON.stringify({ otp }),
          });
 
          const body = await res.json();
 
-         if (!res.ok || !body.success) {
+         // if (!res.ok || !body.success) {
+         //    throw new Error(body.error || "Failed to verify OTP");
+         // }
+         if (!res.ok) {
             throw new Error(body.error || "Failed to verify OTP");
          }
 
@@ -77,8 +82,10 @@ export function BuyerOrdersList() {
          mutate();
       } catch (err) {
          setOtpError(err.message || "Failed to verify OTP");
+         toast.error(err.message);
       } finally {
          setVerifyingOTP(false);
+         setLoading(false);
       }
    };
 
@@ -163,8 +170,8 @@ export function BuyerOrdersList() {
                                        View
                                     </Button>
                                     {order.status === "delivered" && (
-                                       <Button type="button" onClick={() => handleSatisfied(order.id)} className="cursor-pointer inline-flex items-center gap-1 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded">
-                                          <ThumbsUp className="w-3.5 h-3.5" />
+                                       <Button type="button" disabled={loading} onClick={() => handleOTPVerify(order.id)} className="disabled:opacity-50 cursor-pointer inline-flex items-center gap-1 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded">
+                                          {loading ? "Please wait" : <ThumbsUp className="w-3.5 h-3.5" />}
                                           Satisfied
                                        </Button>
                                     )}
