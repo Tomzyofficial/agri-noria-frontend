@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { Truck, MapPin, ArrowLeft, Play, CheckCircle } from "lucide-react";
 import { getStatusBadgeClass } from "@/app/(dashboard)/dashboard/components/orders/OrderStatusUtils";
-import { formatLabel } from "@/utils/otherUtils";
+import { formatLabel, formatDate } from "@/utils/otherUtils";
 import { fetcher } from "@/utils/otherUtils";
 import { ShipmentStartModal } from "./ShipmentStartModal";
 import { OTPVerificationModal } from "./OTPVerificationModal";
@@ -26,13 +26,7 @@ export function LogisticsShipmentsList() {
 
    const shipments = data?.data ?? [];
 
-   const handleStartShipment = (order) => {
-      setShipmentStartOrderId(order.id);
-      // setShipmentStartOrderData(order);
-   };
-
    const handleShipmentStartSuccess = (result) => {
-      // toast.success(`Shipment started successfully! Tracking number: ${result.tracking_number}`);
       toast.success("Shipment started successfully!");
       mutate();
       router.push("/marketplace/logistics/shipments?status=in_transit");
@@ -102,11 +96,10 @@ export function LogisticsShipmentsList() {
                   <table className="min-w-full divide-y divide-gray-200">
                      <thead className="bg-gray-50 dark:bg-gray-800">
                         <tr>
-                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order</th>
-                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Buyer</th>
-                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vehicle</th>
+                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Delivery</th>
                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                         </tr>
                      </thead>
@@ -114,13 +107,7 @@ export function LogisticsShipmentsList() {
                         {shipments.map((order) => (
                            <tr key={order.id}>
                               <td className="px-4 py-4 text-sm font-mono">{order.id.slice(0, 8)}…</td>
-                              <td className="px-4 py-4 text-sm">{order.buyer_name}</td>
-                              <td className="px-4 py-4 text-sm">
-                                 <div className="flex items-center gap-1">
-                                    <Truck className="w-4 h-4 text-gray-400" />
-                                    {order.vehicle_title}
-                                 </div>
-                              </td>
+                              {/* <td className="px-4 py-4 text-sm">{order.buyer_name}</td> */}
                               <td className="px-4 py-4 text-sm max-w-[180px]">
                                  <div className="flex items-start gap-1 line-clamp-2">
                                     <MapPin className="w-4 h-4 shrink-0 text-gray-400" />
@@ -129,6 +116,9 @@ export function LogisticsShipmentsList() {
                               </td>
                               <td className="px-4 py-4">
                                  <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${getStatusBadgeClass(order.status)}`}>{formatLabel(order.status)}</span>
+                              </td>
+                              <td className="px-4 py-4">
+                                 <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium capitalize}`}>{formatDate(order.updated_at)}</span>
                               </td>
                               <td className="px-4 py-4">
                                  <div className="flex flex-wrap gap-2">
@@ -157,17 +147,13 @@ export function LogisticsShipmentsList() {
             )}
          </div>
 
-         {/* <LogisticsOrderDetailModal selectedOrder={selectedOrder} open={Boolean(selectedOrder)} onClose={() => setSelectedOrder(null)} /> */}
-
          <OrderDetailModal selectedOrder={selectedOrder} open={Boolean(selectedOrder)} onClose={() => setSelectedOrder(null)} />
 
          <ShipmentStartModal
             orderId={shipmentStartOrderId}
-            // orderData={shipmentStartOrderData}
             open={Boolean(shipmentStartOrderId)}
             onClose={() => {
                setShipmentStartOrderId(null);
-               // setShipmentStartOrderData(null);
             }}
             onSuccess={handleShipmentStartSuccess}
          />

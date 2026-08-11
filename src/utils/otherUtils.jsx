@@ -23,6 +23,8 @@ function formatDate(value) {
       month: "short",
       day: "numeric",
       year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
    });
 }
 
@@ -33,10 +35,10 @@ const fetcher = async (url) => {
          cookie: cookieHeader,
       },
    });
-   const data = await res.json();
-   if (!res.ok || !data.success) {
+   if (!res.ok) {
       throw new Error(data.error || data.message || "Request failed");
    }
+   const data = await res.json();
    return data;
 };
 

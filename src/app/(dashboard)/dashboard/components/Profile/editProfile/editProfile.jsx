@@ -1,6 +1,8 @@
 "use client";
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/Button";
+import useSwr from "swr";
+import { fetcher } from "@/utils/otherUtils";
 
 import { toast } from "react-toastify";
 import { BusinessInfo } from "@/app/(dashboard)/dashboard/components/Profile/editProfile/Step1BusinessInfo";
@@ -15,6 +17,7 @@ export function VendorProfileEdit({ onProfileEdit }) {
    const [step, setStep] = useState(1);
    const totalStep = 3;
    const steps = ["info", "docs", "bank"];
+   // const [banks, setBanks] = useState([]);
 
    const goToStep = (n) => {
       const clamped = Math.max(1, Math.min(n, totalStep));
@@ -33,36 +36,74 @@ export function VendorProfileEdit({ onProfileEdit }) {
       account_name: "",
       account_number: "",
       bank_name: "",
+      bank_code: "",
    });
 
-   const handleInputChange = (e) => {
-      const { type, name, value, files } = e.target;
-      if (type === "file") {
-         const file = files[0];
-         if (file.size > 5 * 1024 * 1024) {
-            toast.error("File size exceeds 5MB limit");
-            return;
-         }
-         if (file) {
-            const url = URL.createObjectURL(file);
-            if (name === "id_front_url") setIDFrontPreview(url);
-            if (name === "id_back_url") setIDBackPreview(url);
-            if (name === "license_url") setLicensePreview(url);
+   let banks = [];
+   const { data, error, isLoading } = useSwr("/api/proxy/vendor/wallet/banks", fetcher);
+   if (!isLoading && !error && data?.banks) {
+      banks = data.banks;
+   }
 
-            setFormData((prev) => ({
-               ...prev,
-               [name]: file,
-            }));
-         }
-      } else {
-         setFormData((prev) => ({
-            ...prev,
-            [name]: value,
-         }));
-      }
-   };
+   // const fetchBanks = useCallback(async () => {
+   //    const response = await fetch("/api/proxy/vendor/wallet/banks");
+   //    if (!response.ok) {
+   //       console.error("Failed to fetch banks:", response.statusText);
+   //       return;
+   //    }
+   //    const data = await response.json();
+   //    setBanks(data.banks || []);
+   // }, []);
 
-   const [ispending, startTransition] = useTransition(formData);
+   // const cachedBanks = useMemo(() => banks, [banks]);
+
+   const handleInputChange = useCallback(
+      (e) => {
+         const { type, name, value, files } = e.target;
+         if (type === "file") {
+            const file = files[0];
+            if (file.size > 5 * 1024 * 1024) {
+               toast.error("File size exceeds 5MB limit");
+               return;
+            }
+            if (file) {
+               const url = URL.createObjectURL(file);
+               if (name === "id_front_url") setIDFrontPreview(url);
+               if (name === "id_back_url") setIDBackPreview(url);
+               if (name === "license_url") setLicensePreview(url);
+
+               setFormData((prev) => ({
+                  ...prev,
+                  [name]: file,
+               }));
+            }
+         } else {
+            if (name === "bank_name") {
+               const selectedBank = banks.find((b) => b.name === value);
+               setFormData((prev) => ({
+                  ...prev,
+                  [name]: value,
+                  bank_code: selectedBank?.code || "",
+                  account_name: "",
+               }));
+            } else if (name === "account_number") {
+               setFormData((prev) => ({
+                  ...prev,
+                  [name]: value.replace(/\D/g, "").slice(0, 10),
+                  account_name: "",
+               }));
+            } else {
+               setFormData((prev) => ({
+                  ...prev,
+                  [name]: value,
+               }));
+            }
+         }
+      },
+      [banks]
+   );
+
+   const [isPending, startTransition] = useTransition();
 
    const handleSubmitInfo = async (e) => {
       e.preventDefault();
@@ -150,18 +191,18 @@ export function VendorProfileEdit({ onProfileEdit }) {
             throw new Error("Bank account number must be 10 digits");
          }
 
-         const fd = new FormData();
-         fd.append("bank_name", formData.bank_name);
-         fd.append("account_name", formData.account_name);
-         fd.append("account_number", formData.account_number);
-
          startTransition(async () => {
-            const res = await fetch("/api/proxy/vendor/edit-profile", {
+            const res = await fetch("/api/proxy/vendor/wallet/bank-accounts", {
                method: "POST",
-               body: fd,
+               headers: { "Content-Type": "application/json" },
+               body: JSON.stringify({
+                  bankName: formData.bank_name,
+                  bankCode: formData.bank_code,
+                  accountNumber: formData.account_number,
+               }),
             });
             const data = await res.json();
-            if (!res.ok || !data.success) {
+            if (!res.ok || !data.bankAccount) {
                throw new Error(data.error || "Failed to save bank details");
             }
             toast.success(data.message || "Bank details saved");
@@ -201,12 +242,7 @@ export function VendorProfileEdit({ onProfileEdit }) {
          {/* Tabs */}
          <div className="flex gap-4 border-b my-10">
             {steps.map((tab, idx) => (
-               <Button
-                  key={tab}
-                  type="button"
-                  className={`pb-2 ${activeTab === tab ? "border-b-2 border-green-600 font-semibold" : ""}`}
-                  onClick={() => goToStep(idx + 1)}
-               >
+               <Button key={tab} type="button" className={`pb-2 ${activeTab === tab ? "border-b-2 border-green-600 font-semibold" : ""}`} onClick={() => goToStep(idx + 1)}>
                   {tab === "info" ? "Profile Info" : tab === "docs" ? "Documents & KYC" : "Bank Details"}
                </Button>
             ))}
@@ -218,32 +254,15 @@ export function VendorProfileEdit({ onProfileEdit }) {
                e.preventDefault();
             }}
             noValidate
-            aria-busy={ispending}
+            aria-busy={isPending}
          >
             {/* Step 1 */}
             {step === 1 ? (
-               <BusinessInfo
-                  ispending={ispending}
-                  formData={formData}
-                  handleInputChange={handleInputChange}
-                  handleSubmitInfo={handleSubmitInfo}
-               />
+               <BusinessInfo ispending={isPending} formData={formData} handleInputChange={handleInputChange} handleSubmitInfo={handleSubmitInfo} />
             ) : step === 2 ? (
-               <BusinessDocs
-                  IDFrontpreview={IDFrontpreview}
-                  IDBackpreview={IDBackpreview}
-                  Licensepreview={Licensepreview}
-                  ispending={ispending}
-                  handleInputChange={handleInputChange}
-                  handleSubmitDocs={handleSubmitDocs}
-               />
+               <BusinessDocs IDFrontpreview={IDFrontpreview} IDBackpreview={IDBackpreview} Licensepreview={Licensepreview} ispending={isPending} handleInputChange={handleInputChange} handleSubmitDocs={handleSubmitDocs} />
             ) : (
-               <BusinessBank
-                  ispending={ispending}
-                  formData={formData}
-                  handleInputChange={handleInputChange}
-                  handleSubmitBank={handleSubmitBank}
-               />
+               <BusinessBank ispending={isPending} formData={formData} banks={banks} handleInputChange={handleInputChange} handleSubmitBank={handleSubmitBank} />
             )}
          </form>
       </div>
