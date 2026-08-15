@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, X, Menu, LayoutDashboard, Package2, WalletMinimal, UserPen, CreditCard, HandCoins } from "lucide-react";
+import { LogOut, X, Menu, LayoutDashboard, Package2, WalletMinimal, UserPen, CreditCard } from "lucide-react";
+import { FaAd } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { VerifyNotiBanner } from "@/app/(dashboard)/dashboard/components/VerifyNotiBanner";
 import { signoutBridge } from "@/actions/authActions";
@@ -114,6 +115,11 @@ export default function DashboardLayout({ children }) {
          label: "Enrollments",
          href: "/marketplace/store/enrollments",
          icon: <IoSchoolOutline className="w-4 h-4" />,
+      },
+      {
+         label: "Ads",
+         href: "/marketplace/store/ads",
+         icon: <FaAd className="w-4 h-4" />,
       },
       {
          label: "Profile",
