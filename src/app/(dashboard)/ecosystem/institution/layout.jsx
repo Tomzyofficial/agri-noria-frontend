@@ -187,6 +187,18 @@ export default function InstitutionLayout({ children }) {
       : "hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded transition-all duration-200 ml-1";
   };
 
+  const [notificationDismissed, setNotificationDismissed] = useState(false);
+
+  useEffect(() => {
+    if (notifications.length > 0) {
+      setNotificationDismissed(false);
+      const timer = setTimeout(() => {
+        setNotificationDismissed(true);
+      }, 15000);
+      return () => clearTimeout(timer);
+    }
+  }, [notifications]);
+
   return (
     <div className="flex min-h-screen bg-(--background)">
       <aside>
@@ -203,18 +215,18 @@ export default function InstitutionLayout({ children }) {
         </div>
 
         <div
-          className={`${menuOpen ? "left-0 w-64 h-full bg-white shadow-xl" : "-left-64"} transition-all duration-300 fixed z-40 top-0 lg:left-0 lg:w-64 lg:h-screen dark:bg-gray-950 dark:text-(--foreground) lg:bg-white lg:shadow-md p-4 flex flex-col`}
+          className={`${menuOpen ? "left-0 w-64 h-full bg-white shadow-xl" : "-left-64"} transition-all duration-300 fixed z-40 top-0 lg:left-0 lg:w-64 lg:h-screen dark:bg-gray-950 dark:text-(--foreground) lg:bg-white lg:shadow-md p-4 flex flex-col border-r border-gray-100 dark:border-gray-800`}
         >
           <div className="mb-8 px-2">
-            <h2 className="text-xl font-black text-blue-600 tracking-tighter uppercase">
+            <h2 className="text-2xl font-black text-blue-600 tracking-tighter uppercase">
               Agri-Noria
             </h2>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">
               Institutional Portal
             </p>
           </div>
 
-          <nav className="flex flex-col space-y-2 flex-grow">
+          <nav className="flex flex-col space-y-1 flex-grow overflow-y-auto pr-2 custom-scrollbar">
             {navMenu.map((item) => (
               <Link
                 key={item.label}
@@ -238,8 +250,8 @@ export default function InstitutionLayout({ children }) {
         </div>
       </aside>
       <main className="lg:ml-64 w-full lg:p-8 p-4 bg-gray-50 dark:bg-(--background) transition-all duration-200">
-        {notifications.length > 0 && (
-          <div className="mb-6 p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800/50 shadow-sm flex items-center justify-between gap-4">
+        {notifications.length > 0 && !notificationDismissed && (
+          <div className="mb-6 p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800/50 shadow-sm flex items-center justify-between gap-4 animate-in fade-in duration-300">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-red-500 text-white shadow-sm">
                 <ShieldAlert className="w-5 h-5 animate-pulse" />
@@ -253,13 +265,22 @@ export default function InstitutionLayout({ children }) {
                 </p>
               </div>
             </div>
-            <Link 
-              href="/ecosystem/institution/programs" 
-              prefetch={true}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all whitespace-nowrap shadow-sm"
-            >
-              Fund Programme
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link 
+                href="/ecosystem/institution/programs" 
+                prefetch={true}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all whitespace-nowrap shadow-sm"
+              >
+                Fund Programme
+              </Link>
+              <button
+                onClick={() => setNotificationDismissed(true)}
+                className="p-1.5 hover:bg-red-200 dark:hover:bg-red-800/50 text-red-800 dark:text-red-200 rounded-xl transition-all cursor-pointer"
+                title="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
         {children}

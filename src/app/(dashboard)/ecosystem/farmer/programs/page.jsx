@@ -57,10 +57,13 @@ export default function EnrolledProgramsPage() {
                 label="Program Fund Balance"
                 value={`₦${parseFloat(enrolledProgram?.wallet_balance || 0).toLocaleString()}`}
               />
-              <ProgramStat label="Commodity" value={profile.commodity || "—"} />
+              <ProgramStat 
+                label="Commodity" 
+                value={enrolledProgram?.commodity || profile?.program_commodity || profile?.commodity || "—"} 
+              />
               <ProgramStat
                 label="Assigned Hectares"
-                value={`${profile.farm_size_hectares || 0} Ha`}
+                value={`${parseFloat(enrolledProgram?.target_hectares || profile?.program_target_hectares || profile?.farm_size_hectares || 0).toLocaleString()} Ha`}
               />
               <ProgramStat
                 label="Start Date"
