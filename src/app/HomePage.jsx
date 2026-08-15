@@ -9,8 +9,11 @@ import { sidebarMenu } from "@/utils/homeSideMenu";
 import { ErrorUi } from "@/components/ui/Error";
 import { formatPrice } from "../utils/formatPrice";
 import { EcosystemPopup } from "@/components/ui/EcosystemPopup";
+import useSWR from "swr";
+import { fetcher } from "@/utils/otherUtils";
+import { HomepageSponsoredSection } from "@/app/(dashboard)/dashboard/components/ads/HomepageSponsoredSection";
 
-export function HomePage({ marketPlace, error }) {
+export function HomePage({ marketPlace, error, campaigns, campaignError }) {
    const [searchTerm, setSearchTerm] = useState("");
 
    // Side memu navigation
@@ -20,6 +23,12 @@ export function HomePage({ marketPlace, error }) {
       const matchesSearch = listing.listing_name?.toLowerCase().includes(searchTerm.toLowerCase()) || listing.price?.toString().includes(searchTerm) || listing.description?.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesSearch;
    });
+
+   // const { data, error: adsError, isLoading } = useSWR(`/api/proxy/public/campaigns?country=NG`, fetcher);
+
+   // if (!isLoading && adsError) console.error(adsError);
+   // if (isLoading) console.log("loading");
+   // if (!isLoading && !adsError && data.length > 0) console.log(data);
 
    return (
       <div>
@@ -38,7 +47,6 @@ export function HomePage({ marketPlace, error }) {
 
          <div className="px-2 md:px-6 my-5 text-(--foreground) flex flex-col lg:flex-row gap-8">
             <aside className="relative lg:sticky lg:top-20">
-               {/* SIDE MENU */}
                <ul className="grid grid-cols-4 sm:grid-cols-5 lg:block space-y-0.5">
                   {menu.map((item, index) => (
                      <li key={item.href} className={`relative group bg-transparent lg:bg-(--white-fff) lg:dark:bg-(--card-dark) lg:shadow-lg lg:p-1 lg:rounded lg:w-full ${index === 0 ? "lg:mb-4 lg:border-b-2 lg:border-blue-500/20 pb-2" : ""}`}>
@@ -54,10 +62,12 @@ export function HomePage({ marketPlace, error }) {
                </ul>
             </aside>
 
-            {/* Marketplace Preview Right side */}
             <main className="flex-1 flex flex-col">
+               <section className="mb-14">
+                  <HomepageSponsoredSection campaigns={campaigns} campaignError={campaignError} />
+               </section>
                <div>
-                  <h2 className="text-xl font-semibold mb-4">Verified ads</h2>
+                  <h2 className="text-xl font-semibold mb-4">Verified listings</h2>
                </div>
 
                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -66,7 +76,7 @@ export function HomePage({ marketPlace, error }) {
                   ) : filteredProducts.length === 0 ? (
                      <div className="flex flex-col items-center justify-center col-span-full py-12">
                         <Package className="h-12 w-12 text-(--foreground) mb-4" />
-                        <h3 className="text-lg font-semibold mb-2 text-center">No ads found </h3>
+                        <h3 className="text-lg font-semibold mb-2 text-center">No listings found </h3>
                      </div>
                   ) : (
                      filteredProducts.length > 0 &&

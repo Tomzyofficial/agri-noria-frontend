@@ -8,7 +8,6 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { VENDOR_ADS_BASE } from "@/not-in-useyet-lib/adsRoutes";
 
 export default function DashboardCampaignDetailPage() {
    const params = useParams();
@@ -22,12 +21,12 @@ export default function DashboardCampaignDetailPage() {
       (async () => {
          setLoading(true);
          const res = await fetch(`/api/proxy/vendor/ads/campaigns/${campaignId}`);
-         const body = await res.json();
+         const data = await res.json();
          if (!res.ok) {
-            setError(typeof body?.error === "string" ? body.error : "Not founds");
+            setError(typeof data?.error === "string" ? data.error : "Not founds");
             setRow(null);
          } else {
-            setRow(body.campaign);
+            setRow(data.campaign);
             setError(null);
          }
          setLoading(false);
@@ -42,7 +41,7 @@ export default function DashboardCampaignDetailPage() {
          <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-50">
             {error || "Not found"}
             <div className="mt-3">
-               <Link href={VENDOR_ADS_BASE} className="font-medium text-emerald-700 underline dark:text-emerald-400">
+               <Link href="/marketplace/store/ads" className="font-medium text-emerald-700 underline dark:text-emerald-400">
                   Back
                </Link>
             </div>
@@ -52,7 +51,7 @@ export default function DashboardCampaignDetailPage() {
 
    return (
       <div className="space-y-6">
-         <Link href={VENDOR_ADS_BASE} className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400">
+         <Link href="/marketplace/store/ads" className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400">
             ← All campaigns
          </Link>
          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">

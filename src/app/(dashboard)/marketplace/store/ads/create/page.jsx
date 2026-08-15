@@ -1,14 +1,6 @@
 "use client";
-
-/**
- * Create ad campaign — collects placement/target/budget and opens Paystack checkout.
- * @module app/(dashboard)/dashboard/ads/create/page
- */
-
 import Link from "next/link";
 import { useState } from "react";
-import { VENDOR_ADS_BASE } from "@/not-in-useyet-lib/adsRoutes";
-import SubmitButton from "../../components/SubmitButton";
 import { FaSpinner } from "react-icons/fa";
 
 const TARGET_TYPES = ["PRODUCT", "VENDOR", "TRAINING"];
@@ -82,7 +74,7 @@ export default function DashboardAdsCreatePage() {
    return (
       <div className="mx-auto max-w-xl space-y-8">
          <div>
-            <Link href={VENDOR_ADS_BASE} className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400">
+            <Link href="/marketplace/store/ads" className="text-sm font-medium text-emerald-700 hover:underline dark:text-emerald-400">
                ← Back to campaigns
             </Link>
             <h1 className="mt-4 text-2xl font-bold tracking-tight">Create campaign</h1>

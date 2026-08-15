@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CampaignTable } from "@/app/(dashboard)/dashboard/components/ads/CampaignTable";
 import { VENDOR_ADS_BASE } from "@/not-in-useyet-lib/adsRoutes";
@@ -82,6 +82,7 @@ function VendorAdsDashboardInner() {
             const data = await res.json();
             throw new Error(data.error);
          }
+         toast.success("Campaign deleted successfully.");
          await mutate();
       } catch (error) {
          toast.error(error.message);
@@ -100,10 +101,10 @@ function VendorAdsDashboardInner() {
                <p className="mt-2 max-w-xl text-sm text-slate-600 dark:text-slate-400">Create Paystack-backed placements for products, your vendor profile, and trainings. Ownership is verified server-side.</p>
             </div>
             <div className="flex flex-wrap gap-3">
-               <Link href={`${VENDOR_ADS_BASE}/create`} className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">
+               <Link href="/marketplace/store/ads/create" className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">
                   New campaign
                </Link>
-               <Link href={`${VENDOR_ADS_BASE}/analytics`} className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800">
+               <Link href="/marketplace/store/analytics" className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800">
                   Analytics
                </Link>
             </div>
@@ -119,7 +120,7 @@ function VendorAdsDashboardInner() {
                <p className="mt-2 text-xs text-rose-800/80 dark:text-rose-200/80">Sign in as a vendor with a valid session cookie, and ensure NEXT_PUBLIC_BACKEND_URL points to your API.</p>
             </div>
          ) : (
-            <CampaignTable campaigns={data.campaigns} busyId={busyId} onPause={onPause} onActivate={onActivate} onDelete={onDelete} />
+            <CampaignTable campaigns={data.campaigns} busyId={busyId} onPause={onPause} onActivate={onActivate} onDelete={onDelete} href="/marketplace/store/ads" />
          )}
       </div>
    );
