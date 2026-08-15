@@ -149,7 +149,7 @@ export default function FarmerOnboarding() {
             submitLevel(1); // submit level 1
         } else if (step === 13) {
             submitLevel(2); // submit level 2
-        } else if (step === 19) {
+        } else if (step === 17) {
             submitLevel(3); // submit level 3
         } else {
             setStep(s => s + 1);
@@ -209,12 +209,53 @@ export default function FarmerOnboarding() {
                     </div>
                 );
             case 3:
+                const currentIdType = formData.selected_id_type || 'nin';
+                const currentIdNumber = 
+                    currentIdType === 'drivers_license' ? formData.drivers_license :
+                    currentIdType === 'voter_id' ? formData.voter_id :
+                    currentIdType === 'passport_id' ? formData.passport_id :
+                    formData.nin;
+
+                const handleIdNumberChange = (val) => {
+                    setFormData(prev => ({
+                        ...prev,
+                        nin: currentIdType === 'nin' ? val : prev.nin,
+                        drivers_license: currentIdType === 'drivers_license' ? val : prev.drivers_license,
+                        voter_id: currentIdType === 'voter_id' ? val : prev.voter_id,
+                        passport_id: currentIdType === 'passport_id' ? val : prev.passport_id,
+                    }));
+                };
+
                 return (
                     <div className={styles.screen}>
                         <h2 className={styles.title}>Identity Verification</h2>
                         <div className={styles.formGroup}>
-                            <label className={styles.label}>NIN</label>
-                            <input className={styles.input} name="nin" value={formData.nin} onChange={handleChange} />
+                            <label className={styles.label}>Select Legal Acceptable Document</label>
+                            <select 
+                                className={styles.select} 
+                                name="selected_id_type" 
+                                value={currentIdType} 
+                                onChange={(e) => setFormData(prev => ({ ...prev, selected_id_type: e.target.value }))}
+                            >
+                                <option value="nin">National Government ID</option>
+                                <option value="drivers_license">Driver's License</option>
+                                <option value="voter_id">Voter's Card</option>
+                                <option value="passport_id">International Passport</option>
+                            </select>
+                        </div>
+                        <div className={styles.formGroup}>
+                            <label className={styles.label}>
+                                {currentIdType === 'drivers_license' ? "Driver's License Number" :
+                                 currentIdType === 'voter_id' ? "Voter's Card VIN / Number" :
+                                 currentIdType === 'passport_id' ? "Passport Number" :
+                                 "National Government ID Number"}
+                            </label>
+                            <input 
+                                className={styles.input} 
+                                placeholder="Enter document number"
+                                value={currentIdNumber || ''} 
+                                onChange={(e) => handleIdNumberChange(e.target.value)} 
+                            />
                         </div>
                         <div className={styles.formGroup}>
                             <label className={styles.label}>Upload ID Front</label>
@@ -425,6 +466,8 @@ export default function FarmerOnboarding() {
                                 <option value="Maize">Maize</option>
                                 <option value="Rice">Rice</option>
                                 <option value="Cassava">Cassava</option>
+                                <option value="Tomato">Tomato</option>
+                                <option value="Soybeans">Soybeans</option>
                             </select>
                         </div>
                         <div className={styles.formGroup}>
@@ -489,44 +532,12 @@ export default function FarmerOnboarding() {
             case 17:
                 return (
                     <div className={styles.screen}>
-                        <h2 className={styles.title}>Financial Profile</h2>
-                        <div className={styles.formGroup}>
-                            <label className={styles.label}>Bank Name</label>
-                            <input className={styles.input} name="bank_name" value={formData.bank_name} onChange={handleChange} />
-                        </div>
-                        <div className={styles.formGroup}>
-                            <label className={styles.label}>Account Number</label>
-                            <input className={styles.input} name="account_number" value={formData.account_number} onChange={handleChange} />
-                        </div>
-                    </div>
-                );
-            case 18:
-                return (
-                    <div className={styles.screen}>
-                        <h2 className={styles.title}>Risk & Climate Profile</h2>
-                        <p className={styles.description}>Based on your coordinates and historical data, the system is auto-calculating your risk profile.</p>
-                        <div style={{ marginTop: '20px', padding: '20px', background: '#f8fafc', borderRadius: '8px', color: '#1a1a1a', fontWeight: '500' }}>
-                            <p style={{ margin: '12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                {riskScores.climate !== null ? <span style={{color: '#10b981'}}>✓ Climate Risk Score: {riskScores.climate} / 100</span> : <span style={{color: '#64748b'}}>⏳ Climate Risk: Calculating...</span>}
-                            </p>
-                            <p style={{ margin: '12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                {riskScores.flood !== null ? <span style={{color: '#10b981'}}>✓ Flood Risk Score: {riskScores.flood} / 100</span> : <span style={{color: '#64748b'}}>⏳ Flood Risk: Calculating...</span>}
-                            </p>
-                            <p style={{ margin: '12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                {riskScores.crop !== null ? <span style={{color: '#10b981'}}>✓ Crop Risk Score: {riskScores.crop} / 100</span> : <span style={{color: '#64748b'}}>⏳ Crop Risk: Calculating...</span>}
-                            </p>
-                        </div>
-                    </div>
-                );
-            case 19:
-                return (
-                    <div className={styles.screen}>
                         <h2 className={styles.title}>Review Summary</h2>
                         <p className={styles.description}>Please review your agricultural identity.</p>
                         <div className={styles.assetsList}>
                             <p><strong>Name:</strong> {formData.middle_name} (Level 1)</p>
-                            <p><strong>Farm Name:</strong> {formData.farm_name} (Level 2)</p>
-                            <p><strong>Financials Provided:</strong> {formData.bank_name ? 'Yes' : 'No'} (Level 3)</p>
+                            <p><strong>Farm Name:</strong> {formData.farm_name || 'Main Farm'} (Level 2)</p>
+                            <p><strong>Crop:</strong> {formData.historical_productions[0]?.crop || formData.crop || 'Not specified'} (Level 3)</p>
                         </div>
                         <p className={styles.description}>Clicking submit will finalize your Level 3 Full Agricultural Passport.</p>
                     </div>
@@ -564,7 +575,7 @@ export default function FarmerOnboarding() {
                 <div className={styles.buttonContainer}>
                     <button className={styles.btnSecondary} onClick={prevStep} disabled={isLoading}>Back</button>
                     <button className={styles.btnPrimary} onClick={nextStep} disabled={isLoading}>
-                        {isLoading ? 'Processing...' : (step === 7 || step === 13 || step === 19) ? 'Submit Level' : 'Continue'}
+                        {isLoading ? 'Processing...' : (step === 7 || step === 13 || step === 17) ? 'Submit Level' : 'Continue'}
                     </button>
                 </div>
             )}

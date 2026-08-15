@@ -9,10 +9,11 @@ import {
    FaCloudSun,
    FaCheckCircle,
    FaExclamationTriangle,
-   FaLock
+   FaLock,
+   FaTimes
 } from "react-icons/fa";
 import { useFarmerData } from "./useFarmerData";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 
@@ -21,6 +22,16 @@ export default function FarmerOverview() {
    const router = useRouter();
    const [isLocating, setIsLocating] = useState(false);
    const [nearbyClusters, setNearbyClusters] = useState([]);
+   const [bannerDismissed, setBannerDismissed] = useState(false);
+
+   useEffect(() => {
+      if (!isVerified) {
+         const timer = setTimeout(() => {
+            setBannerDismissed(true);
+         }, 15000);
+         return () => clearTimeout(timer);
+      }
+   }, [isVerified]);
 
    if (loading) return (
       <div className="flex items-center justify-center py-32">
@@ -89,9 +100,16 @@ export default function FarmerOverview() {
             <p className="text-sm text-gray-500 font-bold uppercase tracking-widest mt-1">Monitor your farm, training, wallet, and marketplace activity.</p>
          </div>
 
-         {!isVerified && (
-            <div className="relative overflow-hidden bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-amber-500/15 border border-amber-500/30 dark:border-amber-500/20 rounded-3xl p-6 md:p-8 shadow-xl">
-               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+         {!isVerified && !bannerDismissed && (
+            <div className="relative overflow-hidden bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-amber-500/15 border border-amber-500/30 dark:border-amber-500/20 rounded-3xl p-6 md:p-8 shadow-xl animate-in fade-in duration-300">
+               <button
+                  onClick={() => setBannerDismissed(true)}
+                  className="absolute top-4 right-4 p-2 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 rounded-full transition-all cursor-pointer z-10"
+                  title="Dismiss Notice"
+               >
+                  <FaTimes size={16} />
+               </button>
+               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pr-6">
                   <div className="flex items-start gap-4">
                      <div className="p-3 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-2xl shrink-0 mt-1">
                         <FaExclamationTriangle size={28} />
@@ -160,23 +178,54 @@ export default function FarmerOverview() {
                   </CardHeader>
                   <CardContent className="p-8">
                      <div className="space-y-4">
-                        {availablePrograms.filter((p) => p.status === "active").length === 0 ? (
-                           <p className="text-center py-8 text-gray-500 font-bold italic">No active programs available.</p>
-                        ) : (
-                           availablePrograms
-                              .filter((p) => p.status === "active")
-                              .map((prog) => (
-                                 <ProgramRow 
-                                    key={prog.id} 
-                                    prog={prog} 
-                                    isEnrolled={profile?.program_id === prog.id} 
-                                    canEnroll={!profile?.program_id}
-                                    enrolling={enrollingProgramId === prog.id}
-                                    onEnroll={() => handleEnroll(prog.id)}
-                                    isVerified={isVerified}
-                                 />
-                              ))
-                        )}
+                        {(() => {
+                           const activePrograms = availablePrograms.filter((p) => p.status === "active");
+                           if (activePrograms.length === 0) {
+                              return <p className="text-center py-8 text-gray-500 font-bold italic">No active programs available.</p>;
+                           }
+                           const PROGRAMS_PER_PAGE = 3;
+                           const totalPages = Math.ceil(activePrograms.length / PROGRAMS_PER_PAGE) || 1;
+                           const currentPage = Math.min(programPage, totalPages);
+                           const paginatedPrograms = activePrograms.slice((currentPage - 1) * PROGRAMS_PER_PAGE, currentPage * PROGRAMS_PER_PAGE);
+
+                           return (
+                              <>
+                                 {paginatedPrograms.map((prog) => (
+                                    <ProgramRow 
+                                       key={prog.id} 
+                                       prog={prog} 
+                                       isEnrolled={profile?.program_id === prog.id} 
+                                       canEnroll={!profile?.program_id}
+                                       enrolling={enrollingProgramId === prog.id}
+                                       onEnroll={() => handleEnroll(prog.id)}
+                                       isVerified={isVerified}
+                                    />
+                                 ))}
+
+                                 {totalPages > 1 && (
+                                    <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800">
+                                       <button
+                                          disabled={currentPage === 1}
+                                          onClick={() => setProgramPage(p => Math.max(p - 1, 1))}
+                                          className="px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                                       >
+                                          ← Previous
+                                       </button>
+                                       <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                                          Page {currentPage} of {totalPages}
+                                       </span>
+                                       <button
+                                          disabled={currentPage === totalPages}
+                                          onClick={() => setProgramPage(p => Math.min(p + 1, totalPages))}
+                                          className="px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                                       >
+                                          Next →
+                                       </button>
+                                    </div>
+                                 )}
+                              </>
+                           );
+                        })()}
                      </div>
                   </CardContent>
                </Card>
