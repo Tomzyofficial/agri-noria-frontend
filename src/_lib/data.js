@@ -1,11 +1,19 @@
 import { apiUrl } from "@/_lib/api";
 import { cookieStoreFnc } from "@/actions/session";
 import { headers } from "next/headers";
-// Farmer and seller products marketplace
-export const getMarketplaceProducts = async (countryCode) => {
+
+const utils = async () => {
    const cookieHeader = await cookieStoreFnc();
+   const headerStore = await headers();
+   const countryCode = headerStore.get("x-user-country");
    const cookieStr = typeof cookieHeader === "string" ? cookieHeader : "";
    const query = countryCode ? `?country=${encodeURIComponent(countryCode)}` : "";
+
+   return { cookieStr, query };
+};
+
+export const getMarketplaceProducts = async () => {
+   const { cookieStr, query } = await utils();
    try {
       const res = await fetch(apiUrl(`/api/marketplace${query}`), {
          method: "GET",
@@ -27,15 +35,14 @@ export const getMarketplaceProducts = async (countryCode) => {
 
 // Listed storage marketplace
 export const getMarketplaceListedStorage = async () => {
-   const cookieHeader = await cookieStoreFnc();
-
+   const { cookieStr, query } = await utils();
    try {
       const res = await fetch(apiUrl("/api/marketplace/listed-storage"), {
          method: "GET",
          headers: {
-            Cookie: cookieHeader,
+            Cookie: cookieStr,
          },
-         revalidate: 60,
+         next: { revalidate: 60 },
       });
 
       if (!res.ok) {
@@ -52,12 +59,12 @@ export const getMarketplaceListedStorage = async () => {
 
 // Public logistics vehicle marketplace
 export const getListedLogisticsVehicles = async () => {
-   const cookieHeader = await cookieStoreFnc();
+   const { cookieStr, query } = await utils();
    try {
       const res = await fetch(apiUrl("/api/vendor/logistics/public/vehicles"), {
          method: "GET",
          headers: {
-            Cookie: cookieHeader,
+            Cookie: cookieStr,
          },
          next: { revalidate: 60 },
       });
@@ -75,11 +82,7 @@ export const getListedLogisticsVehicles = async () => {
 };
 
 export const getHomeSponsoredProducts = async () => {
-   const cookieHeader = await cookieStoreFnc();
-   const headerStore = await headers();
-   const countryCode = headerStore.get("x-user-country");
-   const cookieStr = typeof cookieHeader === "string" ? cookieHeader : "";
-   const query = countryCode ? `?country=${encodeURIComponent(countryCode)}` : "";
+   const { cookieStr, query } = await utils();
    try {
       const res = await fetch(apiUrl(`/api/public/campaigns${query}`), {
          method: "GET",
@@ -90,11 +93,11 @@ export const getHomeSponsoredProducts = async () => {
       });
 
       if (!res.ok) {
-         return { error: "Error" };
+         return { error: "Error occurred while loading sponsored products" };
       }
       const data = await res.json();
       return data.result || [];
    } catch {
-      return { error: "Error" };
+      return { error: "Error occurred while loading sponsored products" };
    }
 };

@@ -7,10 +7,7 @@ export const StarRating = ({ rating, size = 4 }) => {
 
    return (
       <div className="flex items-center">
-         {fullStars > 0 &&
-            [...Array(fullStars)].map((_, i) => (
-               <Star key={`full-${i}`} className={`w-${size} h-${size} text-yellow-400 fill-current`} />
-            ))}
+         {fullStars > 0 && [...Array(fullStars)].map((_, i) => <Star key={`full-${i}`} className={`w-${size} h-${size} text-yellow-400 fill-current`} />)}
          {hasHalfStar && (
             <div className="relative">
                <Star className={`w-${size} h-${size} text-gray-300 fill-current`} />
@@ -19,10 +16,7 @@ export const StarRating = ({ rating, size = 4 }) => {
                </div>
             </div>
          )}
-         {fullStars > 0 &&
-            [...Array(emptyStars)].map((_, i) => (
-               <Star key={`empty-${i}`} className={`w-${size} h-${size} text-gray-300`} />
-            ))}
+         {fullStars > 0 && [...Array(emptyStars)].map((_, i) => <Star key={`empty-${i}`} className={`w-${size} h-${size} text-gray-300`} />)}
       </div>
    );
 };

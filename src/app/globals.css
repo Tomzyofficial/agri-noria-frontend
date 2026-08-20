@@ -1,15 +1,6 @@
 @import "tailwindcss";
 @import "react-phone-number-input/style.css";
 
-/* Custom Font Declarations */
-/* @font-face {
-  font-family: "Epunda Sans";
-  src: url("/fonts/web_font/Epunda_Sans/EpundaSans-Italic-VariableFont_wght.ttf") format("truetype");
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-} */
-
 :root {
    --background: #f2f2f2;
    --white-fff: #ffffff;
@@ -114,11 +105,19 @@ h4 {
    width: 6px;
 }
 ::-webkit-scrollbar-track {
-   background: var(--cream);
+   background: white;
 }
 ::-webkit-scrollbar-thumb {
-   background: var(--clay);
+   background: gray;
    border-radius: 3px;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+   display: none;
+}
+.no-scrollbar {
+   -ms-overflow-style: none;
+   scrollbar-width: none;
 }
 
 /* Animations */
@@ -187,11 +186,6 @@ h4 {
 body {
    background-color: var(--background);
    color: var(--foreground);
-   font-family:
-      "Epunda Sans",
-      system-ui,
-      -apple-system,
-      sans-serif;
 }
 
 header.sticky {

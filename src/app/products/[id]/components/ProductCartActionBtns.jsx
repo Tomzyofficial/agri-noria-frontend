@@ -30,13 +30,15 @@ export function ProductCartActions({ product }) {
    const itemQuantity = cartItem?.quantity || 0;
    if (loading) {
       return (
-         <div className="flex justify-between items-center">
-            <div className="flex gap-4">
-               <div className="h-10 w-10 mt-5 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
-               <div className="h-10 w-10 mt-5 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
-            </div>
-            <div className="h-10 w-10 mt-5 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
-         </div>
+         // <div className="flex justify-between items-center">
+         //    <div className="flex gap-4">
+         //       <div className="h-10 w-10 mt-5 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
+         //       <div className="h-10 w-10 mt-5 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
+         //    </div>
+         //    <div className="h-10 w-10 mt-5 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
+         // </div>
+
+         <div className="h-10 w-full mt-5 bg-gray-200 dark:bg-gray-700 animate-pulse rounded"></div>
       );
    }
 

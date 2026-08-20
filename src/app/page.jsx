@@ -18,16 +18,13 @@ import { apiUrl } from "@/_lib/api";
 
 export default async function Page() {
    const campaigns = await getHomeSponsoredProducts();
-   const campaignError = null;
    let marketplace = [];
    let error = null;
 
-   const headerStore = await headers();
-   const countryCode = headerStore.get("x-user-country");
    try {
-      const data = await getMarketplaceProducts(countryCode);
+      const data = await getMarketplaceProducts();
       if (data?.error) {
-         marketplace = [];
+         error = data.error;
       } else if (Array.isArray(data) && data.length > 0) {
          marketplace = data;
       } else {

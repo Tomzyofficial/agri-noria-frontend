@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { quoteRequestSchema } from "@/_lib/validations/DroneQuoteRequestSchema";
 import { formatPrice } from "@/utils/formatPrice";
+import PhoneInput from "react-phone-number-input/input";
 
 const RENTAL_PERIOD_LABEL = {
    per_day: "per day",
@@ -12,13 +13,6 @@ const RENTAL_PERIOD_LABEL = {
    per_month: "per month",
 };
 
-/**
- * RequestQuoteForm
- *
- * Client component: validates with the same Zod pattern used across the
- * app, then posts to /api/proxy/quotes rather than calling any backend
- * or third-party service directly.
- */
 export default function RequestQuoteForm({ listing }) {
    const [submitState, setSubmitState] = useState("idle"); // idle | loading | success | error
    const [submitError, setSubmitError] = useState("");
@@ -57,8 +51,8 @@ export default function RequestQuoteForm({ listing }) {
          });
 
          if (!response.ok) {
-            const body = await response.json().catch(() => null);
-            throw new Error(body?.message || "Couldn't send your request. Try again.");
+            const data = await response.json().catch(() => null);
+            throw new Error(data?.message || "Couldn't send your request. Try again.");
          }
 
          setSubmitState("success");
@@ -102,6 +96,7 @@ export default function RequestQuoteForm({ listing }) {
 
             <Field label="Phone (optional)" htmlFor="phone" error={errors.phone}>
                <input id="phone" type="tel" {...register("phone")} className={inputClass(errors.phone)} />
+               {/* <PhoneInput {...register("phone")} /> */}
             </Field>
 
             <Field label="Start date" htmlFor="start_date" error={errors.start_date}>
@@ -117,7 +112,11 @@ export default function RequestQuoteForm({ listing }) {
             <textarea id="message" rows={3} {...register("additional_info")} className={inputClass(errors.additional_info)} />
          </Field>
 
-         <button type="submit" disabled={isSubmitting || submitState === "loading"} className="bg-[#2F5D8A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#26496e] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#14171A]">
+         <button
+            type="submit"
+            disabled={isSubmitting || submitState === "loading"}
+            className="cursor-pointer bg-[#2F5D8A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#26496e] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#14171A]"
+         >
             {submitState === "loading" ? "Sending request…" : "Request a quote"}
          </button>
 

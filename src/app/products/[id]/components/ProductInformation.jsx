@@ -1,3 +1,5 @@
+import { formatDate } from "@/utils/otherUtils";
+
 export function ProductInformation({ product }) {
    // Parse attributes if it's a string
    let parsedAttributes = product?.attributes;
@@ -9,14 +11,14 @@ export function ProductInformation({ product }) {
       }
    }
 
-   const formatDate = (dateString) => {
-      if (!dateString) return "N/A";
-      return new Date(dateString).toLocaleDateString("en-US", {
-         year: "numeric",
-         month: "long",
-         day: "numeric",
-      });
-   };
+   // const formatDate = (dateString) => {
+   //    if (!dateString) return "N/A";
+   //    return new Date(dateString).toLocaleDateString("en-US", {
+   //       year: "numeric",
+   //       month: "long",
+   //       day: "numeric",
+   //    });
+   // };
 
    // Map attributes for display
    const mappedObj = parsedAttributes
@@ -24,7 +26,7 @@ export function ProductInformation({ product }) {
            .filter(([key, value]) => key && value && value !== "")
            .map(([key, value]) => ({
               key: key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
-              value: key.includes("date") ? formatDate(value) : value,
+              value: key.includes("date") ? formatDate(value, false, false) : value,
            }))
       : [];
 

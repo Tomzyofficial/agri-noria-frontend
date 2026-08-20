@@ -31,7 +31,7 @@ export function ProductCartActions({ listing }) {
 
    if (loading) {
       return (
-         <div className="bg-white shadow-md rounded-md p-4">
+         <div className="bg-white dark:bg-(--card-dark) shadow-md rounded-md p-4">
             <div className="flex gap-4 items-center">
                <p className="w-1/2 h-5 animate-pulse bg-gray-300" />
                <p className="w-1/2 h-5 animate-pulse bg-gray-300" />
@@ -42,10 +42,10 @@ export function ProductCartActions({ listing }) {
    }
 
    return (
-      <div className="bg-white shadow-md rounded-md p-4">
+      <div className="bg-white dark:bg-(--card-dark) shadow-md rounded-md p-4">
          {listing.price && (
             <div className="flex justify-between items-center">
-               <span className="text-sm text-gray-600">Price:</span>
+               <span className="text-sm text-gray-600 dark:text-foreground">Price:</span>
                <span className="text-lg font-bold">{formatPrice(listing.price, listing.country_code, listing.currency)}</span>
             </div>
          )}

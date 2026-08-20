@@ -1,5 +1,5 @@
 // const BACKEND_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
-const BACKEND_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
+const BACKEND_URL = process.env.BACKEND_URL;
 
 export function apiUrl(path) {
    if (!path) return;
