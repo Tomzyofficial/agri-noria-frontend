@@ -23,6 +23,7 @@ export default function FarmerOverview() {
    const [isLocating, setIsLocating] = useState(false);
    const [nearbyClusters, setNearbyClusters] = useState([]);
    const [bannerDismissed, setBannerDismissed] = useState(false);
+   const [programPage, setProgramPage] = useState(1);
 
    useEffect(() => {
       if (!isVerified) {
