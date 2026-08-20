@@ -140,8 +140,7 @@ export default function FarmerOverview() {
             </div>
          )}
 
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard label="Farm Size" value={`${farmSize} Ha`} icon={<FaSeedling size={24} />} color="green" />
+         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <StatCard label="Commodity" value={profile?.commodity || "—"} icon={<FaCloudSun size={24} />} color="sky" />
             <StatCard label="Wallet Balance" value={`₦${(walletBalance + lockedBalance).toLocaleString()}`} icon={<FaWallet size={24} />} color="amber" subValue={lockedBalance > 0 ? `₦${lockedBalance.toLocaleString()} locked` : null} />
             <StatCard label="Verification Status" value={isVerified ? "Verified" : "Unverified"} icon={isVerified ? <FaCheckCircle size={24} /> : <FaExclamationTriangle size={24} />} color={isVerified ? "emerald" : "amber"} />
@@ -159,7 +158,14 @@ export default function FarmerOverview() {
                         <ProfileItem label="Program" value={profile?.program_name || "Not assigned"} />
                         <ProfileItem label="Commodity" value={profile?.commodity || "—"} />
                         <ProfileItem label="Farm Size" value={`${parseFloat(farmSize).toLocaleString()} Hectares`} />
-                        <ProfileItem label="Experience" value={profile?.experience_level || "—"} />
+                        <ProfileItem 
+                           label="Experience" 
+                           value={
+                              (profile?.years_of_experience !== null && profile?.years_of_experience !== undefined && profile?.years_of_experience !== '')
+                                 ? `${profile.years_of_experience} ${Number(profile.years_of_experience) === 1 ? 'Year' : 'Years'}`
+                                 : (profile?.experience_level || "—")
+                           } 
+                        />
                         <div className="flex justify-between items-center pt-4">
                            <span className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Status</span>
                            <span className={`px-4 py-1.5 text-[10px] rounded-full font-black uppercase tracking-widest ${isVerified ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"}`}>
