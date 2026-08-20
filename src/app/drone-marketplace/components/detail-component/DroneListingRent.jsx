@@ -6,15 +6,15 @@ import RequestQuoteForm from "./RequestQuoteForm";
 
 export default function DroneListingRent({ listing }) {
    return (
-      <article className="mx-auto grid max-w-5xl gap-8 px-4 py-8 lg:grid-cols-[1fr_360px] lg:gap-10">
-         <div className="flex flex-col gap-6">
+      <article className="mx-auto max-w-7xl grid grid-cols-1 gap-10 py-8 lg:grid-cols-5">
+         <div className="lg:col-span-3 space-y-4">
             <DroneListingHeader listing={listing} />
             <DroneImageGallery image={listing.image} listingName={listing.listing_name} listingType={listing.listing_type} quantity={listing.available_quantity} />
             <DroneListingDescription listing={listing} />
             <DroneSpecTable listing={listing} />
          </div>
 
-         <aside className="lg:sticky lg:top-6 lg:self-start">
+         <aside className="lg:sticky lg:top-6 lg:self-start lg:col-span-2">
             <RequestQuoteForm listing={listing} />
          </aside>
       </article>

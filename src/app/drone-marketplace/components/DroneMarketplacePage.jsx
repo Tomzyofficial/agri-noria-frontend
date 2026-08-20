@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { DroneCard } from "./DroneCard";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
-import { FaSpinner } from "react-icons/fa6";
 import { Search, Filter } from "lucide-react";
+import { ErrorUi } from "@/components/ui/Error";
 
-export function DroneMarketplacePage({ listings, total, page }) {
+export function DroneMarketplacePage({ listings, total, page, error }) {
    const [searchTerm, setSearchTerm] = useState("");
    const [filterType, setFilterType] = useState("all");
 
@@ -62,13 +62,15 @@ export function DroneMarketplacePage({ listings, total, page }) {
                </div>
             </div>
 
-            {filteredListings.length === 0 ? (
+            {error ? (
+               <ErrorUi />
+            ) : filteredListings.length === 0 ? (
                <div className="text-center py-12">
                   <p className="text-gray-500 dark:text-gray-400">No drone listings found matching your criteria.</p>
                </div>
             ) : (
                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 mb-8">
                      {filteredListings.map((listing) => (
                         <DroneCard key={listing.id} listing={listing} />
                      ))}

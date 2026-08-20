@@ -1,33 +1,18 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { ProductCartActions } from "@/app/products/[id]/components/ProductCartActionBtns";
 import Link from "next/link";
 import { formatPrice } from "@/utils/formatPrice";
-import { StarRating } from "@/app/products/opinions/[id]/components/StarRating";
-import { ImageEnlargementModal } from "@/components/ui/ImageEnlargementModal";
+import { StarRating } from "../../opinions/[id]/components/StarRating";
 
 export function ProductInfo({ product, summary }) {
-   const [isModalOpen, setIsModalOpen] = useState(false);
    const gallery = product.image.length > 0 ? product.image : null;
    const [activeIndex, setActiveIndex] = useState(0);
    const active = gallery[activeIndex];
 
-   // Prevent background scrolling when modal is open
-   useEffect(() => {
-      if (isModalOpen) {
-         document.body.style.overflow = "hidden";
-      } else {
-         document.body.style.overflow = "unset";
-      }
-      // Cleanup function to reset overflow when component unmounts
-      return () => {
-         document.body.style.overflow = "unset";
-      };
-   }, [isModalOpen]);
-
    return (
-      <div className="flex flex-col md:flex-row justify-between gap-4 lg:gap-8 bg-(--white-fff) dark:bg-(--card-dark) text-(--foreground) rounded-md p-6 max-h-screen min-h-70">
+      <div className="flex flex-col md:flex-row justify-between gap-4 lg:gap-8 bg-(--white-fff) dark:bg-(--card-dark) text-(--foreground) rounded-md p-6 h-fit">
          <div className="w-full ">
             <Image className="w-full aspect-square object-cover rounded-md" src={active} priority alt={`${product?.listing_name} Image`} width={300} height={300} />
 
@@ -48,9 +33,6 @@ export function ProductInfo({ product, summary }) {
                </div>
             )}
          </div>
-
-         {/* Image Modal. Preview in large screen when the image is clicked */}
-         {/* <ImageEnlargementModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} name={`${product?.listing_name} image`} src={product?.product_image} /> */}
 
          <div className="w-full text-(--foreground)">
             <div className="divide-y divide-gray-100 dark:divide-gray-700 space-y-5">

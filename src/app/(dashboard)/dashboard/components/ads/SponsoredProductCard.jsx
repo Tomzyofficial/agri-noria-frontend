@@ -1,65 +1,54 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
-import { SponsoredBadge } from "./SponsoredBadge";
-import { trackImpression } from "@/not-in-useyet-lib/adsApi";
 import Image from "next/image";
+import { useEffect, useRef } from "react";
 import { formatPrice } from "@/utils/formatPrice";
 
-export function SponsoredProductCard({ listing, campaignId, href = "#" }) {
+export function SponsoredProductCard({ product, containerRef }) {
+   const cardRef = useRef(null);
    const tracked = useRef(false);
 
+   // Fires once, only when this specific card actually scrolls into view
+   // within the horizontal row — not on mount, not for cards off-screen.
    useEffect(() => {
-      if (!campaignId || tracked.current) return;
-      tracked.current = true;
-      (async () => {
-         const res = await fetch("/api/proxy/public/track/impression", {
-            method: "POST",
-            body: JSON.stringify({ campaignId }),
-            headers: {
-               "Content-Type": "application/json",
-            },
-         });
-         if (!res.ok) {
-            console.error("failed to fetch", res.status);
-            return;
-         }
-         console.log("impression tracked");
-      })();
-   }, [campaignId]);
+      if (!product.campaign_id || !cardRef.current) return;
 
-   const handleClick = async () => {
-      if (!campaignId) return;
-      const res = await fetch("/api/proxy/public/track/click", {
-         method: "POST",
-         body: JSON.stringify({ campaignId }),
-         headers: {
-            "Content-Type": "application/json",
+      const observer = new IntersectionObserver(
+         ([entry]) => {
+            if (entry.isIntersecting && !tracked.current) {
+               tracked.current = true;
+               fetch("/api/proxy/public/track/impression", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ campaignId: product.campaign_id }),
+               }).catch((err) => console.error("Failed to track impression:", err));
+               observer.disconnect();
+            }
          },
-      });
+         { root: containerRef?.current || null, threshold: 0.6 }
+      );
 
-      if (!res.ok) {
-         console.error("failed to fetch", res.status);
-         return;
-      }
-      console.log("click tracked");
+      observer.observe(cardRef.current);
+      return () => observer.disconnect();
+   }, [product?.campaign_id, containerRef]);
+
+   const handleClick = () => {
+      if (!product.campaign_id) return;
+      fetch("/api/proxy/public/track/click", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ campaignId: product.campaign_id }),
+      }).catch((err) => console.error("Failed to track click:", err));
    };
 
    return (
-      <div onClick={handleClick}>
-         <Link href={href} className="group flex flex-col rounded-lg border border-slate-200/80 bg-white shadow-sm transition relative hover:shadow-md dark:border-slate-700 dark:bg-slate-900">
-            <div className="w-full bg-slate-100 dark:bg-slate-800">
-               {listing?.image && listing.image.length > 0 ? <Image src={listing.image[0]} alt={listing.listing_name || "Product"} className="h-full w-full object-cover aspect-[4/3] transition duration-300 group-hover:scale-[1.02]" width={300} height={200} /> : null}
-               <div className="absolute left-2 top-2">
-                  <SponsoredBadge />
-               </div>
-            </div>
-            <div className="flex flex-1 flex-col gap-1 p-4">
-               <p className="line-clamp-2 text-sm font-semibold text-slate-900 group-hover:text-emerald-700 dark:text-slate-50">{listing?.listing_name}</p>
-               <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">{formatPrice(listing?.price, listing.country_code, listing.currency)}</p>
-            </div>
-         </Link>
-      </div>
+      <Link ref={cardRef} href={`/products/${product?.id}`} onClick={handleClick} className="snap-start shrink-0 w-40 md:w-48 rounded-md border border-slate-200/80 bg-white shadow-sm hover:shadow-md dark:border-slate-700 dark:bg-slate-900 transition">
+         <div className="w-full bg-slate-100 dark:bg-slate-800">{product.image?.length > 0 && <Image src={product.image[0]} alt={product.listing_name || "Product"} className="object-cover shrink-0 rounded-t-md w-full h-32" width={300} height={200} />}</div>
+         <div className="flex flex-col gap-1 p-3">
+            <p className="line-clamp-2 text-sm font-semibold text-slate-900 dark:text-slate-50">{product.listing_name}</p>
+            <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">{formatPrice(product.price, product.country_code, product.currency)}</p>
+         </div>
+      </Link>
    );
 }

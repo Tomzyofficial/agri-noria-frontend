@@ -4,17 +4,17 @@ import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CampaignTable } from "@/app/(dashboard)/dashboard/components/ads/CampaignTable";
-import { VENDOR_ADS_BASE } from "@/not-in-useyet-lib/adsRoutes";
 import { toast } from "react-toastify";
 import useSWR from "swr";
 import { fetcher } from "@/utils/otherUtils";
+import { ErrorUi } from "@/components/ui/Error";
 
 function VendorAdsDashboardInner() {
    const searchParams = useSearchParams();
    const [busyId, setBusyId] = useState(null);
    const [banner, setBanner] = useState(null);
 
-   const { data, error, isLoading, mutate } = useSWR("/api/proxy/vendor/ads/campaigns", fetcher);
+   const { error, isLoading, mutate, data } = useSWR("/api/proxy/vendor/ads/campaigns", fetcher);
 
    useEffect(() => {
       const ref = searchParams.get("reference") || searchParams.get("trxref");
@@ -57,7 +57,7 @@ function VendorAdsDashboardInner() {
       try {
          setBusyId(id);
          const res = await fetch(`/api/proxy/vendor/ads/campaigns/${id}/activate`, {
-            method: "GET",
+            method: "PATCH",
          });
          const data = await res.json();
          if (!res.ok) {
@@ -104,9 +104,6 @@ function VendorAdsDashboardInner() {
                <Link href="/marketplace/store/ads/create" className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">
                   New campaign
                </Link>
-               <Link href="/marketplace/store/analytics" className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800">
-                  Analytics
-               </Link>
             </div>
          </header>
 
@@ -115,12 +112,10 @@ function VendorAdsDashboardInner() {
          {isLoading ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900">Loading campaigns…</div>
          ) : error ? (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-900 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-50">
-               {error.message}
-               <p className="mt-2 text-xs text-rose-800/80 dark:text-rose-200/80">Sign in as a vendor with a valid session cookie, and ensure NEXT_PUBLIC_BACKEND_URL points to your API.</p>
-            </div>
+            // <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-900 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-50">Error occurred while fetching your campaigns</div>
+            <ErrorUi />
          ) : (
-            <CampaignTable campaigns={data.campaigns} busyId={busyId} onPause={onPause} onActivate={onActivate} onDelete={onDelete} href="/marketplace/store/ads" />
+            <CampaignTable campaigns={data?.campaigns} busyId={busyId} onPause={onPause} onActivate={onActivate} onDelete={onDelete} href="/marketplace/store/ads" />
          )}
       </div>
    );

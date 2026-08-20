@@ -15,16 +15,23 @@ function oppositeFormatLabel(value) {
       .replace(/\b\w/g, (char) => char.toLowerCase());
 }
 
-function formatDate(value) {
-   if (!value) return "-";
+function formatDate(value, hr = true, min = true) {
+   if (!value) return "Date N/A";
    const date = new Date(value);
    if (Number.isNaN(date.getTime())) return value;
+   if (value && hr && min) {
+      return date.toLocaleDateString(undefined, {
+         month: "short",
+         day: "numeric",
+         year: "numeric",
+         hour: "2-digit",
+         minute: "2-digit",
+      });
+   }
    return date.toLocaleDateString(undefined, {
       month: "short",
       day: "numeric",
       year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
    });
 }
 

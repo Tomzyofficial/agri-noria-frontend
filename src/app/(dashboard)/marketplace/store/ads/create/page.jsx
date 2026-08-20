@@ -3,27 +3,30 @@ import Link from "next/link";
 import { useState } from "react";
 import { FaSpinner } from "react-icons/fa";
 
-const TARGET_TYPES = ["PRODUCT", "VENDOR", "TRAINING"];
-const PLACEMENTS = ["SPONSORED_PRODUCT", "FEATURED_VENDOR", "PROMOTED_TRAINING", "SEARCH_BOOST", "HOMEPAGE_FEATURED"];
+const TARGET_TYPES = ["Product", "Storage_listing", "Logistics_service", "Farm_service", "Agricultural_training", "Agricultural_employment"];
+const PLACEMENTS = ["Sponsored_product", "Banner"];
+const SURFACES = ["Home", "Drone_marketplace", "Storage_marketplace", "Logistics_marketplace", "Farm_services", "Training", "Jobs"];
+// const PLACEMENTS = ["SPONSORED_PRODUCT", "FEATURED_VENDOR", "PROMOTED_TRAINING", "SEARCH_BOOST", "HOMEPAGE_FEATURED"];
 
 export default function DashboardAdsCreatePage() {
    const [submitting, setSubmitting] = useState(false);
    const [error, setError] = useState(null);
 
    const [formData, setFormData] = useState({
-      targetType: "PRODUCT",
+      targetType: "Product",
+      surfaces: "Home",
       targetId: "",
-      placement: "SPONSORED_PRODUCT",
+      placement: "Sponsored_product",
       startAt: "",
       endAt: "",
    });
 
    const PLACEMENT_RATES = {
-      SPONSORED_PRODUCT: 500, // NGN per day
-      FEATURED_VENDOR: 1500,
-      PROMOTED_TRAINING: 800,
-      SEARCH_BOOST: 1000,
-      HOMEPAGE_FEATURED: 2000,
+      Sponsored_product: 500, // NGN per day
+      Banner: 1500,
+      // PROMOTED_TRAINING: 800,
+      // SEARCH_BOOST: 1000,
+      // HOMEPAGE_FEATURED: 2000,
    };
 
    function calcDays(startAt, endAt) {
@@ -84,6 +87,16 @@ export default function DashboardAdsCreatePage() {
          <form onSubmit={onSubmit} noValidate aria-busy={submitting} className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
             {typeof error === "string" ? <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-100">{error}</div> : null}
             <div>
+               <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Surfaces</label>
+               <select value={formData.surfaces} onChange={updateField("surfaces")} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-950">
+                  {SURFACES.map((p) => (
+                     <option key={p} value={p}>
+                        {p}
+                     </option>
+                  ))}
+               </select>
+            </div>
+            <div>
                <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Placement</label>
                <select value={formData.placement} onChange={updateField("placement")} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-950">
                   {PLACEMENTS.map((p) => (
@@ -92,6 +105,7 @@ export default function DashboardAdsCreatePage() {
                      </option>
                   ))}
                </select>
+               {error?.placement && <p className="text-rose-900 dark:text-rose-100">{error.placement}</p>}
             </div>
             <div>
                <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Target type</label>
@@ -102,6 +116,7 @@ export default function DashboardAdsCreatePage() {
                      </option>
                   ))}
                </select>
+               {error?.targetType && <p className="text-rose-900 dark:text-rose-100 text-wrap">{error.targetType}</p>}
             </div>
             <div>
                <label className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Target ID (UUID)</label>

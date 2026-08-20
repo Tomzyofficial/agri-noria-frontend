@@ -5,7 +5,7 @@ import Image from "next/image";
 import DroneStatusPlate from "./DroneStatusPlate";
 
 export default function DroneImageGallery({ image, listingName, listingType, quantity }) {
-   const gallery = image && image.length > 0 ? image : null;
+   const gallery = Array.isArray(image) ? image : [];
    const [activeIndex, setActiveIndex] = useState(0);
    const active = gallery[activeIndex];
 
