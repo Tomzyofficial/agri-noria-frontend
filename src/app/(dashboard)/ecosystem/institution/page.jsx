@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useState, useEffect } from "react";
 import {
   Landmark, Users, Activity, CheckCircle2, TrendingUp, Calendar,
-  ArrowUpRight, ShieldAlert, ShieldCheck, Loader2, FileText, Plus, Globe, BarChart3, Droplets, Leaf
+  ArrowUpRight, ShieldAlert, ShieldCheck, Loader2, FileText, Plus, Globe, BarChart3, Droplets, Leaf,
+  Package, Truck, Percent, Wheat, Warehouse, Handshake, MapPin
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
@@ -55,10 +56,6 @@ const GovernmentDashboard = ({ stats }) => (
           </div>
         </CardContent>
       </Card>
-    </div>
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Card className="border-none shadow-sm"><CardHeader><CardTitle>National Crop Distribution</CardTitle></CardHeader><CardContent className="h-64 flex items-center justify-center text-gray-400">Map/Chart Placeholder</CardContent></Card>
-      <Card className="border-none shadow-sm"><CardHeader><CardTitle>Climate Risk Matrix</CardTitle></CardHeader><CardContent className="h-64 flex items-center justify-center text-gray-400">Matrix Placeholder</CardContent></Card>
     </div>
   </div>
 );
@@ -175,7 +172,6 @@ const CommodityBoardDashboard = ({ stats }) => (
         </CardContent>
       </Card>
     </div>
-    <Card className="border-none shadow-sm"><CardHeader><CardTitle>Harvest Calendar</CardTitle></CardHeader><CardContent className="h-64 flex items-center justify-center text-gray-400">Calendar Placeholder</CardContent></Card>
   </div>
 );
 
@@ -227,10 +223,6 @@ const DFIDashboard = ({ stats }) => (
         </CardContent>
       </Card>
     </div>
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Card className="border-none shadow-sm"><CardHeader><CardTitle>Carbon & Climate Indicators</CardTitle></CardHeader><CardContent className="h-64 flex items-center justify-center text-gray-400">ESG Analytics Placeholder</CardContent></Card>
-      <Card className="border-none shadow-sm"><CardHeader><CardTitle>SDG Reporting Matrix</CardTitle></CardHeader><CardContent className="h-64 flex items-center justify-center text-gray-400">SDG Matrix Placeholder</CardContent></Card>
-    </div>
   </div>
 );
 
@@ -271,7 +263,6 @@ const NGODashboard = ({ stats }) => (
         </CardContent>
       </Card>
     </div>
-    <Card className="border-none shadow-sm"><CardHeader><CardTitle>Communities Reached</CardTitle></CardHeader><CardContent className="h-64 flex items-center justify-center text-gray-400">Map Placeholder</CardContent></Card>
   </div>
 );
 
@@ -428,6 +419,149 @@ const ResearchInstitutionDashboard = ({ stats }) => (
   </div>
 );
 
+const InputMetricsPanel = ({ inputMetrics }) => {
+  if (!inputMetrics) return null;
+  
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Package size={20} className="text-indigo-600" />
+        <h2 className="text-lg font-black text-(--foreground) uppercase tracking-wider">Input Metrics</h2>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Inputs Allocated</p>
+                <h3 className="text-3xl font-black mt-2 text-(--foreground)">{(inputMetrics.inputsAllocated || 0).toLocaleString()}</h3>
+                <p className="text-xs font-bold text-gray-400 mt-1">₦{parseFloat(inputMetrics.allocatedValue || 0).toLocaleString()} value</p>
+              </div>
+              <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-xl"><Package size={24} /></div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Inputs Delivered</p>
+                <h3 className="text-3xl font-black mt-2 text-(--foreground)">{(inputMetrics.inputsDelivered || 0).toLocaleString()}</h3>
+                <p className="text-xs font-bold text-gray-400 mt-1">₦{parseFloat(inputMetrics.deliveredValue || 0).toLocaleString()} value</p>
+              </div>
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl"><Truck size={24} /></div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Supplier Fulfilment</p>
+                <h3 className="text-3xl font-black mt-2 text-(--foreground)">{inputMetrics.supplierFulfilment || 0}%</h3>
+                <p className="text-xs font-bold text-gray-400 mt-1">of assigned requests delivered</p>
+              </div>
+              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-xl"><CheckCircle2 size={24} /></div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Programme Utilisation</p>
+                <h3 className="text-3xl font-black mt-2 text-(--foreground)">{inputMetrics.programmeUtilisation || 0}%</h3>
+                <p className="text-xs font-bold text-gray-400 mt-1">of programme funds deployed</p>
+              </div>
+              <div className="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-xl"><Percent size={24} /></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+const SupplyChainMetricsPanel = ({ metrics }) => {
+  if (!metrics) return null;
+  
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <MapPin size={20} className="text-blue-600" />
+        <h2 className="text-lg font-black text-(--foreground) uppercase tracking-wider">Supply Chain Metrics</h2>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        {/* Harvest */}
+        <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Harvest</p>
+                <h3 className="text-2xl font-black mt-2 text-(--foreground)">{(metrics.harvestVolume || 0).toLocaleString()} <span className="text-sm font-bold text-gray-400">MT</span></h3>
+                <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase">{metrics.harvestBatches || 0} Batches</p>
+              </div>
+              <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl"><Wheat size={20} /></div>
+            </div>
+          </CardContent>
+        </Card>
+        {/* Warehouse Inventory */}
+        <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Inventory</p>
+                <h3 className="text-2xl font-black mt-2 text-(--foreground)">{(metrics.inventoryVolume || 0).toLocaleString()} <span className="text-sm font-bold text-gray-400">MT</span></h3>
+                <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase">₦{parseFloat(metrics.inventoryValue || 0).toLocaleString()} Value</p>
+              </div>
+              <div className="p-2 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-xl"><Warehouse size={20} /></div>
+            </div>
+          </CardContent>
+        </Card>
+        {/* Logistics */}
+        <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Logistics</p>
+                <h3 className="text-2xl font-black mt-2 text-(--foreground)">{metrics.logisticsActive || 0}</h3>
+                <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase">{metrics.logisticsDelivered || 0} Delivered</p>
+              </div>
+              <div className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-xl"><Truck size={20} /></div>
+            </div>
+          </CardContent>
+        </Card>
+        {/* Commodity Sales */}
+        <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Sales</p>
+                <h3 className="text-2xl font-black mt-2 text-(--foreground)">₦{parseFloat(metrics.salesValue || 0).toLocaleString()}</h3>
+                <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase">Total Settlements</p>
+              </div>
+              <div className="p-2 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-xl"><Activity size={20} /></div>
+            </div>
+          </CardContent>
+        </Card>
+        {/* Buyer Activity */}
+        <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Buyer Activity</p>
+                <h3 className="text-2xl font-black mt-2 text-(--foreground)">{metrics.buyerAgreements || 0}</h3>
+                <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase">₦{parseFloat(metrics.buyerFinancing || 0).toLocaleString()} Financed</p>
+              </div>
+              <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-xl"><Handshake size={20} /></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
 export default function InstitutionDashboard() {
   const [userRole, setUserRole] = useState("");
   const [stats, setStats] = useState({
@@ -495,6 +629,12 @@ export default function InstitutionDashboard() {
       {(!["government", "bank", "commodity board", "dfi", "ngo", "producer association", "cooperative", "research institution"].includes(userRole)) && (
          <GovernmentDashboard stats={stats} />
       )}
+
+      {/* Input Metrics - visible to all institution roles */}
+      <InputMetricsPanel inputMetrics={stats.inputMetrics} />
+
+      {/* Supply Chain Metrics - visible to all institution roles */}
+      <SupplyChainMetricsPanel metrics={stats.supplyChainMetrics} />
     </div>
   );
 }
