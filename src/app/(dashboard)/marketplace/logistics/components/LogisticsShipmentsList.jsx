@@ -6,12 +6,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { Truck, MapPin, ArrowLeft, Play, CheckCircle } from "lucide-react";
-import { getStatusBadgeClass } from "@/app/(dashboard)/dashboard/components/orders/OrderStatusUtils";
+import { getStatusBadgeClass } from "@/components/dashboard/orders/OrderStatusUtils";
 import { formatLabel, formatDate } from "@/utils/otherUtils";
 import { fetcher } from "@/utils/otherUtils";
 import { ShipmentStartModal } from "./ShipmentStartModal";
 import { OTPVerificationModal } from "./OTPVerificationModal";
-import { OrderDetailModal } from "@/app/(dashboard)/dashboard/components/orders/OrderDetailModal";
+import { OrderDetailModal } from "@/components/dashboard/orders/OrderDetailModal";
 
 export function LogisticsShipmentsList() {
    const router = useRouter();

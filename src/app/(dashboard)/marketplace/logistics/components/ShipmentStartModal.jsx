@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { X, Upload, Check, AlertCircle, Loader2 } from "lucide-react";
 import Image from "next/image";
-import SubmitButton from "../../../dashboard/components/SubmitButton";
+import SubmitButton from "../../../../../components/dashboard/SubmitButton";
 
 export function ShipmentStartModal({ orderId, open, onClose, onSuccess }) {
    const [formData, setFormData] = useState({

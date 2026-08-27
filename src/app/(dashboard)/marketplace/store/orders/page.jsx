@@ -1,7 +1,6 @@
-import { Suspense } from "react";
 import { verifyVendorSession } from "@/actions/session";
-import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
-import { OrdersList } from "@/app/(dashboard)/dashboard/components/orders/OrdersList";
+import { Unauthorized } from "@/components/dashboard/Unauthorized";
+import { OrdersList } from "@/components/dashboard/orders/OrdersList";
 
 export const metadata = {
    title: "Logistics Orders",

@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, X, Menu, UserPen, CreditCard, Truck, Package, WalletMinimal, LayoutDashboard, MessageSquareMore } from "lucide-react";
 import { toast } from "react-toastify";
-import { VerifyNotiBanner } from "@/app/(dashboard)/dashboard/components/VerifyNotiBanner";
+import { VerifyNotiBanner } from "@/components/dashboard/VerifyNotiBanner";
 import { signoutBridge } from "@/actions/authActions";
 import { IoBriefcaseOutline } from "react-icons/io5";
 import { GiShoppingCart } from "react-icons/gi";

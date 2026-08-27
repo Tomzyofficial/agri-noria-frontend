@@ -3,13 +3,13 @@
 import useSWR from "swr";
 import Link from "next/link";
 import { Package, Wallet, ArrowRight } from "lucide-react";
-import { ORDER_STATUS_CONFIG } from "@/app/(dashboard)/dashboard/components/orders/OrderStatusUtils";
+import { ORDER_STATUS_CONFIG } from "@/components/dashboard/orders/OrderStatusUtils";
 import { fetcher } from "@/utils/otherUtils";
 import { formatPrice } from "@/utils/formatPrice";
 import { Modal } from "@/components/ui/Modal";
 import { useState } from "react";
 import { QuoteRequestDetails } from "./QuoteRequestDetails";
-import { QuoteRequestTable } from "@/app/(dashboard)/dashboard/components/QuoteRequestTable";
+import { QuoteRequestTable } from "@/components/dashboard/QuoteRequestTable";
 
 export function LogisticsOverview() {
    const [showModal, setShowModal] = useState(false);

@@ -1,210 +1,8 @@
-// "use client";
-// import { useEffect, useState } from "react";
-// import { toast } from "react-toastify";
-// import { useRouter } from "next/navigation";
-
-// export function useProductEditForm(product) {
-//    const router = useRouter();
-//    const [loading, setLoading] = useState(false);
-//    const [preview, setPreview] = useState(product.product_image);
-
-//    // Parse attributes from product if they exist
-//    let parsedAttributes = {};
-//    if (product.attributes) {
-//       try {
-//          parsedAttributes = typeof product.attributes === "string" ? JSON.parse(product.attributes) : product.attributes;
-//       } catch (e) {
-//          console.error("Failed to parse product attributes:", e);
-//       }
-//    }
-
-//    const [formData, setFormData] = useState({
-//       product_id: product.id || "",
-//       image: null,
-//       listing_name: product.listing_name || "",
-//       description: product.description || "",
-//       price: product.price || "",
-//       location: product.location || "",
-//       unit_measure: product.unit_measure || "",
-//       available_quantity: product.available_quantity || "",
-//       unit: product.unit || "",
-//       min_quantity: product.min_quantity || "",
-//       category: product.category || "",
-//       discount: product.discount || "",
-//       attributes: parsedAttributes || "",
-//    });
-
-//    const handleChange = (e) => {
-//       const { name, type, value, files } = e.target;
-
-//       if (type === "file" && name === "image") {
-//          console.log("true");
-//          const file = files;
-//          console.log("file", file);
-//          if (file) {
-//             setPreview(URL.createObjectURL(file));
-//             setFormData((prev) => ({ ...prev, [name]: file }));
-//          }
-//       } else if (["equipment_type", "brand", "model", "condition", "warranty", "harvest_date", "crop_type", "variety", "quality", "organic", "food_type", "expiry_date", "package_type", "storage_requirement"].includes(name)) {
-//          // Handle nested attribute fields
-//          const attrKey = name;
-//          setFormData((prev) => ({
-//             ...prev,
-//             attributes: {
-//                ...prev.attributes,
-//                [attrKey]: value,
-//             },
-//          }));
-//       } else {
-//          setFormData((prev) => ({ ...prev, [name]: value }));
-//       }
-//    };
-
-//    // useEffect(() => console.log("form stat file", formData.image), []);
-
-//    const handleSubmit = async (e) => {
-//       e.preventDefault();
-//       setLoading(true);
-
-//       try {
-//          // Client-side validation
-//          if (!formData.listing_name || formData.listing_name.trim() === "") {
-//             throw new Error("Product name is required");
-//          }
-//          if (!formData.location || formData.location.trim() === "") {
-//             throw new Error("Location is required");
-//          }
-//          if (!formData.price || formData.price <= 0 || isNaN(formData.price) || formData.price.trim() === "") {
-//             throw new Error("Price must be a valid number");
-//          }
-//          if (!formData.unit_measure) {
-//             throw new Error("Unit measure is required");
-//          }
-//          if (!formData.available_quantity || formData.available_quantity <= 0 || isNaN(formData.available_quantity) || formData.available_quantity.trim() === "") {
-//             throw new Error("Available quantity must be a valid number greater than 0");
-//          }
-//          if (!formData.unit || formData.unit.trim() === "") {
-//             throw new Error("Unit is required");
-//          }
-//          if (!formData.category) {
-//             throw new Error("Category is required");
-//          }
-//          if (!formData.description || formData.description.trim() === "") {
-//             throw new Error("Description is required");
-//          }
-//          if (formData.min_quantity !== undefined && formData.min_quantity !== null && formData.min_quantity !== "") {
-//             const minQtyNum = Number(formData.min_quantity);
-//             if (isNaN(minQtyNum) || minQtyNum < 0) {
-//                throw new Error("Minimum quantity must be a valid non-negative number");
-//             }
-//          }
-//          if (formData.discount !== undefined && formData.discount !== null && formData.discount !== "") {
-//             const discountNum = Number(formData.discount);
-//             if (isNaN(discountNum) || discountNum < 0 || discountNum > 100) {
-//                throw new Error("Discount must be a number between 0 and 100");
-//             }
-//          }
-
-//          // Category-specific validation
-//          if (formData.category === "food_items") {
-//             if (!formData.attributes.food_type || formData.attributes.food_type.trim() === "") {
-//                throw new Error("Food type is required");
-//             }
-//             if (!formData.attributes.expiry_date) {
-//                throw new Error("Expiry date is required");
-//             }
-//             if (!formData.attributes.package_type || formData.attributes.package_type.trim() === "") {
-//                throw new Error("Package type is required");
-//             }
-//             if (!formData.attributes.storage_requirement || formData.attributes.storage_requirement.trim() === "") {
-//                throw new Error("Storage requirement is required");
-//             }
-//          }
-
-//          if (formData.category === "farm_produce") {
-//             if (!formData.attributes.crop_type || formData.attributes.crop_type.trim() === "") {
-//                throw new Error("Crop type is required");
-//             }
-//             if (!formData.attributes.variety || formData.attributes.variety.trim() === "") {
-//                throw new Error("Variety is required");
-//             }
-//             if (!formData.attributes.quality || formData.attributes.quality.trim() === "") {
-//                throw new Error("Quality is required");
-//             }
-//             if (!formData.attributes.organic || formData.attributes.organic.trim() === "") {
-//                throw new Error("Organic status is required");
-//             }
-//             if (!formData.attributes.harvest_date) {
-//                throw new Error("Harvest date is required");
-//             }
-//          }
-
-//          if (formData.category === "equipment") {
-//             if (!formData.attributes.equipment_type || formData.attributes.equipment_type.trim() === "") {
-//                throw new Error("Equipment type is required");
-//             }
-//             if (!formData.attributes.brand || formData.attributes.brand.trim() === "") {
-//                throw new Error("Brand is required");
-//             }
-//             if (!formData.attributes.model || formData.attributes.model.trim() === "") {
-//                throw new Error("Model is required");
-//             }
-//             if (!formData.attributes.condition || formData.attributes.condition.trim() === "") {
-//                throw new Error("Condition is required");
-//             }
-//             if (!formData.attributes.warranty || formData.attributes.warranty.trim() === "") {
-//                throw new Error("Warranty is required");
-//             }
-//          }
-
-//          const formDataToSend = new FormData();
-//          // Append common fields
-//          Object.keys(formData).forEach((key) => {
-//             if (key !== "attributes") {
-//                if (formData[key] !== null && formData[key] !== undefined && formData[key] !== "") {
-//                   console.log("appended files", formDataToSend.append(key, formData[key]));
-//                   formDataToSend.append(key, formData[key]);
-//                }
-//             }
-//          });
-
-//          // Stringify attributes and append
-//          formDataToSend.append("attributes", JSON.stringify(formData.attributes || {}));
-
-//          // if (formData.image) {
-//          //    console.log("true", formData.image);
-//          //    formDataToSend.append("image", formData.image);
-//          // } else {
-//          //    console.log("false");
-//          // }
-
-//          const response = await fetch("/api/proxy/vendor/products/edit-item", {
-//             method: "PATCH",
-//             body: formDataToSend,
-//          });
-
-//          const data = await response.json();
-
-//          if (!response.ok || !data.success) {
-//             throw new Error(data.error || "Failed to update product");
-//          }
-
-//          toast.success(data.message || "Product updated successfully!");
-//          router.push("/marketplace/store/products");
-//       } catch (err) {
-//          console.error("Update error:", err);
-//          toast.error(err.message || "Something went wrong while updating the product.");
-//       } finally {
-//          setLoading(false);
-//       }
-//    };
-//    return { formData, handleChange, handleSubmit, preview, loading };
-// }
-
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { imageFileTypes, MAX_FILE_SIZE } from "@/utils/otherUtils";
 
 const ATTRIBUTE_FIELDS = ["equipment_type", "brand", "model", "condition", "warranty", "harvest_date", "crop_type", "variety", "quality", "organic", "food_type", "expiry_date", "package_type", "storage_requirement"];
 
@@ -214,9 +12,7 @@ export function useProductEditForm(product) {
    const router = useRouter();
    const [loading, setLoading] = useState(false);
 
-   // preview is now an array of object URLs for multi-image preview
-   // const [preview, setPreview] = useState(Array.isArray(product.mage) ? product.image : product.image ? [product.image] : []);
-   // const previewUrlsRef = useRef([]); // tracks object URLs we created, so we can revoke them
+   const [preview, setPreview] = useState(Array.isArray(product.image) ? product.image : product.image ? [product.image] : []);
 
    let parsedAttributes = {};
    if (product.attributes) {
@@ -229,7 +25,7 @@ export function useProductEditForm(product) {
 
    const [formData, setFormData] = useState({
       product_id: product.id || "",
-      image: [], // now an array of File objects
+      image: null,
       listing_name: product.listing_name || "",
       description: product.description || "",
       price: product.price ?? "",
@@ -243,40 +39,45 @@ export function useProductEditForm(product) {
       attributes: parsedAttributes || {},
    });
 
-   // Revoke object URLs on unmount to avoid leaking memory
-   // useEffect(() => {
-   //    return () => {
-   //       previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-   //    };
-   // }, []);
-
    const handleChange = (e) => {
       const { name, type, value, files } = e.target;
 
-      if (type === "file" && name === "image") {
-         const fileArray = files ? Array.from(files) : [];
-         if (fileArray.length === 0) return;
+      if (type === "file") {
+         const selectedFiles = Array.from(files ?? []);
 
-         // Revoke previous object URLs before creating new ones
-         // previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+         if (selectedFiles.length === 0) return;
 
-         // const newPreviewUrls = fileArray.map((file) => URL.createObjectURL(file));
-         // previewUrlsRef.current = newPreviewUrls;
+         const oversizedFile = selectedFiles.find((f) => f.size > MAX_FILE_SIZE);
+         if (oversizedFile) {
+            toast.error(`"${oversizedFile.name}" exceeds the 5MB limit`);
+            return;
+         }
 
-         // setPreview(newPreviewUrls);
-         setFormData((prev) => ({ ...prev, image: fileArray }));
-         return;
+         const invalidFile = selectedFiles.find((f) => !imageFileTypes.includes(f.type));
+
+         if (invalidFile) {
+            toast.error("You can only upload image files (JPEG, PNG, JPG, WebP)");
+            return;
+         }
+
+         const urls = selectedFiles.map((file) => URL.createObjectURL(file));
+         setPreview(urls);
+
+         if (e.target.multiple) {
+            setFormData((prev) => ({ ...prev, [name]: selectedFiles }));
+         } else {
+            setFormData((prev) => ({ ...prev, [name]: selectedFiles[0] }));
+         }
+      } else {
+         if (ATTRIBUTE_FIELDS.includes(name)) {
+            setFormData((prev) => ({
+               ...prev,
+               attributes: { ...prev.attributes, [name]: value },
+            }));
+         } else {
+            setFormData((prev) => ({ ...prev, [name]: value }));
+         }
       }
-
-      if (ATTRIBUTE_FIELDS.includes(name)) {
-         setFormData((prev) => ({
-            ...prev,
-            attributes: { ...prev.attributes, [name]: value },
-         }));
-         return;
-      }
-
-      setFormData((prev) => ({ ...prev, [name]: value }));
    };
 
    const handleSubmit = async (e) => {
@@ -284,7 +85,6 @@ export function useProductEditForm(product) {
       setLoading(true);
 
       try {
-         // --- Client-side validation ---
          if (isBlank(formData.listing_name)) throw new Error("Product name is required");
          if (isBlank(formData.location)) throw new Error("Location is required");
 
@@ -344,23 +144,21 @@ export function useProductEditForm(product) {
             if (isBlank(attrs.warranty)) throw new Error("Warranty is required");
          }
 
-         // --- Build FormData ---
          const formDataToSend = new FormData();
 
-         Object.keys(formData).forEach((key) => {
-            if (key === "attributes" || key === "image") return; // handled separately
-            const val = formData[key];
-            if (val !== null && val !== undefined && val !== "") {
-               formDataToSend.append(key, val);
+         Object.entries(formData).forEach(([key, value]) => {
+            if (value == null || value === "" || (Array.isArray(value) && value.length === 0)) {
+               return;
             }
-         });
-
-         formDataToSend.append("attributes", JSON.stringify(formData.attributes || {}));
-
-         // Append each file individually under the same field name.
-         // A parser like multer/formidable will read these as an array (e.g. req.files).
-         formData.image.forEach((file) => {
-            formDataToSend.append("image", file);
+            if (key === "attributes") {
+               formDataToSend.append("attributes", JSON.stringify(formData.attributes));
+            } else if (key === "image" && Array.isArray(value)) {
+               value.forEach((file) => {
+                  formDataToSend.append(key, file);
+               });
+            } else {
+               formDataToSend.append(key, value);
+            }
          });
 
          const response = await fetch("/api/proxy/vendor/products/edit-item", {
@@ -384,5 +182,5 @@ export function useProductEditForm(product) {
       }
    };
 
-   return { formData, handleChange, handleSubmit, loading };
+   return { formData, handleChange, handleSubmit, loading, preview };
 }

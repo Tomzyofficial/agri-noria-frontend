@@ -1,6 +1,6 @@
 import { DashboardOverview } from "@/app/(dashboard)/marketplace/storage-facility/components/DashboardOverview";
 import { verifyVendorSession } from "@/actions/session";
-import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
+import { Unauthorized } from "@/components/dashboard/Unauthorized";
 
 export const metadata = {
    title: "Dashboard Overview",

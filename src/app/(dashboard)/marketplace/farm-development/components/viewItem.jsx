@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Edit, Trash2, Calendar, CheckCircle2, Clock, Info } from "lucide-react";
 import { toast } from "react-toastify";
 import { FaSpinner } from "react-icons/fa6";
-import { formatDate } from "@/utils/otherUtils";
+import { formatDate, formatLabel } from "@/utils/otherUtils";
 import { BiMoney } from "react-icons/bi";
 import { formatPrice } from "@/utils/formatPrice";
 
@@ -96,12 +96,7 @@ export function ViewListingPage({ listing }) {
                   <CardContent className="space-y-7 divide-y divide-slate-200 dark:divide-slate-700 text-start">
                      <div>
                         <span>Title</span>
-                        <p className="text-md text-(--foreground)">
-                           {listing?.title
-                              .split(" ")
-                              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                              .join(" ")}
-                        </p>
+                        <p className="text-md text-(--foreground)">{formatLabel(listing?.title)}</p>
                      </div>
                      <div>
                         <span>Category</span>

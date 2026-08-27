@@ -5,10 +5,10 @@ import Link from "next/link";
 import { Plus, Package, DollarSign, Users, ArrowRight } from "lucide-react";
 import useSWR from "swr";
 import { formatPrice } from "@/utils/formatPrice";
-import { StatCard } from "@/app/(dashboard)/dashboard/components/ui/StatCard";
+import { StatCard } from "@/components/ui/StatCard";
 import { fetcher } from "@/utils/otherUtils";
 import { useState } from "react";
-import { QuoteRequestTable } from "@/app/(dashboard)/dashboard/components/QuoteRequestTable";
+import { QuoteRequestTable } from "@/components/dashboard/QuoteRequestTable";
 import { Modal } from "@/components/ui/Modal";
 import { QuoteRequestDetails } from "./QuoteRequestDetails";
 

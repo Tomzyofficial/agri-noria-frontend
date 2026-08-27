@@ -1,6 +1,6 @@
 import { verifyVendorSession } from "@/actions/session";
 import { ViewListingPage } from "../../../components/ListingView";
-import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
+import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import { apiUrl } from "@/_lib/api";
 import axios from "axios";
 import { cookieStoreFnc } from "@/actions/session";

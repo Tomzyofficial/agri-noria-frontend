@@ -6,15 +6,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { ImageEnlargementModal } from "@/components/ui/ImageEnlargementModal";
-import { Edit, Trash2, X, ZoomIn, Package, MapPin, Tag, CheckCircle2, Clock, Info } from "lucide-react";
+import { Edit, Trash2, Package, MapPin, Tag, CheckCircle2, Clock, Info } from "lucide-react";
 import { toast } from "react-toastify";
 import { formatPrice } from "@/utils/formatPrice";
 import { FaSpinner } from "react-icons/fa6";
+import { formatDate } from "@/utils/otherUtils";
+import { ImageGalleryDisplay } from "@/components/dashboard/ImageGalleryDisplay";
 
 export function ViewItem({ result }) {
    const router = useRouter();
-   const [isModalOpen, setIsModalOpen] = useState(false);
    const [isDeleting, setIsDeleting] = useState(false);
    const [activeIndex, setActiveIndex] = useState(0);
 
@@ -32,17 +32,6 @@ export function ViewItem({ result }) {
 
    const gallery = result && result.image.length > 0 ? result.image : null;
    const active = gallery[activeIndex];
-
-   const formatDate = (dateString) => {
-      if (!dateString) return "N/A";
-      return new Date(dateString).toLocaleDateString("en-US", {
-         year: "numeric",
-         month: "long",
-         day: "numeric",
-         hour: "2-digit",
-         minute: "2-digit",
-      });
-   };
 
    // Parse attributes if it's a string
    let parsedAttributes = result?.attributes;
@@ -63,18 +52,6 @@ export function ViewItem({ result }) {
               value: key.includes("date") ? formatDate(value) : value.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
            }))
       : [];
-
-   // Prevent background scrolling when image modal is open
-   useEffect(() => {
-      if (isModalOpen) {
-         document.body.style.overflow = "hidden";
-      } else {
-         document.body.style.overflow = "unset";
-      }
-      return () => {
-         document.body.style.overflow = "unset";
-      };
-   }, [isModalOpen]);
 
    const handleDelete = async () => {
       if (!confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
@@ -104,6 +81,11 @@ export function ViewItem({ result }) {
       }
    };
 
+   const handleClipboard = (id) => {
+      navigator.clipboard.writeText(id);
+      toast.success("Copied to clipboard");
+   };
+
    return (
       <div className="py-6 space-y-6">
          {/* Action Bar */}
@@ -111,15 +93,21 @@ export function ViewItem({ result }) {
             <div>
                <h1 className="text-2xl font-bold text-(--foreground)">Product Details</h1>
                <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">View and manage your product information</p>
+               <div className="mt-2 flex gap-2 items-center text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-md p-3 border border-green-200 dark:border-green-800">
+                  <p>Item UUID: {result.id}</p>
+                  <button onClick={() => handleClipboard(result.id)} className="cursor-pointer bg-(--greenish-color) text-white py-1 px-2 rounded-md">
+                     Copy
+                  </button>
+               </div>
             </div>
             <div className="flex gap-3">
                <Link href={`/marketplace/store/products/${result.id}/edit`}>
-                  <Button className="flex items-center gap-2 bg-(--greenish-color) hover:bg-(--dark-green-color) text-white px-4 py-2 rounded-lg transition-colors cursor-pointer">
+                  <Button className="flex items-center gap-2 bg-(--greenish-color) hover:bg-(--dark-green-color) text-white px-4 py-2 rounded-md transition-colors cursor-pointer">
                      <Edit className="h-4 w-4" />
                      Edit Product
                   </Button>
                </Link>
-               <Button onClick={handleDelete} disabled={isDeleting} className="cursor-pointer flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+               <Button onClick={handleDelete} disabled={isDeleting} className="cursor-pointer flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                   {isDeleting ? (
                      <>
                         <FaSpinner className="h-4 w-4 animate-spin" />
@@ -141,25 +129,8 @@ export function ViewItem({ result }) {
             <div className="lg:col-span-2 space-y-6">
                {/* Product Image Card */}
                <Card className="overflow-hidden">
-                  <CardContent className="p-0">
-                     <div className="relative aspect-[4/3]">
-                        <Image src={active} fill sizes="(max-width: 1024px) 560px, 100vw" alt={`${result.listing_name} image`} className="object-cover" priority />
-                     </div>
-                     <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label={`${result.listing_name} Image`}>
-                        {gallery.length > 1 &&
-                           gallery.map((img, index) => (
-                              <button
-                                 key={index}
-                                 type="button"
-                                 role="tab"
-                                 aria-selected={index === activeIndex}
-                                 onClick={() => setActiveIndex(index)}
-                                 className={`relative h-16 w-16 flex-shrink-0 overflow-hidden border transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#14171A] ${index === activeIndex ? "border-[#14171A]" : "border-[#E2E4E3] opacity-70 hover:opacity-100"}`}
-                              >
-                                 <Image src={img} alt={result.listing_name} fill sizes="64px" className="object-cover" />
-                              </button>
-                           ))}
-                     </div>
+                  <CardContent>
+                     <ImageGalleryDisplay image={result?.image} listingName={result?.listing_name} />
                   </CardContent>
                </Card>
 
@@ -270,9 +241,6 @@ export function ViewItem({ result }) {
                </Card>
             </div>
          </div>
-
-         {/* Large Image Modal */}
-         <ImageEnlargementModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} name={result?.listing_name} src={result?.image} />
       </div>
    );
 }

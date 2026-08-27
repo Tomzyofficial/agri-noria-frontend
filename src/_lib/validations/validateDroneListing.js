@@ -1,6 +1,5 @@
 import { z } from "zod";
-
-const imageFileTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+import { imageFileTypes, MAX_FILE_SIZE } from "@/utils/otherUtils";
 
 const emptyToUndefined = (val) => (val === "" || val === null ? undefined : val);
 
@@ -90,7 +89,7 @@ export const createDroneListingSchema = droneListingFields
          .refine((files) => files && files.length > 0, "At least one image file is required")
          .refine((files) => files?.length <= 5, "Maximum 5 images allowed")
          .refine((files) => Array.from(files).every((file) => imageFileTypes.includes(file.type)), "Only JPG, JPEG, PNG or WEBP images are allowed")
-         .refine((files) => Array.from(files).every((file) => file.size <= 5 * 1024 * 1024), "Each image must not exceed 5MB"),
+         .refine((files) => Array.from(files).every((file) => file.size <= MAX_FILE_SIZE), "Each image must not exceed 5MB"),
    })
    .superRefine(listingRefinement);
 
@@ -101,7 +100,7 @@ export const updateDroneListingSchema = droneListingFields
          .optional()
          .refine((files) => !files || files.length === 0 || files.length <= 5, "Maximum 5 images allowed")
          .refine((files) => !files || files.length === 0 || Array.from(files).every((file) => imageFileTypes.includes(file.type)), "Only JPG, JPEG, PNG or WEBP images are allowed")
-         .refine((files) => !files || files.length === 0 || Array.from(files).every((file) => file.size <= 5 * 1024 * 1024), "Each image must not exceed 5MB"),
+         .refine((files) => !files || files.length === 0 || Array.from(files).every((file) => file.size <= MAX_FILE_SIZE), "Each image must not exceed 5MB"),
    })
    .superRefine(listingRefinement);
 

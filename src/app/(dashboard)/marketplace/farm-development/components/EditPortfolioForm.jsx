@@ -11,7 +11,7 @@ import { Check } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
-import SubmitButton from "@/app/(dashboard)/dashboard/components/SubmitButton";
+import SubmitButton from "@/components/dashboard/SubmitButton";
 import { editPortfolioSchema } from "@/_lib/validations/validateFarmDevPortfolio";
 import Image from "next/image";
 

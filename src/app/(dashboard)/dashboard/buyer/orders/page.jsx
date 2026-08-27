@@ -1,5 +1,5 @@
 import { verifyBuyerSession } from "@/actions/session";
-import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
+import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import { BuyerOrdersList } from "../components/BuyerOrdersList";
 
 export const metadata = {

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Plus, TrendingUp, Package, DollarSign, Users, ArrowRight } from "lucide-react";
 import useSWR from "swr";
 import { formatPrice } from "@/utils/formatPrice";
-import { StatCard } from "@/app/(dashboard)/dashboard/components/ui/StatCard";
+import { StatCard } from "@/components/ui/StatCard";
 import { fetcher } from "@/utils/otherUtils";
 
 export function DashboardOverview({ user }) {

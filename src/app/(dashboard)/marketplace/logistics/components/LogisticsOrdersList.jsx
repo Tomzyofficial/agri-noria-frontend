@@ -8,9 +8,9 @@ import { toast } from "react-toastify";
 import { MapPin, Truck, ArrowLeft, Eye, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import React from "react";
-import { ORDER_STATUS_CONFIG, getStatusBadgeClass } from "@/app/(dashboard)/dashboard/components/orders/OrderStatusUtils";
+import { ORDER_STATUS_CONFIG, getStatusBadgeClass } from "@/components/dashboard/orders/OrderStatusUtils";
 import { formatLabel, formatDate } from "@/utils/otherUtils";
-import { OrderDetailModal } from "@/app/(dashboard)/dashboard/components/orders/OrderDetailModal";
+import { OrderDetailModal } from "@/components/dashboard/orders/OrderDetailModal";
 import { fetcher } from "@/utils/otherUtils";
 
 export function LogisticsOrdersList() {

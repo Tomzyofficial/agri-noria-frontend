@@ -1,6 +1,6 @@
 import { DashboardOverview } from "./components/DashboardOverView";
 import { verifyVendorSession } from "@/actions/session";
-import { Unauthorized } from "../../dashboard/components/Unauthorized";
+import { Unauthorized } from "../../../../components/dashboard/Unauthorized";
 
 export default async function Page() {
    const session = await verifyVendorSession();

@@ -1,7 +1,7 @@
-import BillingPage from "@/app/(dashboard)/dashboard/components/Billing/BillingPage";
+import BillingPage from "@/components/dashboard/Billing/BillingPage";
 import { verifyVendorSession } from "@/actions/session";
 import { apiUrl } from "@/_lib/api";
-import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
+import { Unauthorized } from "@/components/dashboard/Unauthorized";
 
 export const metadata = {
    title: "Dashboard Billing",

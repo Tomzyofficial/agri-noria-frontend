@@ -6,11 +6,12 @@ import { Textarea } from "@/components/ui/Textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createDroneListingSchema } from "@/_lib/validations/validateDroneListing";
-import SubmitButton from "@/app/(dashboard)/dashboard/components/SubmitButton";
+import SubmitButton from "@/components/dashboard/SubmitButton";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
+import Breadcrumbs from "@/components/dashboard/BreadCrumbs";
 
 export default function AddDroneListingPage() {
    const {
@@ -88,14 +89,19 @@ export default function AddDroneListingPage() {
    };
 
    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-(--card-dark) p-6">
-         <div className="max-w-5xl mx-auto">
-            <div className="mb-8">
-               <h1 className="text-3xl font-bold">Create Drone Marketplace Listing</h1>
+      <div className="p-6">
+         <Breadcrumbs
+            breadcrumbs={[
+               { label: "Inventory", href: "/marketplace/drone/inventory" },
 
-               <p className="text-gray-500 mt-2">Add your drone for sale, rental, or both.</p>
-            </div>
-
+               {
+                  label: "Create new listing",
+                  href: "/marketplace/drone/inventory/add-new",
+                  active: true,
+               },
+            ]}
+         />
+         <div className="max-w-5xl my-10 mx-auto  bg-gray-50 dark:bg-(--card-dark) rounded-md">
             <form onSubmit={handleSubmit(onSubmit)} className="rounded-xl shadow p-6 space-y-10">
                <section>
                   <h2 className="text-xl font-semibold mb-5">Drone Information</h2>
