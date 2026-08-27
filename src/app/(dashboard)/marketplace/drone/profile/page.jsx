@@ -1,7 +1,7 @@
 import { verifyVendorSession } from "@/actions/session";
-import { VendorProfilePage } from "@/app/(dashboard)/dashboard/components/Profile/profileView/profile";
+import { VendorProfilePage } from "@/components/dashboard/Profile/profileView/profile";
 import { apiUrl } from "@/_lib/api";
-import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
+import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import { cookieStoreFnc } from "@/actions/session";
 import { ErrorUi } from "@/components/ui/Error";
 

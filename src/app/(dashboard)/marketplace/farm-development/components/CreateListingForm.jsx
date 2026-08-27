@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Label } from "@/components/ui/Label";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
-import SubmitButton from "@/app/(dashboard)/dashboard/components/SubmitButton";
+import SubmitButton from "@/components/dashboard/SubmitButton";
 
 const schemaValidation = z.object({
    title: z.string().min(1, { error: "Title is required." }),

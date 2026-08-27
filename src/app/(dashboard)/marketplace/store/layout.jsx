@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { LogOut, X, Menu, LayoutDashboard, Package2, WalletMinimal, UserPen, CreditCard } from "lucide-react";
 import { FaAd } from "react-icons/fa";
 import { toast } from "react-toastify";
-import { VerifyNotiBanner } from "@/app/(dashboard)/dashboard/components/VerifyNotiBanner";
+import { VerifyNotiBanner } from "@/components/dashboard/VerifyNotiBanner";
 import { signoutBridge } from "@/actions/authActions";
 import { IoBriefcaseOutline } from "react-icons/io5";
 import { GiShoppingCart } from "react-icons/gi";

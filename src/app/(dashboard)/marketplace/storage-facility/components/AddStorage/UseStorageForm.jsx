@@ -1,14 +1,16 @@
 "use client";
+import { storageFormSchema } from "@/_lib/validations/ValidateStorageListing";
+import { imageFileTypes, MAX_FILE_SIZE } from "@/utils/otherUtils";
 import { useState } from "react";
 import { toast } from "react-toastify";
 
 export function useStorageForm() {
    const [loading, setLoading] = useState(false);
-   const [preview, setPreview] = useState(null);
+   const [preview, setPreview] = useState([]);
+   const [featureText, setFeatureText] = useState("");
 
    const [formData, setFormData] = useState({
-      storage_image: "",
-      storage_name: "",
+      listing_name: "",
       href: "",
       storage_type: "",
       location: "",
@@ -18,24 +20,38 @@ export function useStorageForm() {
       temperature: "",
       description: "",
       features: [],
+      image: "",
    });
 
    const handleChange = (e) => {
       const { name, type, value, files } = e.target;
 
       if (type === "file") {
-         const file = files[0];
-         if (file.size > 5 * 1024 * 1024) {
-            toast.error("File size must be less than 5MB");
+         const selectedFiles = Array.from(files ?? []);
+
+         if (selectedFiles.length === 0) return;
+         const oversizedFile = selectedFiles.find((f) => f.size > MAX_FILE_SIZE);
+         if (oversizedFile) {
+            toast.error(`"${oversizedFile.name}" exceeds the 5MB limit`);
             return;
          }
-         if (file) {
-            setPreview(URL.createObjectURL(file));
-            setFormData((prev) => ({ ...prev, [name]: file }));
+         const invalidFile = selectedFiles.find((f) => !imageFileTypes.includes(f.type));
+
+         if (invalidFile) {
+            toast.error("You can only upload image files (JPEG, PNG, JPG, WebP)");
+            return;
+         }
+         const urls = selectedFiles.map((file) => URL.createObjectURL(file));
+         setPreview(urls);
+
+         if (e.target.multiple) {
+            setFormData((prev) => ({ ...prev, [name]: selectedFiles }));
+         } else {
+            setFormData((prev) => ({ ...prev, [name]: selectedFiles[0] }));
          }
       } else {
-         // Auto-generate href from storage_name
-         if (name === "storage_name") {
+         // Auto-generate href from listing_name
+         if (name === "listing_name") {
             const href = value
                .trim()
                .toLowerCase()
@@ -49,44 +65,52 @@ export function useStorageForm() {
       }
    };
 
+   const handleAddFeature = (e) => {
+      e.preventDefault();
+      if (featureText.trim() && !formData.features.includes(featureText.trim())) {
+         setFormData((prev) => ({
+            ...prev,
+            features: [...prev.features, featureText.trim()],
+         }));
+         setFeatureText("");
+      }
+   };
+
+   const handleRemoveFeature = (featureText) => {
+      setFormData((prev) => ({
+         ...prev,
+         features: prev.features.filter((r) => r !== featureText),
+      }));
+   };
+
    const handleSubmit = async (e) => {
       e.preventDefault();
 
       try {
-         if (!formData.storage_image) {
-            throw new Error("Storage image is required");
-         }
-         if (!formData.storage_name || formData.storage_name.trim() === "") {
-            throw new Error("Storage name is required");
-         }
-         if (!formData.storage_type) {
-            throw new Error("Storage type is required");
-         }
-         if (!formData.location || formData.location.trim() === "") {
-            throw new Error("Location is required");
-         }
-         if (!formData.capacity || formData.capacity.trim() === "") {
-            throw new Error("Capacity is required");
-         }
-         if (!formData.available || formData.available.trim() === "") {
-            throw new Error("Available is required");
-         }
-         if (!formData.price || formData.price.trim() === "" || isNaN(formData.price) || formData.price <= 0) {
-            throw new Error("Price must be a valid number");
-         }
-         if (!formData.temperature || formData.temperature.trim() === "") {
-            throw new Error("Temperature is required");
-         }
-         if (formData.features.length === 0) {
-            throw new Error("At least one feature is required");
-         }
-         if (!formData.description || formData.description.trim() === "") {
-            throw new Error("Description is required");
+         let validate = storageFormSchema.safeParse(formData);
+         if (!validate.success) {
+            const firstMsg = Object.values(validate.error.flatten().fieldErrors).flat().filter(Boolean)[0];
+            if (firstMsg) {
+               toast.error(firstMsg);
+               return;
+            }
          }
 
          setLoading(true);
+         const validatedData = validate.data;
          const formDataToSend = new FormData();
-         Object.keys(formData).forEach((key) => formDataToSend.append(key, formData[key]));
+
+         Object.entries(validatedData).forEach(([key, value]) => {
+            if (value == null || value === "") return;
+
+            if (key === "image" && Array.isArray(value)) {
+               value.forEach((file) => {
+                  formDataToSend.append(key, file);
+               });
+            } else {
+               formDataToSend.append(key, value);
+            }
+         });
 
          const response = await fetch("/api/proxy/vendor/storage/add-storage", {
             method: "POST",
@@ -98,25 +122,9 @@ export function useStorageForm() {
          if (!response.ok || !data.success) {
             throw new Error(data.error || "Failed to add storage facility.");
          }
-
-         toast.success(data.message);
-         /*   setFormData({
-            storage_image: "",
-            storage_name: "",
-            href: "",
-            storage_type: "",
-            city: "",
-            state: "",
-            capacity: "",
-            available: "",
-            price: "",
-            currency: "",
-            temperature: "",
-            description: "",
-            features: [],
-         }); */
          Object.keys(formData).forEach((key) => setFormData((prev) => ({ ...prev, [key]: "", features: [] })));
          setPreview(null);
+         toast.success(data.message);
       } catch (error) {
          toast.error(error.message || "Something went wrong. Try again.");
       } finally {
@@ -124,5 +132,5 @@ export function useStorageForm() {
       }
    };
 
-   return { formData, handleChange, handleSubmit, preview, loading };
+   return { formData, handleChange, handleSubmit, preview, loading, handleAddFeature, handleRemoveFeature, featureText, setFeatureText };
 }

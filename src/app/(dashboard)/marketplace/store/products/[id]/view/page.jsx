@@ -2,8 +2,8 @@ import { ViewItem } from "@/app/(dashboard)/marketplace/store/components/Dashboa
 import { apiUrl } from "@/_lib/api";
 import { cookieStoreFnc, verifyVendorSession } from "@/actions/session";
 
-import Breadcrumbs from "@/app/(dashboard)/dashboard/components/BreadCrumbs";
-import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
+import Breadcrumbs from "@/components/dashboard/BreadCrumbs";
+import { Unauthorized } from "@/components/dashboard/Unauthorized";
 
 export default async function ViewPage({ params }) {
    const session = await verifyVendorSession();

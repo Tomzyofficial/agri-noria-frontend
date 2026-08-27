@@ -1,23 +1,10 @@
-import { getMarketplaceProducts, getHomeSponsoredProducts } from "@/_lib/data";
+import { getMarketplaceProducts, getHomeAdCampaigns } from "@/_lib/data";
 import { HomePage } from "@/app/HomePage.jsx";
 import { Footer } from "@/components/ui/Footer";
 import NavBar from "../components/ui/NavBar/NavBar";
-import { headers } from "next/headers";
-import { apiUrl } from "@/_lib/api";
-
-// const Campagins = async () => {
-//    const headerStore = await headers();
-//    const countryCode = headerStore.get("x-user-country");
-//    const res = await fetch(apiUrl(`/api/public/campaigns?country=${countryCode}`), {
-//       method: "GET",
-
-//    });
-//    const body = await res.json();
-//    return body;
-// }
 
 export default async function Page() {
-   const campaigns = await getHomeSponsoredProducts();
+   const campaigns = await getHomeAdCampaigns();
    let marketplace = [];
    let error = null;
 

@@ -1,6 +1,6 @@
 "use client";
-import WalletView from "@/app/(dashboard)/dashboard/components/Wallet/WalletView";
+import WalletView from "@/components/dashboard/Wallet/WalletView";
 
 export default function LogisticsWalletPage() {
-  return <WalletView role="logistics" walletType="logistics" />;
+   return <WalletView role="logistics" walletType="logistics" />;
 }

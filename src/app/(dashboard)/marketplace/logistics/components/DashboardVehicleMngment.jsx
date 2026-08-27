@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import Skeleton from "@/components/ui/LoadingSkeleton";
 import { ErrorUi } from "@/components/ui/Error";
-import { NoProductsFound } from "@/app/(dashboard)/dashboard/components/ui/NotFound";
+import { NoProductsFound } from "@/components/ui/NotFound";
 import { formatPrice } from "@/utils/formatPrice";
 
 function StatusBadge({ status }) {

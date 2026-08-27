@@ -12,7 +12,7 @@ import { toast } from "react-toastify";
 import { FaSpinner } from "react-icons/fa";
 import { fetcher } from "@/utils/otherUtils";
 import { formatDate } from "@/utils/otherUtils";
-import { StatCard } from "@/app/(dashboard)/dashboard/components/ui/StatCard";
+import { StatCard } from "@/components/ui/StatCard";
 import Link from "next/link";
 
 export function DashboardOverview() {

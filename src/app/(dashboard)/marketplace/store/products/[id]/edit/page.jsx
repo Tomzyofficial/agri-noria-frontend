@@ -1,8 +1,8 @@
 import { verifyVendorSession, cookieStoreFnc } from "@/actions/session";
 import { EditProductForm } from "@/app/(dashboard)/marketplace/store/components/EditProduct/EditProductForm";
-import Breadcrumbs from "@/app/(dashboard)/dashboard/components/BreadCrumbs";
+import Breadcrumbs from "@/components/dashboard/BreadCrumbs";
 import { apiUrl } from "@/_lib/api";
-import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
+import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import { toast } from "react-toastify";
 
 export const metadata = {

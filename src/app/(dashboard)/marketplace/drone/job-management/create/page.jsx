@@ -1,5 +1,5 @@
-import { JobForm } from "@/app/(dashboard)/dashboard/components/jobs/job-form";
-import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
+import { JobForm } from "@/components/dashboard/jobs/job-form";
+import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import { verifyVendorSession } from "@/actions/session";
 
 export default async function CreateJobPage() {

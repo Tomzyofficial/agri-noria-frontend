@@ -1,4 +1,4 @@
-import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
+import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import { verifyVendorSession } from "@/actions/session";
 import DashboardOverview from "./components/DashboardOverview";
 

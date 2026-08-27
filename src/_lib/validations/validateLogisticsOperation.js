@@ -1,6 +1,5 @@
 import { z } from "zod";
-
-const imageFileTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+import { imageFileTypes } from "@/utils/otherUtils";
 
 const vehicleUploadSchema = z.object({
    image: z

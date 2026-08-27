@@ -1,5 +1,5 @@
 import { verifyVendorSession } from "@/actions/session";
-import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
+import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import { VehicleManagement } from "../components/DashboardVehicleMngment";
 
 export const metadata = {

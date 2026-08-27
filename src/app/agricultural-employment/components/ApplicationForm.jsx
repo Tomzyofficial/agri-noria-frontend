@@ -8,7 +8,7 @@ import { Country, State } from "country-state-city";
 import { jobApplicationSchema } from "@/_lib/validations/validateJob";
 import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
-import SubmitButton from "@/app/(dashboard)/dashboard/components/SubmitButton";
+import SubmitButton from "@/components/dashboard/SubmitButton";
 import { Input } from "@/components/ui/Input";
 import { isValidPhoneNumber } from "react-phone-number-input";
 import PhoneInput from "react-phone-number-input/input";

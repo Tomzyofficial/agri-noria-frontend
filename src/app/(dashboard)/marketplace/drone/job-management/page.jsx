@@ -1,6 +1,6 @@
 import { verifyVendorSession } from "@/actions/session";
-import JobsPage from "@/app/(dashboard)/dashboard/components/jobs/Jobspage";
-import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
+import JobsPage from "@/components/dashboard/jobs/Jobspage";
+import { Unauthorized } from "@/components/dashboard/Unauthorized";
 
 export default async function Page() {
    const session = await verifyVendorSession();

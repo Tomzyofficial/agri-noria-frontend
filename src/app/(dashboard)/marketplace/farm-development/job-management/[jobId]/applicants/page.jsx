@@ -1,32 +1,32 @@
 // import JobApplicantsPage from "./applicantpage";
-import JobApplicantsPage from "@/app/(dashboard)/dashboard/components/jobs/applicantpage";
+import JobApplicantsPage from "@/components/dashboard/jobs/applicantpage";
 import { apiUrl } from "@/_lib/api";
 import { cookieStoreFnc } from "@/actions/session";
 import { verifyVendorSession } from "@/actions/session";
-import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
+import { Unauthorized } from "@/components/dashboard/Unauthorized";
 
 async function getData(jobId) {
-  const cookieHeader = await cookieStoreFnc();
+   const cookieHeader = await cookieStoreFnc();
 
-  const res = await fetch(apiUrl(`/api/vendor/jobs/get-applicants/${jobId}`), {
-    headers: {
-      Cookie: cookieHeader,
-    },
-  });
-  if (!res.ok) {
-    console.log("not found");
-  } else {
-    const data = await res.json();
-    return data.data;
-  }
+   const res = await fetch(apiUrl(`/api/vendor/jobs/get-applicants/${jobId}`), {
+      headers: {
+         Cookie: cookieHeader,
+      },
+   });
+   if (!res.ok) {
+      console.log("not found");
+   } else {
+      const data = await res.json();
+      return data.data;
+   }
 }
 export default async function page({ params }) {
-  const session = await verifyVendorSession();
-  if (!session?.authenticated || session.role !== "farm development" || session.workspace !== "marketplace") {
-    return <Unauthorized />;
-  }
-  const { jobId } = await params;
-  const data = await getData(jobId);
-  console.log(data);
-  return <JobApplicantsPage data={data} />;
+   const session = await verifyVendorSession();
+   if (!session?.authenticated || session.role !== "farm development" || session.workspace !== "marketplace") {
+      return <Unauthorized />;
+   }
+   const { jobId } = await params;
+   const data = await getData(jobId);
+   console.log(data);
+   return <JobApplicantsPage data={data} />;
 }

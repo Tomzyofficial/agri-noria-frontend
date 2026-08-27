@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, X, Menu, UserPen, CreditCard, Truck, Package, Users, LayoutDashboard, MessageSquareMore, Package2 } from "lucide-react";
+import { LogOut, X, Menu, UserPen, CreditCard, Truck, Package, Users, LayoutDashboard, MessageSquareMore, Package2, Megaphone } from "lucide-react";
 import { toast } from "react-toastify";
-import { VerifyNotiBanner } from "@/app/(dashboard)/dashboard/components/VerifyNotiBanner";
+import { VerifyNotiBanner } from "@/components/dashboard/VerifyNotiBanner";
 import { signoutBridge } from "@/actions/authActions";
 import { IoBriefcaseOutline } from "react-icons/io5";
 import { GiShoppingCart } from "react-icons/gi";
@@ -80,7 +80,7 @@ export default function DashboardLayout({ children }) {
    const handleSignout = async () => {
       try {
          toast.info("Signing out...", { autoClose: 2000, toastId: "signout" });
-        const res = await signoutBridge();
+         const res = await signoutBridge();
 
          if (!res) {
             toast.error("Signout failed. Try again later.");
@@ -118,6 +118,11 @@ export default function DashboardLayout({ children }) {
          label: "Inventory",
          href: "/marketplace/drone/inventory",
          icon: <Package2 className="w-4 h-4" />,
+      },
+      {
+         label: "Ads",
+         href: "/marketplace/drone/ads",
+         icon: <Megaphone className="w-4 h-4" />,
       },
       {
          label: "Profile",

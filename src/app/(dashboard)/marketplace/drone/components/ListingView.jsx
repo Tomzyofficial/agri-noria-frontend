@@ -6,17 +6,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Edit, Trash2, X, ZoomIn, Calendar, CheckCircle2, Clock, Info } from "lucide-react";
+import { Edit, Trash2, ZoomIn, Calendar, CheckCircle2, Clock, Info } from "lucide-react";
 import { toast } from "react-toastify";
 import { FaSpinner } from "react-icons/fa6";
 import { formatDate, formatLabel } from "@/utils/otherUtils";
 import { BiMoney } from "react-icons/bi";
 import { formatPrice } from "@/utils/formatPrice";
-import { ImageEnlargementModal } from "@/components/ui/ImageEnlargementModal";
+import { ImageGalleryDisplay } from "@/components/dashboard/ImageGalleryDisplay";
 
 export function ViewListingPage({ listing }) {
    const router = useRouter();
-   const [isModalOpen, setIsModalOpen] = useState(false);
    const [isDeleting, setIsDeleting] = useState(false);
 
    if (!listing) {
@@ -56,12 +55,23 @@ export function ViewListingPage({ listing }) {
       }
    };
 
+   const handleClipboard = (id) => {
+      navigator.clipboard.writeText(id);
+      toast.success("Copied to clipboard");
+   };
+
    return (
       <div className="py-6 space-y-6">
          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
                <h1 className="text-2xl font-bold text-(--foreground)">Service listing Details</h1>
                <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">View and manage your service listing information</p>
+               <div className="mt-2 flex gap-2 items-center text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-md p-3 border border-green-200 dark:border-green-800">
+                  <p>Item UUID: {listing.id}</p>
+                  <button onClick={() => handleClipboard(listing.id)} className="cursor-pointer bg-(--greenish-color) text-white py-1 px-2 rounded-md">
+                     Copy
+                  </button>
+               </div>
             </div>
             <div className="flex gap-3">
                <Link href={`/marketplace/drone/inventory/${listing.id}/edit`}>
@@ -80,28 +90,8 @@ export function ViewListingPage({ listing }) {
          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
                <Card className="overflow-hidden">
-                  <CardContent className="p-0">
-                     <div onClick={() => setIsModalOpen(true)} className="relative w-full h-[300px] bg-stone-100 dark:bg-stone-800 group cursor-zoom-in">
-                        {(() => {
-                           const src = listing?.image[0];
-                           return src ? (
-                              <>
-                                 <Image src={src} fill alt={`${listing.listing_name} image`} className="object-cover transition-transform duration-300 group-hover:scale-105" priority />
-                                 <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
-                                    <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                 </div>
-                              </>
-                           ) : null;
-                        })()}
-                     </div>
-                     <div className="flex gap-4 overflow-x-auto p-2">
-                        {listing?.image?.length > 1 &&
-                           listing.image.map((src) => (
-                              <div key={src}>
-                                 <Image src={src} width={200} height={200} alt={`Gallery images for ${listing.listing_name}`} className="rounded-md w-[120px] h-[120px] object-fill" />
-                              </div>
-                           ))}
-                     </div>
+                  <CardContent>
+                     <ImageGalleryDisplay image={listing?.image} listingName={listing?.listing_name} />
                   </CardContent>
                </Card>
 
@@ -224,9 +214,6 @@ export function ViewListingPage({ listing }) {
                </Card>
             </div>
          </div>
-
-         {/* Image enlargement Modal */}
-         {isModalOpen && <ImageEnlargementModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} name={`${listing.listing_name} - Enlarged Image View`} src={listing.product_image[0]} />}
       </div>
    );
 }

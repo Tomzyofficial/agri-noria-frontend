@@ -3,20 +3,13 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import Image from "next/image";
 import { Textarea } from "@/components/ui/Textarea";
-import ImageUploadPreview from "../../../../dashboard/components/ImageUploadPreview";
+import ImageUploadPreview from "@/components/dashboard/ImageUploadPreview";
 
-export default function CommonFields({ formData, handleChange, loading }) {
-   // console.log(preview);
+export default function CommonFields({ formData, handleChange, loading, preview }) {
    return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
          <div className="col-span-2">
-            {/* <ImageUploadPreview text="Product Image" preview={preview} previewText="No Image" name="product_image" id="product_image" loading={loading} handleChange={handleChange} /> */}
-            {/* <div> */}
-            {/* {preview.length > 0 && preview.map((img) => <Image src={img} alt="tex" width={100} height={100} />)} */}
-            <Label htmlFor="image">Upload Image</Label>
-
-            <Input type="file" id="image" name="image" className={` ${loading ? "cursor-not-allowed opacity-50" : ""}`} accept="image/*" multiple onChange={handleChange} disabled={loading} />
-            {/* </div> */}
+            <ImageUploadPreview preview={preview} handleChange={handleChange} loading={loading} />
          </div>
 
          <div>
@@ -32,7 +25,7 @@ export default function CommonFields({ formData, handleChange, loading }) {
          <div>
             <Label htmlFor="price">Price</Label>
             <div className="flex">
-               <Input type="text" placeholder="E.g., 5000" name="price" value={formData.price} onChange={handleChange} required className={loading ? "cursor-not-allowed opacity-50" : ""} disabled={loading} />
+               <Input type="number" placeholder="E.g., 5000" name="price" value={formData.price} onChange={handleChange} required className={loading ? "cursor-not-allowed opacity-50" : ""} disabled={loading} />
             </div>
          </div>
 

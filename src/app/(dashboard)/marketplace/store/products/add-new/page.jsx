@@ -1,7 +1,7 @@
 import { verifyVendorSession } from "@/actions/session";
 import { AddProductForm } from "@/app/(dashboard)/marketplace/store/components/AddProduct/AddProductForm";
-import Breadcrumbs from "@/app/(dashboard)/dashboard/components/BreadCrumbs";
-import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
+import Breadcrumbs from "@/components/dashboard/BreadCrumbs";
+import { Unauthorized } from "@/components/dashboard/Unauthorized";
 
 export const metadata = {
    title: "Add New Product",

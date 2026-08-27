@@ -49,4 +49,7 @@ const fetcher = async (url) => {
    return data;
 };
 
-export { formatLabel, oppositeFormatLabel, formatDate, fetcher };
+const MAX_FILE_SIZE = 5 * 1024 * 1024; //5MB
+const imageFileTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+
+export { formatLabel, oppositeFormatLabel, formatDate, fetcher, MAX_FILE_SIZE, imageFileTypes };

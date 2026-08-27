@@ -10,7 +10,7 @@ import { FaSpinner } from "react-icons/fa";
 import { Eye, Edit, Trash2, Plus, Search } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import Skeleton from "@/components/ui/LoadingSkeleton";
-import { NoProductsFound } from "../../../dashboard/components/ui/NotFound";
+import { NoProductsFound } from "../../../../../components/ui/NotFound";
 import useSWR from "swr";
 import { fetcher } from "@/utils/otherUtils";
 import Image from "next/image";

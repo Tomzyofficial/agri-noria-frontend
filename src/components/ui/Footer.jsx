@@ -1,4 +1,10 @@
 import { Wheat } from "lucide-react";
+import Link from "next/link";
+import { oppositeFormatLabel } from "@/utils/otherUtils";
+
+const sellers = ["List Products", "Payments Payout"];
+const buyers = ["Browse Products", "Quality Guarantee", "Shipping Info"];
+const support = ["Help Center", "Contact Us", "Safety Guidelines", "Terms of Service"];
 
 export function Footer() {
    return (
@@ -15,28 +21,37 @@ export function Footer() {
                <div>
                   <h5 className="font-semibold mb-4">For Sellers</h5>
                   <ul className="space-y-2 text-muted-foreground">
-                     <li>List Products</li>
-                     <li>Seller Dashboard</li>
-                     <li>Pricing Guide</li>
-                     <li>Success Stories</li>
+                     <li className="flex flex-col">
+                        {sellers.map((s) => (
+                           <Link key={s} href={oppositeFormatLabel(s)}>
+                              {s}
+                           </Link>
+                        ))}
+                     </li>
                   </ul>
                </div>
                <div>
                   <h5 className="font-semibold mb-4">For Buyers</h5>
                   <ul className="space-y-2 text-muted-foreground">
-                     <li>Browse Products</li>
-                     <li>Quality Guarantee</li>
-                     <li>Shipping Info</li>
-                     <li>Bulk Orders</li>
+                     <li className="flex flex-col">
+                        {buyers.map((b) => (
+                           <Link key={b} href={oppositeFormatLabel(b)}>
+                              {b}
+                           </Link>
+                        ))}
+                     </li>
                   </ul>
                </div>
                <div>
                   <h5 className="font-semibold mb-4">Support</h5>
                   <ul className="space-y-2 text-muted-foreground">
-                     <li>Help Center</li>
-                     <li>Contact Us</li>
-                     <li>Safety Guidelines</li>
-                     <li>Terms of Service</li>
+                     <li className="flex flex-col">
+                        {support.map((s) => (
+                           <Link key={s} href={oppositeFormatLabel(s)}>
+                              {s}
+                           </Link>
+                        ))}
+                     </li>
                   </ul>
                </div>
             </div>

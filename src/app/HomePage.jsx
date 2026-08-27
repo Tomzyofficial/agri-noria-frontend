@@ -9,8 +9,8 @@ import { sidebarMenu } from "@/utils/homeSideMenu";
 import { ErrorUi } from "@/components/ui/Error";
 import { formatPrice } from "../utils/formatPrice";
 import { EcosystemPopup } from "@/components/ui/EcosystemPopup";
-import { BannerProductCard } from "./(dashboard)/dashboard/components/ads/BannerProductCard";
-import { SponsoredProductsRow } from "./(dashboard)/dashboard/components/ads/SponsoredProductRow";
+import { BannerProductCard } from "../components/dashboard/ads/BannerProductCard";
+import { SponsoredProductsRow } from "../components/dashboard/ads/SponsoredProductRow";
 
 export function HomePage({ marketPlace, error, campaigns, campaignError }) {
    const [searchTerm, setSearchTerm] = useState("");

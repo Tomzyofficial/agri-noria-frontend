@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/Button";
 import React from "react";
 import { fetcher } from "@/utils/otherUtils";
 import { formatLabel } from "@/utils/otherUtils";
-import { ORDER_STATUS_CONFIG, getStatusBadgeClass } from "@/app/(dashboard)/dashboard/components/orders/OrderStatusUtils";
-import { OrderDetailModal } from "../../components/orders/OrderDetailModal";
+import { ORDER_STATUS_CONFIG, getStatusBadgeClass } from "@/components/dashboard/orders/OrderStatusUtils";
+import { OrderDetailModal } from "../../../../../components/dashboard/orders/OrderDetailModal";
 import { OTPVerificationModal } from "../../../marketplace/logistics/components/OTPVerificationModal";
 
 export function BuyerOrdersList() {

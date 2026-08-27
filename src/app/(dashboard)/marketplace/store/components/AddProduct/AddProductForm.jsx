@@ -2,7 +2,7 @@
 import CommonFields from "@/app/(dashboard)/marketplace/store/components/AddProduct/CommonFieldsForm";
 import FarmerFields from "@/app/(dashboard)/marketplace/store/components/AddProduct/FarmerFieldsForm";
 import EquipmentFieldsForm from "@/app/(dashboard)/marketplace/store/components/AddProduct/EquipmentFieldsForm";
-import SubmitButton from "../../../../dashboard/components/SubmitButton";
+import SubmitButton from "../../../../../../components/dashboard/SubmitButton";
 import { Card, CardContent } from "@/components/ui/Card";
 import { useProductForm } from "@/app/(dashboard)/marketplace/store/components/AddProduct/UseProductForm";
 import FoodItemFields from "@/app/(dashboard)/marketplace/store/components/AddProduct/FooditemForm";
@@ -15,7 +15,7 @@ export function AddProductForm() {
          <Card>
             <CardContent className="p-4 lg:p-6">
                <form onSubmit={handleSubmit} noValidate aria-busy={loading} className="space-y-8">
-                  <CommonFields formData={formData} handleChange={handleChange} loading={loading} />
+                  <CommonFields formData={formData} handleChange={handleChange} loading={loading} preview={preview} />
 
                   {formData.category === "farm_produce" ? (
                      <FarmerFields formData={formData} handleChange={handleChange} loading={loading} />

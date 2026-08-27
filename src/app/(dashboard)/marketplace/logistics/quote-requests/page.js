@@ -1,6 +1,6 @@
 import { QuoteRequestPage } from "../components/QuoteRequestPage";
 import { verifyVendorSession } from "@/actions/session";
-import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
+import { Unauthorized } from "@/components/dashboard/Unauthorized";
 
 export default async function Page() {
    const session = await verifyVendorSession();

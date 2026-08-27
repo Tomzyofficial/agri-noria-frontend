@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { StatCard } from "../../../dashboard/components/ui/StatCard";
+import { StatCard } from "../../../../../components/ui/StatCard";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { EyeIcon, Package } from "lucide-react";
 import { TbHandClick } from "react-icons/tb";
