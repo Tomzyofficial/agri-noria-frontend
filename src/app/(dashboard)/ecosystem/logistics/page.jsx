@@ -55,6 +55,23 @@ export default function LogisticsDashboard() {
     }
   };
 
+  const completeDelivery = async (ticket_id) => {
+    try {
+      const res = await fetch(`/api/proxy/vendor/commodity-operations/logistics/tickets/${ticket_id}/deliver`, {
+        method: "POST"
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Delivery confirmed and marked as completed!");
+        fetchData();
+      } else {
+        toast.error(data.error || "Failed to complete delivery");
+      }
+    } catch (error) {
+      toast.error("Network error");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -169,13 +186,21 @@ export default function LogisticsDashboard() {
                       {ticket.status === 'pending' && (
                         <button
                           onClick={() => acceptTicket(ticket.ticket_id)}
-                          className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-purple-700"
+                          className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-purple-700 transition"
                         >
                           Accept & Dispatch Fleet
                         </button>
                       )}
                       {ticket.status === 'in_transit' && (
-                        <span className="text-gray-500 text-sm italic">In Transit</span>
+                        <button
+                          onClick={() => completeDelivery(ticket.ticket_id)}
+                          className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-emerald-700 transition"
+                        >
+                          Mark Delivered
+                        </button>
+                      )}
+                      {ticket.status === 'delivered' && (
+                        <span className="text-emerald-600 font-bold text-sm">Delivered</span>
                       )}
                     </td>
                   </tr>

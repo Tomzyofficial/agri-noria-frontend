@@ -8,7 +8,7 @@ export const metadata = {
   description: "Billing page. This page is used to manage billing information",
 };
 
-export async function GetPlans() {
+async function GetPlans() {
   const res = await fetch(apiUrl("api/vendor/subscription/plans"), {
     method: "GET",
     cache: "force-cache",

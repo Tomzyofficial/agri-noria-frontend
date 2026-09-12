@@ -273,7 +273,7 @@ const ProducerAssociationDashboard = ({ stats }) => (
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Total Members</p>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Network Producers</p>
               <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.totalFarmers?.toLocaleString() || "0"}</h3>
             </div>
             <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-xl"><Users size={24} /></div>
@@ -284,10 +284,10 @@ const ProducerAssociationDashboard = ({ stats }) => (
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Cooperatives</p>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Member Cooperatives</p>
               <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.totalCooperatives?.toLocaleString() || "0"}</h3>
             </div>
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl"><Globe size={24} /></div>
+            <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 rounded-xl"><Globe size={24} /></div>
           </div>
         </CardContent>
       </Card>
@@ -314,6 +314,37 @@ const ProducerAssociationDashboard = ({ stats }) => (
         </CardContent>
       </Card>
     </div>
+
+    {/* Quick Hub */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Card className="border-none shadow-sm bg-gradient-to-r from-blue-900/20 to-indigo-900/20 border border-blue-500/20 p-6 rounded-3xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="text-lg font-black text-(--foreground)">Producer Group Management</h4>
+            <p className="text-xs text-gray-400 font-semibold mt-1">Coordinate regional commodity cohorts and assign programmes</p>
+          </div>
+          <Link href="/ecosystem/institution/producer-groups">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs">
+              Manage Groups
+            </Button>
+          </Link>
+        </div>
+      </Card>
+
+      <Card className="border-none shadow-sm bg-gradient-to-r from-indigo-900/20 to-purple-900/20 border border-indigo-500/20 p-6 rounded-3xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="text-lg font-black text-(--foreground)">Member Cooperatives Network</h4>
+            <p className="text-xs text-gray-400 font-semibold mt-1">Affiliate independent cooperatives to your association</p>
+          </div>
+          <Link href="/ecosystem/institution/cooperatives">
+            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs">
+              View Network
+            </Button>
+          </Link>
+        </div>
+      </Card>
+    </div>
   </div>
 );
 
@@ -327,7 +358,7 @@ const CooperativeDashboard = ({ stats }) => (
               <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Members</p>
               <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.totalFarmers?.toLocaleString() || "0"}</h3>
             </div>
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-xl"><Users size={24} /></div>
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl"><Users size={24} /></div>
           </div>
         </CardContent>
       </Card>
@@ -338,7 +369,7 @@ const CooperativeDashboard = ({ stats }) => (
               <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Total Hectares</p>
               <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.totalHectares?.toLocaleString() || "0"}</h3>
             </div>
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-xl"><Globe size={24} /></div>
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-xl"><Globe size={24} /></div>
           </div>
         </CardContent>
       </Card>
@@ -346,7 +377,7 @@ const CooperativeDashboard = ({ stats }) => (
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Active Loans</p>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Active Financing</p>
               <h3 className="text-3xl font-black mt-2 text-(--foreground)">₦{stats.overview?.totalDeployed?.toLocaleString() || "0"}</h3>
             </div>
             <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-xl"><Activity size={24} /></div>
@@ -365,6 +396,37 @@ const CooperativeDashboard = ({ stats }) => (
         </CardContent>
       </Card>
     </div>
+
+    {/* Quick Hub */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Card className="border-none shadow-sm bg-gradient-to-r from-emerald-900/20 to-teal-900/20 border border-emerald-500/20 p-6 rounded-3xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="text-lg font-black text-(--foreground)">Member Clusters</h4>
+            <p className="text-xs text-gray-400 font-semibold mt-1">Organize cooperative members and request programme inputs</p>
+          </div>
+          <Link href="/ecosystem/institution/member-clusters">
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs">
+              Manage Clusters
+            </Button>
+          </Link>
+        </div>
+      </Card>
+
+      <Card className="border-none shadow-sm bg-gradient-to-r from-blue-900/20 to-cyan-900/20 border border-blue-500/20 p-6 rounded-3xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="text-lg font-black text-(--foreground)">Farmer Members Directory</h4>
+            <p className="text-xs text-gray-400 font-semibold mt-1">Add or link verified farmers with single digital identity</p>
+          </div>
+          <Link href="/ecosystem/institution/farmers">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs">
+              View Members
+            </Button>
+          </Link>
+        </div>
+      </Card>
+    </div>
   </div>
 );
 
@@ -375,7 +437,7 @@ const ResearchInstitutionDashboard = ({ stats }) => (
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Active Projects</p>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Research Projects</p>
               <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.activePrograms || "0"}</h3>
             </div>
             <div className="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-xl"><Landmark size={24} /></div>
@@ -408,12 +470,43 @@ const ResearchInstitutionDashboard = ({ stats }) => (
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Active Alerts</p>
+              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Scientific Advisories</p>
               <h3 className="text-3xl font-black mt-2 text-(--foreground)">{stats.overview?.researchAlerts || "0"}</h3>
             </div>
-            <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-xl"><ShieldAlert size={24} /></div>
+            <div className="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-xl"><ShieldAlert size={24} /></div>
           </div>
         </CardContent>
+      </Card>
+    </div>
+
+    {/* Quick Hub */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Card className="border-none shadow-sm bg-gradient-to-r from-purple-900/20 to-pink-900/20 border border-purple-500/20 p-6 rounded-3xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="text-lg font-black text-(--foreground)">Research Programme Workspace</h4>
+            <p className="text-xs text-gray-400 font-semibold mt-1">Manage experimental cohorts, observations, and grant proposals</p>
+          </div>
+          <Link href="/ecosystem/institution/research-projects">
+            <Button className="bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs">
+              Manage Research
+            </Button>
+          </Link>
+        </div>
+      </Card>
+
+      <Card className="border-none shadow-sm bg-gradient-to-r from-emerald-900/20 to-teal-900/20 border border-emerald-500/20 p-6 rounded-3xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="text-lg font-black text-(--foreground)">Trial Plots & Field Trials</h4>
+            <p className="text-xs text-gray-400 font-semibold mt-1">Map geographic trial plots and cultivar performance</p>
+          </div>
+          <Link href="/ecosystem/institution/trial-plots">
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs">
+              View Plots
+            </Button>
+          </Link>
+        </div>
       </Card>
     </div>
   </div>

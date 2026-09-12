@@ -5,7 +5,7 @@ import AdminLoanList from "../../../../dashboard/components/AdminLoanList";
 // Prevent static generation during build
 export const dynamic = "force-dynamic";
 
-export const adminLoans = async () => {
+const adminLoans = async () => {
   try {
     const res = await fetch(apiUrl("/api/loans/"), {
       cache: "no-store",
