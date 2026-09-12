@@ -89,7 +89,6 @@ export default async function middleware(request) {
          const token = request.cookies.get("vendor-session")?.value;
 
          if (!token) {
-            console.log("Middleware: No vendor session token found");
             return NextResponse.redirect(new URL("/", request.url));
          }
 

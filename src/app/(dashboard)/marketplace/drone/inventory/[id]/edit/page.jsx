@@ -1,7 +1,7 @@
 import { verifyVendorSession, cookieStoreFnc } from "@/actions/session";
-import Breadcrumbs from "@/app/(dashboard)/dashboard/components/BreadCrumbs";
+import Breadcrumbs from "@/components/dashboard/BreadCrumbs";
 import { apiUrl } from "@/_lib/api";
-import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
+import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import EditInventoryForm from "../../../components/EditInventoryForm";
 import axios from "axios";
 

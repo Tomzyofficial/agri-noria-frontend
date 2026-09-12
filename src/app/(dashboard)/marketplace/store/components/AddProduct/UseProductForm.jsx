@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { MAX_FILE_SIZE, imageFileTypes } from "@/utils/otherUtils";
 
 export function useProductForm() {
    const [loading, setLoading] = useState(false);
@@ -36,10 +37,7 @@ export function useProductForm() {
       },
    });
 
-   const MAX_FILE_SIZE = 5 * 1024 * 1024;
    const handleChange = (e) => {
-      const imageFileTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
-
       const { name, type, value, files } = e.target;
 
       if (type === "file") {
@@ -53,8 +51,6 @@ export function useProductForm() {
             toast.error(`"${oversizedFile.name}" exceeds the 5MB limit`);
             return;
          }
-
-         // Also worth validating type here if you accept specific formats
          const invalidFile = selectedFiles.find((f) => !imageFileTypes.includes(f.type));
 
          if (invalidFile) {
@@ -62,13 +58,15 @@ export function useProductForm() {
             return;
          }
 
+         const urls = selectedFiles.map((file) => URL.createObjectURL(file));
+         setPreview(urls);
+
          if (e.target.multiple) {
             setFormData((prev) => ({ ...prev, [name]: selectedFiles }));
          } else {
             setFormData((prev) => ({ ...prev, [name]: selectedFiles[0] }));
          }
       } else {
-         // Check if this is an attribute field (category-specific)
          const attributeFields = ["food_type", "expiry_date", "package_type", "storage_requirement", "harvest_date", "crop_type", "variety", "quality", "organic", "equipment_type", "brand", "model", "condition", "warranty"];
 
          if (attributeFields.includes(name)) {
@@ -96,6 +94,9 @@ export function useProductForm() {
          // Client-side validation
          if (!formData.image) {
             throw new Error("Product image is required");
+         }
+         if (formData.length > 5) {
+            throw new Error("Maximun of 5 images is allowed");
          }
          if (!formData.listing_name || formData.listing_name.trim() === "") {
             throw new Error("Product name is required");

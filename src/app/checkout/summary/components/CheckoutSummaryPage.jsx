@@ -19,33 +19,7 @@ export function CheckoutSummaryPage({ buyer, cart, vendors }) {
    const [selectedLogistics, setSelectedLogistics] = useState(null);
    const [isProcessing, setIsProcessing] = useState(false);
    const searchParams = useSearchParams();
-   // const cartByVendor = vendors.map((item) => ({ ...item }));
-
-   console.log(vendors);
-   // const vendor = vendors.map((vendor) => ({
-   //    seller_id: vendor.seller_id,
-   //    seller_fname: vendor.seller_fname,
-   //    seller_lname: vendor.seller_lname,
-   //    seller_phone: vendor.seller_phone,
-   //    seller_email: vendor.seller_email,
-   // }));
-
-   // Destructure cart items
-   // const processedCart = cart.map((item) => ({
-   //    product_id: item.listing_id,
-   //    product_image: item.product_image,
-   //    listing_name: item.listing_name,
-   //    listing_location: item.listing_location,
-   //    price: item.price,
-   //    unit_measure: item.unit_measure,
-   //    quantity: item.quantity,
-   //    discount: item.discount,
-   //    min_quantity: item.min_quantity,
-   //    currency: item.currency,
-   //    country_code: item.country_code,
-   // }));
-
-   // console.log("cart", processedCart);
+   console.log("selectedLogistics", selectedLogistics);
 
    // Calculate totals
    const itemsCount = cart ? cart.reduce((sum, item) => sum + item.quantity || 1, 0) : 0;
@@ -100,7 +74,7 @@ export function CheckoutSummaryPage({ buyer, cart, vendors }) {
             await deleteCartCookie();
 
             toast.success("Payment successful! Your order has been confirmed.");
-            window.location.href = "/";
+            window.location.href = "/dashboard/buyer/orders";
          } catch (error) {
             console.error("Payment verification error:", error);
             toast.error(error.message || "Payment verification failed");

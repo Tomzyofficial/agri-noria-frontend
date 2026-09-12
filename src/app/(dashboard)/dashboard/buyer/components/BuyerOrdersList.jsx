@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/Button";
 import React from "react";
 import { fetcher } from "@/utils/otherUtils";
 import { formatLabel } from "@/utils/otherUtils";
-import { ORDER_STATUS_CONFIG, getStatusBadgeClass } from "@/app/(dashboard)/dashboard/components/orders/OrderStatusUtils";
-import { BuyerOrderDetailModal } from "./BuyerOrderDetailModal";
+import { ORDER_STATUS_CONFIG, getStatusBadgeClass } from "@/components/dashboard/orders/OrderStatusUtils";
+import { OrderDetailModal } from "../../../../../components/dashboard/orders/OrderDetailModal";
 import { OTPVerificationModal } from "../../../marketplace/logistics/components/OTPVerificationModal";
 
 export function BuyerOrdersList() {
@@ -22,6 +22,7 @@ export function BuyerOrdersList() {
    const [satisfiedOrderId, setSatisfiedOrderId] = useState(null);
    const [verifyingOTP, setVerifyingOTP] = useState(false);
    const [otpError, setOtpError] = useState(null);
+   const [loading, setLoading] = useState(false);
 
    const ordersUrl = useMemo(() => {
       const params = new URLSearchParams();
@@ -45,7 +46,7 @@ export function BuyerOrdersList() {
 
    // Helper to extract vehicle title from order metadata
    const getVehicleTitle = (order) => {
-      return order.metadata?.logistics_provider?.vehicle_title || order.vehicle_title || "—";
+      return order.metadata?.logistics_provider?.vehicle_title || "—";
    };
 
    const handleSatisfied = (orderId) => {
@@ -53,22 +54,26 @@ export function BuyerOrdersList() {
       setOtpError(null);
    };
 
-   const handleOTPVerify = async (otp) => {
+   const handleOTPVerify = async (orderId) => {
       setVerifyingOTP(true);
       setOtpError(null);
+      setLoading(true);
 
       try {
-         const res = await fetch(`/api/proxy/buyer/orders/${satisfiedOrderId}/confirm-satisfaction`, {
-            method: "POST",
-            headers: {
-               "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ otp }),
+         const res = await fetch(`/api/proxy/buyer/orders/${orderId}/confirm-satisfaction`, {
+            method: "PATCH",
+            // headers: {
+            //    "Content-Type": "application/json",
+            // },
+            // body: JSON.stringify({ otp }),
          });
 
          const body = await res.json();
 
-         if (!res.ok || !body.success) {
+         // if (!res.ok || !body.success) {
+         //    throw new Error(body.error || "Failed to verify OTP");
+         // }
+         if (!res.ok) {
             throw new Error(body.error || "Failed to verify OTP");
          }
 
@@ -77,8 +82,10 @@ export function BuyerOrdersList() {
          mutate();
       } catch (err) {
          setOtpError(err.message || "Failed to verify OTP");
+         toast.error(err.message);
       } finally {
          setVerifyingOTP(false);
+         setLoading(false);
       }
    };
 
@@ -117,7 +124,7 @@ export function BuyerOrdersList() {
 
             {isLoading && <div className="p-10 text-center text-gray-500">Loading orders...</div>}
 
-            {!isLoading && !error && orders.length === 0 && <div className="p-10 text-center text-gray-500">{statusFilter ? `No orders with status "${formatStatusLabel(statusFilter)}".` : "No orders assigned to your vehicles yet."}</div>}
+            {!isLoading && !error && orders.length === 0 && <div className="p-10 text-center text-gray-500">{statusFilter ? `No orders with status "${formatLabel(statusFilter)}".` : "No orders assigned to your vehicles yet."}</div>}
 
             {!isLoading && !error && orders.length > 0 && (
                <div className="overflow-x-auto">
@@ -145,7 +152,6 @@ export function BuyerOrdersList() {
                                     <Truck className="w-4 h-4 text-gray-400 shrink-0" />
                                     {getVehicleTitle(order)}
                                  </div>
-                                 <div className="text-xs text-gray-500 mt-0.5">Fee: ₦{Number(order.delivery_fee ?? 0).toLocaleString()}</div>
                               </td>
                               <td className="px-4 py-4 text-sm text-gray-600 max-w-[200px]">
                                  <div className="flex items-start gap-1">
@@ -164,8 +170,8 @@ export function BuyerOrdersList() {
                                        View
                                     </Button>
                                     {order.status === "delivered" && (
-                                       <Button type="button" onClick={() => handleSatisfied(order.id)} className="cursor-pointer inline-flex items-center gap-1 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded">
-                                          <ThumbsUp className="w-3.5 h-3.5" />
+                                       <Button type="button" disabled={loading} onClick={() => handleOTPVerify(order.id)} className="disabled:opacity-50 cursor-pointer inline-flex items-center gap-1 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded">
+                                          {loading ? "Please wait" : <ThumbsUp className="w-3.5 h-3.5" />}
                                           Satisfied
                                        </Button>
                                     )}
@@ -179,7 +185,7 @@ export function BuyerOrdersList() {
             )}
          </div>
 
-         <BuyerOrderDetailModal selectedOrder={selectedOrder} open={Boolean(selectedOrder)} onClose={() => setSelectedOrder(null)} />
+         <OrderDetailModal selectedOrder={selectedOrder} open={Boolean(selectedOrder)} onClose={() => setSelectedOrder(null)} />
 
          <OTPVerificationModal
             open={Boolean(satisfiedOrderId)}

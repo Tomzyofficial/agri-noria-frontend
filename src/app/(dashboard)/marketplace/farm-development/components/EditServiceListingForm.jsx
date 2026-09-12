@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Label } from "@/components/ui/Label";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
-import SubmitButton from "@/app/(dashboard)/dashboard/components/SubmitButton";
+import SubmitButton from "@/components/dashboard/SubmitButton";
 import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 

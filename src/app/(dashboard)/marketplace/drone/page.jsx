@@ -1,6 +1,6 @@
 import { verifyVendorSession } from "@/actions/session";
 import { DashboardOverview } from "./components/DashboardOverview";
-import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
+import { Unauthorized } from "@/components/dashboard/Unauthorized";
 
 export const metadata = {
    title: "Drone Services",

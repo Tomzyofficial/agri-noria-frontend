@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
@@ -10,7 +8,7 @@ import { StarRating } from "@/app/products/opinions/[id]/components/StarRating";
 import { RatingBar } from "@/app/products/opinions/[id]/components/RatingBar";
 import { ReviewItem } from "./RatingItem";
 import { MessageSquareMore } from "lucide-react";
-import useSWR from "swr";
+import { useRouter } from "next/navigation";
 
 const getReviewKey = (review, index) => {
    if (review.id) return `review-${review.id}`;
@@ -18,69 +16,19 @@ const getReviewKey = (review, index) => {
    return `review-${index}`;
 };
 
-export default function ProductReviewsPage({ productId, buyerId }) {
+export default function ReviewsPage({ arrowBack = true, productReviews, productId, buyerId, eligible }) {
+   const reviews = productReviews?.reviews ?? [];
+   const summary = productReviews?.summary ?? { total: 0, average: 0, breakdown: {} };
+
    const router = useRouter();
-   const [page, setPage] = useState(1);
-   const pageSize = 2;
-
-   const fetcher = async (url) => {
-      const res = await fetch(url, {
-         method: "GET",
-      });
-      if (!res.ok) {
-         return new Error("Failed to fetch reviews data");
-      }
-      const data = await res.json();
-
-      return data;
-   };
-
-   const { data, isLoading, error } = useSWR(
-      `/api/proxy/marketplace/${productId}/reviews?page=${page}&pageSize=${pageSize}`,
-      fetcher,
-   );
-
-   const reviews = data?.reviews ?? [];
-   const summary = data?.summary ?? { total: 0, average: 0, breakdown: {} };
-
-   if (isLoading) {
-      return (
-         <div className="container mx-auto p-4">
-            <div className="animate-pulse space-y-4">
-               <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-               <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-               <div className="grid md:grid-cols-3 gap-8 mt-8">
-                  <div className="md:col-span-1 space-y-4">
-                     <div className="h-64 bg-gray-200 rounded"></div>
-                  </div>
-                  <div className="md:col-span-2 space-y-4">
-                     {[1, 2, 3].map((i) => (
-                        <div key={i} className="h-32 bg-gray-200 rounded"></div>
-                     ))}
-                  </div>
-               </div>
-            </div>
-         </div>
-      );
-   }
-
-   if (error) {
-      return (
-         <div className="container mx-auto p-4">
-            <p className="text-red-500">Failed to load reviews. Please try again later.</p>
-         </div>
-      );
-   }
-
    return (
-      <div className="container mx-auto px-4 py-8">
-         <Button
-            className="flex cursor-pointer gap items-center mb-6 p-0 hover:bg-transparent"
-            onClick={() => router.back()}
-         >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to product
-         </Button>
+      <div className="container mx-auto px-4 md:px-10 mb-10 mt-4">
+         {arrowBack && (
+            <Button className="flex cursor-pointer gap items-center mb-6 p-0 hover:bg-transparent" onClick={() => router.back()}>
+               <ArrowLeft className="w-4 h-4 mr-2" />
+               Back to product
+            </Button>
+         )}
 
          <div className="mb-8">
             <h1 className="text-2xl font-bold mb-1">Feedback on Product Reviews</h1>
@@ -104,18 +52,12 @@ export default function ProductReviewsPage({ productId, buyerId }) {
 
                      <div className="space-y-3">
                         {[5, 4, 3, 2, 1].map((rating) => (
-                           <RatingBar
-                              key={rating}
-                              rating={rating}
-                              count={summary?.breakdown[rating] || 0}
-                              total={summary?.total}
-                           />
+                           <RatingBar key={rating} rating={rating} count={summary?.breakdown[rating] || 0} total={summary?.total} />
                         ))}
                      </div>
 
                      <div className="mt-6 pt-6 border-t border-gray-100">
-                        <h3 className="font-medium mb-3">Leave a review</h3>
-                        <ReviewForm productId={productId} buyerId={buyerId} />
+                        <ReviewForm productId={productId} buyerId={buyerId} eligible={eligible} />
                      </div>
                   </CardContent>
                </Card>
@@ -136,27 +78,19 @@ export default function ProductReviewsPage({ productId, buyerId }) {
                ) : (
                   <div className="space-y-4">
                      {reviews.map((review, index) => (
-                        <ReviewItem key={getReviewKey(review, index)} review={review} />
+                        <ReviewItem key={getReviewKey(review, index)} review={review} eligigble={eligible} />
                      ))}
 
                      {/* Pagination */}
-                     {summary.total > pageSize && (
+                     {summary.total > 1 && (
                         <div className="flex justify-between items-center mt-6">
-                           <Button
-                              className="cursor-pointer"
-                              onClick={() => setPage((p) => Math.max(1, p - 1))}
-                              disabled={page === 1}
-                           >
+                           <Button className="cursor-pointer" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
                               Previous
                            </Button>
                            <span className="text-sm text-gray-600">
                               Page {page} of {Math.ceil(summary.total / pageSize)}
                            </span>
-                           <Button
-                              className="cursor-pointer"
-                              onClick={() => setPage((p) => p + 1)}
-                              disabled={page * pageSize >= summary.total}
-                           >
+                           <Button className="cursor-pointer" onClick={() => setPage((p) => p + 1)} disabled={page * pageSize >= summary.total}>
                               Next
                            </Button>
                         </div>

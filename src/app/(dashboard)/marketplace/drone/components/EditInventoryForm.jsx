@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/Textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { updateDroneListingSchema, mapInventoryToFormValues } from "@/_lib/validations/validateDroneListing";
-import SubmitButton from "@/app/(dashboard)/dashboard/components/SubmitButton";
+import SubmitButton from "@/components/dashboard/SubmitButton";
 import { toast } from "react-toastify";
 import Image from "next/image";
 import { useState } from "react";

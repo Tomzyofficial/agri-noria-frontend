@@ -62,7 +62,6 @@ export function useVehicleForm() {
 
    const handleSubmit = async (e) => {
       e.preventDefault();
-      setLoading(true);
 
       let validate = vehicleUploadSchema.safeParse(formData);
       if (!validate.success) {
@@ -73,6 +72,7 @@ export function useVehicleForm() {
             return;
          }
       }
+      setLoading(true);
       const formDataToSend = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
          if (value == null || value === "") return;
@@ -88,7 +88,6 @@ export function useVehicleForm() {
          }
       });
 
-      console.log("sending data", formDataToSend);
       try {
          const response = await fetch("/api/proxy/vendor/logistics/add-vehicle", {
             method: "POST",

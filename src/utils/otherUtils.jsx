@@ -15,10 +15,19 @@ function oppositeFormatLabel(value) {
       .replace(/\b\w/g, (char) => char.toLowerCase());
 }
 
-function formatDate(value) {
-   if (!value) return "-";
+function formatDate(value, hr = true, min = true) {
+   if (!value) return "Date N/A";
    const date = new Date(value);
    if (Number.isNaN(date.getTime())) return value;
+   if (value && hr && min) {
+      return date.toLocaleDateString(undefined, {
+         month: "short",
+         day: "numeric",
+         year: "numeric",
+         hour: "2-digit",
+         minute: "2-digit",
+      });
+   }
    return date.toLocaleDateString(undefined, {
       month: "short",
       day: "numeric",
@@ -33,11 +42,14 @@ const fetcher = async (url) => {
          cookie: cookieHeader,
       },
    });
-   const data = await res.json();
-   if (!res.ok || !data.success) {
+   if (!res.ok) {
       throw new Error(data.error || data.message || "Request failed");
    }
+   const data = await res.json();
    return data;
 };
 
-export { formatLabel, oppositeFormatLabel, formatDate, fetcher };
+const MAX_FILE_SIZE = 5 * 1024 * 1024; //5MB
+const imageFileTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+
+export { formatLabel, oppositeFormatLabel, formatDate, fetcher, MAX_FILE_SIZE, imageFileTypes };

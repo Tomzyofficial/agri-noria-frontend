@@ -3,7 +3,7 @@
 import useSWR from "swr";
 import Link from "next/link";
 import { Package, ArrowRight, DollarSign } from "lucide-react";
-import { ORDER_STATUS_CONFIG } from "../../components/orders/OrderStatusUtils";
+import { ORDER_STATUS_CONFIG } from "../../../../../components/dashboard/orders/OrderStatusUtils";
 import { fetcher } from "@/utils/otherUtils";
 import { formatPrice } from "@/utils/formatPrice";
 

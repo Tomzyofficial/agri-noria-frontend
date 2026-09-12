@@ -14,7 +14,6 @@ export async function signinBridge(credentials) {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-         const status = res.status;
          return {
             success: false,
             error: data.error,

@@ -1,19 +1,19 @@
 import { Suspense } from "react";
 import { verifyVendorSession } from "@/actions/session";
-import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
+import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import { LogisticsShipmentsList } from "../components/LogisticsShipmentsList";
 
 export const metadata = {
-  title: "Shipment Management",
-  description: "Start and manage logistics shipments",
+   title: "Shipment Management",
+   description: "Start and manage logistics shipments",
 };
 
 export default async function ShipmentPage() {
-  const session = await verifyVendorSession();
+   const session = await verifyVendorSession();
 
-  if (!session?.authenticated || session.role !== "Logistics_Partner") {
-    return <Unauthorized />;
-  }
+   if (!session?.authenticated || session.role !== "Logistics_Partner") {
+      return <Unauthorized />;
+   }
 
-  return <LogisticsShipmentsList />;
+   return <LogisticsShipmentsList />;
 }

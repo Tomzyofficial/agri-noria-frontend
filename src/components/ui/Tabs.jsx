@@ -5,13 +5,7 @@ function Tabs({ ...props }) {
 }
 
 function TabsList({ ...props }) {
-   return (
-      <TabsPrimitive.List
-         data-slot="tabs-list"
-         className="grid w-full grid-cols-3 bg-(--gray-color) dark:bg-(--card-dark) h-9 rounded-lg p-[3px]"
-         {...props}
-      />
-   );
+   return <TabsPrimitive.List data-slot="tabs-list" {...props} />;
 }
 
 function TabsTrigger({ ...props }) {

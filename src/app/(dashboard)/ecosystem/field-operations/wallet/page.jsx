@@ -1,5 +1,5 @@
 "use client";
-import WalletView from "@/app/(dashboard)/dashboard/components/Wallet/WalletView";
+import WalletView from "@/components/dashboard/Wallet/WalletView";
 
 export default function FieldOpsWalletPage() {
    return <WalletView role="field-officer" walletType="operations" />;

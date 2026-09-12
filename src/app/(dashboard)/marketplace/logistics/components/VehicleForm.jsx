@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import SubmitButton from "../../../dashboard/components/SubmitButton";
+import SubmitButton from "../../../../../components/dashboard/SubmitButton";
 import { useVehicleForm } from "./UseVehicleForm";
 
 export function VehicleForm() {
@@ -110,7 +110,7 @@ export function VehicleForm() {
                   <div className="md:col-span-2">
                      <label className="block text-sm font-medium text-gray-700 mb-1">Operating Transit Regions</label>
                      <div className="flex space-x-2">
-                        <input type="text" value={regionInput} disabled={loading} onChange={(e) => setRegionInput(e.target.value)} placeholder="Type a State/Region and click Add (e.g., Oyo)" className={inputStyle} />
+                        <input type="text" value={regionInput} disabled={loading} onChange={(e) => setRegionInput(e.target.value)} placeholder="e.g., Oyo" className={inputStyle} />
                         <button type="button" onClick={handleAddRegion} className="px-4 py-2 bg-gray-100 border border-gray-300 text-gray-700 font-medium text-sm rounded-md hover:bg-gray-200">
                            Add
                         </button>

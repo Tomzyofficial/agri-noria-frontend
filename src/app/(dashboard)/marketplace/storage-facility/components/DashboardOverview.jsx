@@ -12,8 +12,8 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recha
 import { Package, EyeIcon } from "lucide-react";
 import { TbHandClick } from "react-icons/tb";
 import BarChartLoading from "@/components/ui/BarChartLoadingSkeleton";
-import { StatCard } from "../../../dashboard/components/ui/StatCard";
-import { QuoteRequestTable } from "@/app/(dashboard)/dashboard/components/QuoteRequestTable";
+import { StatCard } from "../../../../../components/ui/StatCard";
+import { QuoteRequestTable } from "@/components/dashboard/QuoteRequestTable";
 
 export function DashboardOverview({ user }) {
    const [showModal, setShowModal] = useState(false);

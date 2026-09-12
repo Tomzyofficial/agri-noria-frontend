@@ -1,9 +1,9 @@
-import JobApplicantsPage from "@/app/(dashboard)/dashboard/components/jobs/applicantpage";
+import JobApplicantsPage from "@/components/dashboard/jobs/applicantpage";
 
 import { apiUrl } from "@/_lib/api";
 import { cookieStoreFnc } from "@/actions/session";
 import { verifyVendorSession } from "@/actions/session";
-import { Unauthorized } from "@/app/(dashboard)/dashboard/components/Unauthorized";
+import { Unauthorized } from "@/components/dashboard/Unauthorized";
 
 async function getData(jobId) {
    const cookieHeader = await cookieStoreFnc();
