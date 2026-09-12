@@ -6,17 +6,56 @@ import { useProgramData } from "../useProgramData";
 import { toast } from "react-toastify";
 
 export default function PendingApprovalsPage() {
-   const { loading, pendingInputs, currentUserId } = useProgramData();
+   const { loading, pendingInputs, currentUserId, fetchData } = useProgramData();
    const [activeTab, setActiveTab] = useState("my_approvals");
    const [fieldOpsApprovals, setFieldOpsApprovals] = useState([]);
    const [activeOfficers, setActiveOfficers] = useState([]);
+   const [distributors, setDistributors] = useState([]);
+   const [selectedDistributors, setSelectedDistributors] = useState({});
    const [loadingFieldOps, setLoadingFieldOps] = useState(true);
    const [loadingActiveOfficers, setLoadingActiveOfficers] = useState(true);
+   const [processingId, setProcessingId] = useState(null);
 
    useEffect(() => {
       fetchFieldOpsApprovals();
       fetchAllOfficers();
+      fetchDistributors();
    }, []);
+
+   const fetchDistributors = async () => {
+      try {
+         const res = await fetch("/api/proxy/admin/institution/distributors");
+         const json = await res.json();
+         if (json.success) {
+            setDistributors(json.data || []);
+         }
+      } catch (e) {
+         console.error("Failed to fetch distributors", e);
+      }
+   };
+
+   const handleApproveAgronomic = async (requestId) => {
+      setProcessingId(requestId);
+      try {
+         const distributorId = selectedDistributors[requestId] || null;
+         const res = await fetch(`/api/proxy/pipeline/inputs/${requestId}/approve-items`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ distributor_id: distributorId })
+         });
+         const json = await res.json();
+         if (json.success) {
+            toast.success("Agronomic suitability & input package approved!");
+            if (fetchData) fetchData();
+         } else {
+            toast.error(json.error || "Failed to approve request");
+         }
+      } catch (err) {
+         toast.error("Failed to approve request");
+      } finally {
+         setProcessingId(null);
+      }
+   };
 
    const fetchFieldOpsApprovals = async () => {
       try {
@@ -249,15 +288,60 @@ export default function PendingApprovalsPage() {
                                     <span>{input.cluster_name || "Direct Request"}</span>
                                     <span className="w-1 h-1 rounded-full bg-gray-300"></span>
                                     <span>{input.program_name || "AgriNoria Program"}</span>
+                                    {input.farm_size_hectares && (
+                                       <>
+                                          <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                                          <span>{input.farm_size_hectares} Ha</span>
+                                       </>
+                                    )}
+                                 </div>
+                                 <div className="flex items-center gap-2 mt-2">
+                                    {input.items_status === "approved" ? (
+                                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] font-bold rounded-full border border-emerald-200">
+                                          <CheckCircle2 className="w-3 h-3" /> Agronomic Approved
+                                       </span>
+                                    ) : (
+                                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-[10px] font-bold rounded-full border border-amber-200">
+                                          <Clock className="w-3 h-3" /> Awaiting Agronomic Review
+                                       </span>
+                                    )}
+                                    {input.funds_status === "approved" ? (
+                                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 text-[10px] font-bold rounded-full border border-blue-200">
+                                          <CheckCircle2 className="w-3 h-3" /> Funds Authorized
+                                       </span>
+                                    ) : (
+                                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 text-[10px] font-bold rounded-full border border-gray-200">
+                                          <Clock className="w-3 h-3" /> Awaiting Finance
+                                       </span>
+                                    )}
                                  </div>
                               </div>
                            </div>
-                           <div className="text-right">
+                           <div className="flex flex-col sm:items-end gap-2">
                               <p className="font-black text-lg text-emerald-600 tracking-tighter">₦{parseFloat(input.total_value).toLocaleString()}</p>
-                              <div className="flex items-center justify-end gap-1.5 mt-1 text-[9px] font-bold text-amber-600 uppercase tracking-widest">
-                                 <Clock className="w-3 h-3" />
-                                 Awaiting Finance
-                              </div>
+                              {input.items_status !== "approved" && (
+                                 <div className="flex items-center gap-2">
+                                    {distributors.length > 0 && (
+                                       <select
+                                          className="text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-1.5 font-bold"
+                                          value={selectedDistributors[input.id] || ""}
+                                          onChange={(e) => setSelectedDistributors({ ...selectedDistributors, [input.id]: e.target.value })}
+                                       >
+                                          <option value="">Assign Distributor...</option>
+                                          {distributors.map((d) => (
+                                             <option key={d.id} value={d.id}>{d.company_name || `${d.fname} ${d.lname}`}</option>
+                                          ))}
+                                       </select>
+                                    )}
+                                    <button
+                                       onClick={() => handleApproveAgronomic(input.id)}
+                                       disabled={processingId === input.id}
+                                       className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 disabled:opacity-50"
+                                    >
+                                       <CheckCircle2 size={14} /> Approve
+                                    </button>
+                                 </div>
+                               )}
                            </div>
                         </div>
                      ))}

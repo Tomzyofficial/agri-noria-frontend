@@ -10,7 +10,8 @@ import {
    FaCheckCircle,
    FaExclamationTriangle,
    FaLock,
-   FaTimes
+   FaTimes,
+   FaBuilding
 } from "react-icons/fa";
 import { useFarmerData } from "./useFarmerData";
 import { useState, useEffect } from "react";
@@ -83,7 +84,7 @@ export default function FarmerOverview() {
             body: JSON.stringify({ cluster_id: clusterId, farmer_id: profile.id }),
          });
          const d = await res.json();
-         if (res.ok) {
+         if (res.ok && d.success) {
             toast.success("Successfully joined cluster!");
             window.location.reload();
          } else {
@@ -96,9 +97,30 @@ export default function FarmerOverview() {
 
    return (
       <div className="space-y-8">
-         <div>
-            <h1 className="text-4xl font-black text-(--foreground) tracking-tight">Farmer Dashboard</h1>
-            <p className="text-sm text-gray-500 font-bold uppercase tracking-widest mt-1">Monitor your farm, training, wallet, and marketplace activity.</p>
+         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+               <h1 className="text-4xl font-black text-(--foreground) tracking-tight">Farmer Dashboard</h1>
+               <p className="text-sm text-gray-500 font-bold uppercase tracking-widest mt-1">Monitor your farm, training, wallet, and marketplace activity.</p>
+            </div>
+
+            {profile?.organization && (
+               <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-200 dark:border-blue-800/60 shadow-sm">
+                  <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-600/20">
+                     <FaBuilding className="text-base" />
+                  </div>
+                  <div>
+                     <div className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+                        <span>Affiliated Institution</span>
+                        <span className="px-1.5 py-0.5 rounded bg-blue-200 dark:bg-blue-900/60 text-[9px] font-black uppercase text-blue-800 dark:text-blue-200">
+                           {profile.organization.role || "Member"}
+                        </span>
+                     </div>
+                     <p className="text-xs font-black text-gray-900 dark:text-white leading-tight mt-0.5">
+                        {profile.organization.company_name || profile.organization.name || "Institution Partner"}
+                     </p>
+                  </div>
+               </div>
+            )}
          </div>
 
          {!isVerified && !bannerDismissed && (

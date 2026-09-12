@@ -1,28 +1,63 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Loader2, Search, MapPin, Phone, Users, Building, Mail, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Loader2, Search, MapPin, Phone, Users, Building, Mail, ArrowRight, CheckCircle2, UserPlus } from "lucide-react";
 import { Input } from "@/components/ui/Input";
+import { toast } from "react-toastify";
 
 export default function CooperativesDirectoryPage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [affiliating, setAffiliating] = useState(null);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      // First try to fetch Producer Association network affiliations
+      let res = await fetch("/api/proxy/admin/institution/affiliations");
+      let json = await res.json();
+      if (json.success && json.data?.length > 0) {
+        setData(json.data);
+      } else {
+        // Fallback to platform cooperative directory
+        res = await fetch("/api/proxy/admin/institution/cooperatives");
+        json = await res.json();
+        if (json.success) setData(json.data || []);
+      }
+    } catch (error) {
+      console.error("Failed to load cooperatives:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch("/api/proxy/admin/institution/cooperatives");
-        const json = await res.json();
-        if (json.success) setData(json.data || []);
-      } catch (error) {
-        console.error("Failed to load cooperatives:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
-  }, []);
+  }, [fetchData]);
+
+  const handleAffiliate = async (coopId) => {
+    setAffiliating(coopId);
+    try {
+      const res = await fetch("/api/proxy/admin/institution/affiliations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ coopId, status: "active" }),
+      });
+
+      if (res.ok) {
+        toast.success("Cooperative successfully affiliated to your Association Network!");
+        fetchData();
+      } else {
+        toast.error("Failed to affiliate cooperative");
+      }
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setAffiliating(null);
+    }
+  };
 
   const filteredData = data.filter((item) =>
     `${item.fname} ${item.lname} ${item.company_name || ""}`.toLowerCase().includes(search.toLowerCase()) ||
@@ -40,10 +75,10 @@ export default function CooperativesDirectoryPage() {
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <h1 className="text-4xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">
-              Cooperatives Directory
+              Member Cooperatives & Network
             </h1>
             <p className="text-xs font-bold uppercase tracking-[0.2em] mt-2 text-blue-600 dark:text-blue-400">
-              Verified Ecosystem Cooperatives & Associations
+              Affiliated Cooperatives & Producer Organizations
             </p>
           </div>
           
@@ -67,9 +102,9 @@ export default function CooperativesDirectoryPage() {
         <CardHeader className="border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
           <CardTitle className="text-lg font-bold flex items-center gap-2">
             <Users className="w-5 h-5 text-blue-500" />
-            Registered Ecosystem Cooperatives 
+            Cooperative Organizations 
             <span className="ml-2 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 font-black text-xs shadow-xs">
-              {filteredData.length} Total Users
+              {filteredData.length} Total
             </span>
           </CardTitle>
         </CardHeader>
@@ -87,9 +122,9 @@ export default function CooperativesDirectoryPage() {
                   <tr>
                     <th className="px-8 py-5">Cooperative Identity</th>
                     <th className="px-6 py-5">Representative</th>
-                    <th className="px-6 py-5">Contact & Email</th>
-                    <th className="px-6 py-5">State / Jurisdiction</th>
-                    <th className="px-8 py-5 text-right">Status</th>
+                    <th className="px-6 py-5">Contact</th>
+                    <th className="px-6 py-5">Network Scale</th>
+                    <th className="px-8 py-5 text-right">Affiliation</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-white/5">
@@ -100,59 +135,77 @@ export default function CooperativesDirectoryPage() {
                           <Users className="w-8 h-8 text-gray-400" />
                         </div>
                         <h3 className="text-lg font-bold text-gray-900 dark:text-white">No cooperatives found</h3>
-                        <p className="text-gray-500 mt-1">No cooperative users registered in the ecosystem match your query.</p>
+                        <p className="text-gray-500 mt-1">No cooperative records match your query.</p>
                       </td>
                     </tr>
                   ) : (
-                    filteredData.map((coop, idx) => (
-                      <tr 
-                        key={idx} 
-                        className="group hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-all duration-200 cursor-pointer"
-                      >
-                        <td className="px-8 py-4">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/50 dark:to-indigo-900/50 flex items-center justify-center ring-2 ring-white dark:ring-gray-950 group-hover:scale-105 transition-transform duration-200">
-                              <Building className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    filteredData.map((coop, idx) => {
+                      const coopId = coop.cooperative_id || coop.id;
+                      const isAffiliated = coop.affiliation_status === "active";
+
+                      return (
+                        <tr 
+                          key={idx} 
+                          className="group hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-all duration-200"
+                        >
+                          <td className="px-8 py-4">
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/50 dark:to-indigo-900/50 flex items-center justify-center ring-2 ring-white dark:ring-gray-950 group-hover:scale-105 transition-transform duration-200">
+                                <Building className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                              </div>
+                              <div>
+                                <p className="font-bold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                  {coop.company_name || `${coop.fname} ${coop.lname}`}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {coop.cluster_count ? `${coop.cluster_count} Member Clusters` : "Verified Cooperative"}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-bold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                {coop.company_name || `${coop.fname} ${coop.lname}`}
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">Enrolled {new Date(coop.created_at).toLocaleDateString()}</p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="font-semibold text-gray-800 dark:text-gray-200 text-xs">
+                              {coop.fname} {coop.lname}
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="font-semibold text-gray-800 dark:text-gray-200">
-                            {coop.fname} {coop.lname}
-                          </div>
-                          <span className="text-[10px] uppercase font-bold text-blue-600 dark:text-blue-400 tracking-wider">Representative</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 font-medium text-xs">
-                              <Phone className="w-3 h-3 text-gray-400" />
-                              {coop.phone || "N/A"}
+                            <span className="text-[10px] uppercase font-bold text-blue-600 dark:text-blue-400 tracking-wider">Representative</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="space-y-1 text-xs">
+                              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 font-medium">
+                                <Phone className="w-3 h-3 text-gray-400" />
+                                {coop.phone || "N/A"}
+                              </div>
+                              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                                <Mail className="w-3 h-3 text-gray-400" />
+                                {coop.email || "N/A"}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs">
-                              <Mail className="w-3 h-3 text-gray-400" />
-                              {coop.email || "N/A"}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-xs font-bold text-(--foreground)">
+                              {coop.member_count ? `${coop.member_count} Members` : "Active"}
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold text-xs border border-emerald-200/50 dark:border-emerald-500/20">
-                            <MapPin className="w-3 h-3" />
-                            {coop.state || "National"}
-                          </div>
-                        </td>
-                        <td className="px-8 py-4 text-right">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                            Active Cooperative
-                          </span>
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+                          <td className="px-8 py-4 text-right">
+                            {isAffiliated ? (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                <CheckCircle2 size={12} /> Affiliated Member
+                              </span>
+                            ) : (
+                              <Button
+                                size="sm"
+                                disabled={affiliating === coopId}
+                                onClick={() => handleAffiliate(coopId)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold gap-1 shadow-sm"
+                              >
+                                {affiliating === coopId ? <Loader2 size={12} className="animate-spin" /> : <UserPlus size={12} />}
+                                Affiliate to Network
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

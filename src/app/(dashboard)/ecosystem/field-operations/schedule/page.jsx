@@ -141,43 +141,53 @@ export default function SchedulePage() {
                <CardContent className="p-6">
                    <form onSubmit={handleSubmit} className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                         <div className="md:col-span-2">
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Farmer / Farm</label>
-                            <select 
-                               className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none shadow-sm"
-                               value={formData.farm_id}
-                               onChange={(e) => setFormData({...formData, farm_id: e.target.value})}
-                               required
-                            >
-                                <option value="">Select Farmer</option>
-                                {farmers.map(f => (
-                                    <option key={f.farmer_id} value={f.farmer_id}>{f.name}</option>
-                                ))}
-                            </select>
-                         </div>
-                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Visit Date & Time</label>
-                            <input
-                               type="datetime-local"
-                               value={formData.scheduled_date}
-                               onChange={(e) => setFormData({...formData, scheduled_date: e.target.value})}
-                               className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none shadow-sm"
-                               required
-                            />
-                         </div>
-                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Visit Type</label>
-                            <select 
-                               className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none shadow-sm"
-                               value={formData.visit_type}
-                               onChange={(e) => setFormData({...formData, visit_type: e.target.value})}
-                               required
-                            >
-                               <option value="INSPECTION">INSPECTION</option>
-                               <option value="VERIFICATION">VERIFICATION</option>
-                               <option value="MONITORING">MONITORING</option>
-                            </select>
-                         </div>
+                          <div className="md:col-span-2">
+                             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Farmer / Farm</label>
+                             <select 
+                                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none shadow-sm text-gray-900 dark:text-gray-100 font-medium"
+                                value={formData.farm_id}
+                                onChange={(e) => setFormData({...formData, farm_id: e.target.value})}
+                                required
+                             >
+                                 <option value="" className="bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">Select Farmer</option>
+                                 {farmers.map((f, idx) => {
+                                     const farmerName = f.name?.trim() || `${f.fname || ''} ${f.lname || ''}`.trim() || f.phone || `Farmer #${String(f.farmer_id || idx).slice(0, 8)}`;
+                                     const details = [f.phone, f.commodity].filter(Boolean).join(" • ");
+                                     return (
+                                         <option 
+                                            key={f.farmer_id || idx} 
+                                            value={f.farmer_id}
+                                            className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 py-1.5"
+                                         >
+                                            {farmerName}{details ? ` (${details})` : ''}
+                                         </option>
+                                     );
+                                 })}
+                             </select>
+                          </div>
+                          <div>
+                             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Visit Date & Time</label>
+                             <input
+                                type="datetime-local"
+                                value={formData.scheduled_date}
+                                onChange={(e) => setFormData({...formData, scheduled_date: e.target.value})}
+                                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none shadow-sm text-gray-900 dark:text-gray-100 font-medium"
+                                required
+                             />
+                          </div>
+                          <div>
+                             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Visit Type</label>
+                             <select 
+                                className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none shadow-sm text-gray-900 dark:text-gray-100 font-medium"
+                                value={formData.visit_type}
+                                onChange={(e) => setFormData({...formData, visit_type: e.target.value})}
+                                required
+                             >
+                                <option value="INSPECTION" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">INSPECTION</option>
+                                <option value="VERIFICATION" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">VERIFICATION</option>
+                                <option value="MONITORING" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">MONITORING</option>
+                             </select>
+                          </div>
                       </div>
                       <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
                          <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="rounded-xl px-6">

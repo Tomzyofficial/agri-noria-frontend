@@ -1,6 +1,6 @@
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Briefcase, Globe, CheckCircle2, DollarSign } from "lucide-react";
+import { Briefcase, Globe, CheckCircle2, DollarSign, Package, X, Plus, Check, Loader2 } from "lucide-react";
 import { useProgramData } from "../useProgramData";
 import { useState } from "react";
 import { toast } from "react-toastify";
@@ -8,6 +8,64 @@ import { toast } from "react-toastify";
 export default function EcosystemProgramsPage() {
    const { loading, programs, currentUserId, clusters, fetchData } = useProgramData();
    const [enrollingId, setEnrollingId] = useState(null);
+
+   // Input packages modal state
+   const [selectedProgramForPackages, setSelectedProgramForPackages] = useState(null);
+   const [packages, setPackages] = useState([]);
+   const [loadingPackages, setLoadingPackages] = useState(false);
+   const [isCreatingPackage, setIsCreatingPackage] = useState(false);
+   const [newPackage, setNewPackage] = useState({
+      name: "",
+      total_value: "",
+      seeds: true,
+      fertilizer: true,
+      herbicides: true,
+   });
+
+   const openPackagesModal = async (prog) => {
+      setSelectedProgramForPackages(prog);
+      setLoadingPackages(true);
+      try {
+         const res = await fetch(`/api/proxy/programs/${prog.id}/packages`);
+         const data = await res.json();
+         if (data.success) {
+            setPackages(data.data || []);
+         }
+      } catch (err) {
+         console.error("Error loading packages:", err);
+         toast.error("Failed to load program input packages");
+      } finally {
+         setLoadingPackages(false);
+      }
+   };
+
+   const handleCreatePackage = async (e) => {
+      e.preventDefault();
+      if (!newPackage.name || !newPackage.total_value) {
+         toast.error("Package name and total value are required");
+         return;
+      }
+      setIsCreatingPackage(true);
+      try {
+         const res = await fetch(`/api/proxy/programs/${selectedProgramForPackages.id}/packages`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newPackage),
+         });
+         const data = await res.json();
+         if (data.success) {
+            toast.success("Input package created!");
+            setPackages([data.data, ...packages]);
+            setNewPackage({ name: "", total_value: "", seeds: true, fertilizer: true, herbicides: true });
+         } else {
+            toast.error(data.error || "Failed to create package");
+         }
+      } catch (err) {
+         toast.error("Network error creating package");
+      } finally {
+         setIsCreatingPackage(false);
+      }
+   };
 
    const activeCluster = clusters && clusters.length > 0 ? (clusters.find(c => c.supervisor_id === currentUserId) || null) : null;
 
@@ -131,27 +189,156 @@ export default function EcosystemProgramsPage() {
                                  <span>Automated repayment tracking & strict fund deduction</span>
                               </div>
                            </div>
-                           <div className="pt-2">
-                              {isEnrolled ? (
-                                 <button disabled className="w-full py-3.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-2xl font-black text-xs uppercase tracking-widest cursor-default flex items-center justify-center gap-2 shadow-inner">
-                                    <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400" /> Cluster Enrolled in Program
-                                 </button>
-                              ) : (
-                                 <button 
-                                    onClick={() => handleEnrollCluster(prog.id)}
-                                    disabled={enrollingId === prog.id || !canEnroll}
-                                    className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center justify-center gap-2"
-                                 >
-                                    {enrollingId === prog.id ? "Enrolling Cluster..." : (!activeCluster) ? "Register a Cluster First to Enroll" : (activeCluster && activeCluster.program_id) ? "Cluster Enrolled in Another Program" : "Enroll Cluster in Program"}
-                                 </button>
-                              )}
-                           </div>
+                            <div className="pt-2">
+                               <button
+                                  onClick={() => openPackagesModal(prog)}
+                                  className="w-full py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 mb-2 transition"
+                               >
+                                  <Package size={14} /> Input Packages
+                               </button>
+
+                               {isEnrolled ? (
+                                  <button disabled className="w-full py-3.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-2xl font-black text-xs uppercase tracking-widest cursor-default flex items-center justify-center gap-2 shadow-inner">
+                                     <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400" /> Cluster Enrolled in Program
+                                  </button>
+                               ) : (
+                                  <button 
+                                     onClick={() => handleEnrollCluster(prog.id)}
+                                     disabled={enrollingId === prog.id || !canEnroll}
+                                     className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20 active:scale-95 flex items-center justify-center gap-2"
+                                  >
+                                     {enrollingId === prog.id ? "Enrolling Cluster..." : (!activeCluster) ? "Register a Cluster First to Enroll" : (activeCluster && activeCluster.program_id) ? "Cluster Enrolled in Another Program" : "Enroll Cluster in Program"}
+                                  </button>
+                               )}
+                            </div>
                         </CardContent>
                      </Card>
                   );
                })
             )}
          </div>
+
+         {/* Input Packages Modal */}
+         {selectedProgramForPackages && (
+            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+               <div className="bg-white dark:bg-gray-900 border rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-6 shadow-2xl">
+                  <div className="flex items-center justify-between border-b pb-4">
+                     <div>
+                        <h3 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+                           <Package className="w-5 h-5 text-emerald-600" />
+                           Input Packages: {selectedProgramForPackages.name}
+                        </h3>
+                        <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mt-0.5">
+                           {selectedProgramForPackages.commodity} • {selectedProgramForPackages.region}
+                        </p>
+                     </div>
+                     <button 
+                        onClick={() => setSelectedProgramForPackages(null)}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full text-gray-500"
+                     >
+                        <X size={20} />
+                     </button>
+                  </div>
+
+                  {/* Existing Packages */}
+                  <div className="space-y-3">
+                     <h4 className="text-xs font-black uppercase text-gray-400 tracking-wider">Defined Packages</h4>
+                     {loadingPackages ? (
+                        <div className="py-6 flex justify-center"><Loader2 className="animate-spin text-emerald-600" /></div>
+                     ) : packages.length === 0 ? (
+                        <div className="p-4 bg-gray-50 dark:bg-gray-800/40 rounded-2xl text-center text-xs text-gray-500">
+                           No input packages defined for this program yet. Define one below.
+                        </div>
+                     ) : (
+                        <div className="space-y-2">
+                           {packages.map((pkg) => (
+                              <div key={pkg.id} className="p-4 bg-gray-50 dark:bg-gray-800/60 rounded-2xl border flex items-center justify-between">
+                                 <div>
+                                    <p className="font-bold text-sm text-gray-900 dark:text-white">{pkg.name}</p>
+                                    <div className="flex gap-2 mt-1">
+                                       {pkg.seeds && <span className="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold">Seeds</span>}
+                                       {pkg.fertilizer && <span className="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-bold">Fertilizer</span>}
+                                       {pkg.herbicides && <span className="text-[10px] px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-bold">Crop Protection</span>}
+                                    </div>
+                                 </div>
+                                 <div className="text-right">
+                                    <p className="text-[10px] text-gray-400 uppercase font-black">Per Farmer / Ha</p>
+                                    <p className="font-black text-emerald-600 text-sm">₦{parseFloat(pkg.total_value || 0).toLocaleString()}</p>
+                                 </div>
+                              </div>
+                           ))}
+                        </div>
+                     )}
+                  </div>
+
+                  {/* Add Package Form */}
+                  <form onSubmit={handleCreatePackage} className="p-5 bg-gray-50 dark:bg-gray-800/40 rounded-2xl border space-y-4">
+                     <h4 className="text-xs font-black uppercase text-gray-700 dark:text-gray-300 tracking-wider flex items-center gap-1">
+                        <Plus size={14} /> Add New Package
+                     </h4>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                           <label className="text-[10px] font-bold uppercase text-gray-500">Package Name</label>
+                           <input 
+                              type="text" 
+                              placeholder="e.g. Standard Input Package"
+                              value={newPackage.name}
+                              onChange={(e) => setNewPackage({ ...newPackage, name: e.target.value })}
+                              className="w-full mt-1 p-2.5 text-sm bg-white dark:bg-gray-900 border rounded-xl"
+                           />
+                        </div>
+                        <div>
+                           <label className="text-[10px] font-bold uppercase text-gray-500">Total Value (₦)</label>
+                           <input 
+                              type="number" 
+                              placeholder="e.g. 150000"
+                              value={newPackage.total_value}
+                              onChange={(e) => setNewPackage({ ...newPackage, total_value: e.target.value })}
+                              className="w-full mt-1 p-2.5 text-sm bg-white dark:bg-gray-900 border rounded-xl"
+                           />
+                        </div>
+                     </div>
+                     <div className="flex flex-wrap items-center gap-4 text-xs font-bold">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                           <input 
+                              type="checkbox"
+                              checked={newPackage.seeds}
+                              onChange={(e) => setNewPackage({ ...newPackage, seeds: e.target.checked })}
+                              className="rounded text-emerald-600"
+                           />
+                           <span>Seeds Included</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                           <input 
+                              type="checkbox"
+                              checked={newPackage.fertilizer}
+                              onChange={(e) => setNewPackage({ ...newPackage, fertilizer: e.target.checked })}
+                              className="rounded text-emerald-600"
+                           />
+                           <span>Fertilizer Included</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                           <input 
+                              type="checkbox"
+                              checked={newPackage.herbicides}
+                              onChange={(e) => setNewPackage({ ...newPackage, herbicides: e.target.checked })}
+                              className="rounded text-emerald-600"
+                           />
+                           <span>Crop Protection Included</span>
+                        </label>
+                     </div>
+                     <button
+                        type="submit"
+                        disabled={isCreatingPackage}
+                        className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow transition disabled:opacity-50 flex items-center justify-center gap-2"
+                     >
+                        {isCreatingPackage ? <Loader2 className="animate-spin" size={14} /> : <Check size={14} />}
+                        Create Package
+                     </button>
+                  </form>
+               </div>
+            </div>
+         )}
       </div>
    );
 }

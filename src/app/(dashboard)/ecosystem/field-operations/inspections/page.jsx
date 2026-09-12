@@ -175,34 +175,44 @@ export default function InspectionsPage() {
                         <div>
                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Farmer / Farm</label>
                            <select
-                              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none shadow-sm"
+                              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none shadow-sm text-gray-900 dark:text-gray-100 font-medium"
                               value={formData.farmer_id}
                               onChange={(e) => setFormData({ ...formData, farmer_id: e.target.value })}
                               required
                            >
-                              <option value="">Select Farmer</option>
-                              {farmers.map(f => (
-                                 <option key={f.farmer_id} value={f.farmer_id}>{f.name}</option>
-                              ))}
+                              <option value="" className="bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">Select Farmer</option>
+                              {farmers.map((f, idx) => {
+                                 const farmerName = f.name?.trim() || `${f.fname || ''} ${f.lname || ''}`.trim() || f.phone || `Farmer #${String(f.farmer_id || idx).slice(0, 8)}`;
+                                 const details = [f.phone, f.commodity].filter(Boolean).join(" • ");
+                                 return (
+                                    <option 
+                                       key={f.farmer_id || idx} 
+                                       value={f.farmer_id}
+                                       className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 py-1.5"
+                                    >
+                                       {farmerName}{details ? ` (${details})` : ''}
+                                    </option>
+                                 );
+                              })}
                            </select>
                         </div>
                         <div>
                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Status</label>
                            <select
-                              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none shadow-sm"
+                              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none shadow-sm text-gray-900 dark:text-gray-100 font-medium"
                               value={formData.status}
                               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                               required
                            >
-                              <option value="verified">Verified (Pass)</option>
-                              <option value="failed">Failed</option>
-                              <option value="pending">Pending</option>
+                              <option value="verified" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">Verified (Pass)</option>
+                              <option value="failed" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">Failed</option>
+                              <option value="pending" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">Pending</option>
                            </select>
                         </div>
                         <div className="md:col-span-2">
                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Notes</label>
                            <textarea
-                              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none shadow-sm resize-none"
+                              className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none shadow-sm resize-none text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
                               value={formData.notes}
                               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                               rows={4}
@@ -266,7 +276,7 @@ export default function InspectionsPage() {
                         placeholder="Farmer name or location..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-md dark:bg-gray-800"
+                        className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 outline-none shadow-sm font-medium"
                      />
                   </div>
                   <div>
@@ -274,11 +284,11 @@ export default function InspectionsPage() {
                      <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-md dark:bg-gray-800"
+                        className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 outline-none shadow-sm font-medium"
                      >
-                        <option value="">All Statuses</option>
+                        <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">All Statuses</option>
                         {statuses.map((status) => (
-                           <option key={status} value={status}>
+                           <option key={status} value={status} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
                               {status.replace(/_/g, " ")}
                            </option>
                         ))}

@@ -50,7 +50,7 @@ export default function InstitutionLayout({ children }) {
     }
   };
 
-  // Auto-verify session
+  // Auto-verify session and fetch notifications
   useEffect(() => {
     const checkExistingUser = async () => {
       try {
@@ -71,7 +71,13 @@ export default function InstitutionLayout({ children }) {
 
         if (notifRes && notifRes.ok) {
           const notifData = await notifRes.json().catch(() => null);
-          if (notifData?.success) setNotifications(notifData.data || []);
+          if (notifData?.success && Array.isArray(notifData.data)) {
+            const savedDismissed = typeof window !== "undefined"
+              ? JSON.parse(sessionStorage.getItem("dismissed_notification_ids") || "[]")
+              : [];
+            const active = notifData.data.filter(n => !savedDismissed.includes(n.id));
+            setNotifications(active);
+          }
         }
       } catch {
         return;
@@ -80,7 +86,7 @@ export default function InstitutionLayout({ children }) {
     checkExistingUser();
     const interval = setInterval(checkExistingUser, 30000);
     return () => clearInterval(interval);
-  }, [pathname]);
+  }, []);
 
   let navMenu = [];
 
@@ -136,28 +142,33 @@ export default function InstitutionLayout({ children }) {
       break;
     case "producer association":
       navMenu = [
-        { label: "Dashboard", href: "/ecosystem/institution", icon: <LayoutDashboard className="w-4 h-4" /> },
+        { label: "Overview", href: "/ecosystem/institution", icon: <LayoutDashboard className="w-4 h-4" /> },
+        { label: "Producers", href: "/ecosystem/institution/farmers", icon: <Users className="w-4 h-4" /> },
+        { label: "Member Cooperatives", href: "/ecosystem/institution/cooperatives", icon: <Globe className="w-4 h-4" /> },
+        { label: "Producer Groups", href: "/ecosystem/institution/producer-groups", icon: <Activity className="w-4 h-4" /> },
         { label: "Programmes", href: "/ecosystem/institution/programs", icon: <Landmark className="w-4 h-4" /> },
-        { label: "Monitoring", href: "/ecosystem/institution/monitoring", icon: <Activity className="w-4 h-4" /> },
-        { label: "Cooperatives", href: "/ecosystem/institution/cooperatives", icon: <Users className="w-4 h-4" /> },
-        { label: "Farmers", href: "/ecosystem/institution/farmers", icon: <Globe className="w-4 h-4" /> },
+        { label: "Commodity Intelligence", href: "/ecosystem/institution/traceability", icon: <Activity className="w-4 h-4" /> },
+        { label: "Reports", href: "/ecosystem/institution/reports", icon: <FileText className="w-4 h-4" /> },
       ];
       break;
     case "cooperative":
       navMenu = [
-        { label: "Dashboard", href: "/ecosystem/institution", icon: <LayoutDashboard className="w-4 h-4" /> },
+        { label: "Overview", href: "/ecosystem/institution", icon: <LayoutDashboard className="w-4 h-4" /> },
         { label: "Members", href: "/ecosystem/institution/farmers", icon: <Users className="w-4 h-4" /> },
+        { label: "Member Clusters", href: "/ecosystem/institution/member-clusters", icon: <Activity className="w-4 h-4" /> },
         { label: "Farms", href: "/ecosystem/institution/farms", icon: <Globe className="w-4 h-4" /> },
-        { label: "Requests", href: "/ecosystem/institution/approvals", icon: <Coins className="w-4 h-4" /> },
+        { label: "Programmes", href: "/ecosystem/institution/programs", icon: <Landmark className="w-4 h-4" /> },
+        { label: "Financing & Inputs", href: "/ecosystem/institution/approvals", icon: <Coins className="w-4 h-4" /> },
         { label: "Reports", href: "/ecosystem/institution/reports", icon: <FileText className="w-4 h-4" /> },
       ];
       break;
     case "research institution":
       navMenu = [
         { label: "Research Dashboard", href: "/ecosystem/institution", icon: <LayoutDashboard className="w-4 h-4" /> },
-        { label: "Projects", href: "/ecosystem/institution/programs", icon: <Landmark className="w-4 h-4" /> },
+        { label: "Research Projects", href: "/ecosystem/institution/research-projects", icon: <FileText className="w-4 h-4" /> },
+        { label: "Participating Farmers", href: "/ecosystem/institution/farmers", icon: <Users className="w-4 h-4" /> },
         { label: "Trial Plots", href: "/ecosystem/institution/trial-plots", icon: <Activity className="w-4 h-4" /> },
-        { label: "Publications", href: "/ecosystem/institution/publications", icon: <FileText className="w-4 h-4" /> },
+        { label: "Publications", href: "/ecosystem/institution/publications", icon: <Globe className="w-4 h-4" /> },
         { label: "Alerts & Advisories", href: "/ecosystem/institution/advisories", icon: <ShieldAlert className="w-4 h-4" /> },
       ];
       break;
@@ -187,17 +198,34 @@ export default function InstitutionLayout({ children }) {
       : "hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded transition-all duration-200 ml-1";
   };
 
-  const [notificationDismissed, setNotificationDismissed] = useState(false);
+  const handleDismissNotification = async (notifId) => {
+    // 1. Remove from local display immediately
+    setNotifications((prev) => prev.filter((n) => n.id !== notifId));
 
-  useEffect(() => {
-    if (notifications.length > 0) {
-      setNotificationDismissed(false);
-      const timer = setTimeout(() => {
-        setNotificationDismissed(true);
-      }, 15000);
-      return () => clearTimeout(timer);
+    // 2. Persist in session storage so polling ignores it
+    if (typeof window !== "undefined") {
+      try {
+        const saved = JSON.parse(sessionStorage.getItem("dismissed_notification_ids") || "[]");
+        if (!saved.includes(notifId)) {
+          saved.push(notifId);
+          sessionStorage.setItem("dismissed_notification_ids", JSON.stringify(saved));
+        }
+      } catch (e) {
+        console.error("Storage error:", e);
+      }
     }
-  }, [notifications]);
+
+    // 3. Mark as read on the backend database
+    try {
+      await fetch("/api/proxy/programs/notifications/dismiss", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: notifId }),
+      });
+    } catch (e) {
+      console.error("Failed to dismiss on backend:", e);
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-(--background)">
@@ -250,7 +278,7 @@ export default function InstitutionLayout({ children }) {
         </div>
       </aside>
       <main className="lg:ml-64 w-full lg:p-8 p-4 bg-gray-50 dark:bg-(--background) transition-all duration-200">
-        {notifications.length > 0 && !notificationDismissed && (
+        {notifications.length > 0 && (
           <div className="mb-6 p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800/50 shadow-sm flex items-center justify-between gap-4 animate-in fade-in duration-300">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-red-500 text-white shadow-sm">
@@ -274,7 +302,7 @@ export default function InstitutionLayout({ children }) {
                 Fund Programme
               </Link>
               <button
-                onClick={() => setNotificationDismissed(true)}
+                onClick={() => handleDismissNotification(notifications[0].id)}
                 className="p-1.5 hover:bg-red-200 dark:hover:bg-red-800/50 text-red-800 dark:text-red-200 rounded-xl transition-all cursor-pointer"
                 title="Dismiss"
               >

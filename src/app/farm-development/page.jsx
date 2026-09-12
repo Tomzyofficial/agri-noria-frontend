@@ -2,7 +2,7 @@ import Link from "next/link";
 import { apiUrl } from "@/_lib/api";
 import { formatLabel } from "@/utils/otherUtils";
 
-export async function getData() {
+async function getData() {
   const response = await fetch(apiUrl("/api/farm-development/public/service-list"));
   const data = await response.json();
   return data;
