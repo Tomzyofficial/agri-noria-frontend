@@ -14,7 +14,7 @@ export default function DroneListingRent({ listing }) {
             <DroneSpecTable listing={listing} />
          </div>
 
-         <aside className="lg:sticky lg:top-6 lg:self-start lg:col-span-2">
+         <aside className="lg:sticky lg:top-20 lg:self-start lg:col-span-2">
             <RequestQuoteForm listing={listing} />
          </aside>
       </article>

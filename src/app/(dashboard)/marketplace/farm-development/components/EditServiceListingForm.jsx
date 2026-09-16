@@ -284,7 +284,7 @@ export default function EditServiceListing({ listing }) {
                      Next
                   </Button>
                ) : (
-                  <SubmitButton loading={loading} loadingText="Please wait..." text="Publish listing" />
+                  <SubmitButton loading={loading} text="Save Changes" />
                )}
             </div>
          </form>

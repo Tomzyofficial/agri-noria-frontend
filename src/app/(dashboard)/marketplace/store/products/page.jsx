@@ -1,6 +1,6 @@
 import { verifyVendorSession } from "@/actions/session";
 import { Unauthorized } from "@/components/dashboard/Unauthorized";
-import { InventoryManagement } from "../../../../../components/dashboard/InventoryManagement";
+import { InventoryManagement } from "@/components/dashboard/InventoryManagement";
 
 export const metadata = {
    title: "Dashboard Product Management",

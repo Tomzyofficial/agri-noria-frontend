@@ -137,7 +137,7 @@ export function CreateTrainingForm() {
                </div>
             </div>
             <div className="mt-4">
-               <SubmitButton loading={loading} text="Create Training" loadingText="Creating..." />
+               <SubmitButton loading={loading} text="Create Training" />
             </div>
          </form>
       </div>

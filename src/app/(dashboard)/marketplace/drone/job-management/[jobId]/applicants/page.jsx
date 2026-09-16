@@ -1,9 +1,10 @@
-import JobApplicantsPage from "@/components/dashboard/jobs/applicantpage";
+import JobApplicantsPage from "@/components/dashboard/jobs/applicantpage.jsx";
 
 import { apiUrl } from "@/_lib/api";
 import { cookieStoreFnc } from "@/actions/session";
 import { verifyVendorSession } from "@/actions/session";
 import { Unauthorized } from "@/components/dashboard/Unauthorized";
+import Breadcrumbs from "@/components/dashboard/BreadCrumbs";
 
 async function getData(jobId) {
    const cookieHeader = await cookieStoreFnc();
@@ -27,5 +28,20 @@ export default async function page({ params }) {
    }
    const { jobId } = await params;
    const data = await getData(jobId);
-   return <JobApplicantsPage data={data} />;
+   return (
+      <>
+         {/* <Breadcrumbs
+            breadcrumbs={[
+               { label: "Jobs Management", href: "/marketplace/drone/job-management" },
+
+               {
+                  label: "Applicants",
+                  href: "/marketplace/drone/job-management/create",
+                  active: true,
+               },
+            ]}
+         /> */}
+         <JobApplicantsPage data={data} />
+      </>
+   );
 }

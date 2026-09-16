@@ -44,16 +44,6 @@ export function LogisticsOverview() {
                </div>
             </div>
 
-            <div className="bg-white dark:bg-(--card-dark) rounded-xl shadow-sm border p-5">
-               <div className="flex items-center justify-between">
-                  <div>
-                     <p className="text-gray-500 text-sm">Delivery revenue</p>
-                     <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{isLoading ? "—" : stats?.total_delivery_revenue ? formatPrice(stats?.total_delivery_revenue, stats?.country_code, stats?.currency) : 0}</p>
-                  </div>
-                  <Wallet className="w-8 h-8 text-green-500" />
-               </div>
-            </div>
-
             {ORDER_STATUS_CONFIG.map(({ key, label, status, icon: Icon, cardClass, iconClass }) => (
                <Link key={key} href={`/marketplace/logistics/orders?status=${status}`} className="bg-white dark:bg-(--card-dark) rounded-xl shadow-sm border p-5 hover:border-green-300 transition-colors">
                   <div className="flex items-center justify-between">

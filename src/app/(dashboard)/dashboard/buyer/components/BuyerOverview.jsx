@@ -3,7 +3,7 @@
 import useSWR from "swr";
 import Link from "next/link";
 import { Package, ArrowRight, DollarSign } from "lucide-react";
-import { ORDER_STATUS_CONFIG } from "../../../../../components/dashboard/orders/OrderStatusUtils";
+import { ORDER_STATUS_CONFIG } from "@/components/dashboard/orders/OrderStatusUtils";
 import { fetcher } from "@/utils/otherUtils";
 import { formatPrice } from "@/utils/formatPrice";
 
@@ -47,20 +47,6 @@ export function BuyerOverview() {
                   <DollarSign className="w-8 h-8 text-blue-500" />
                </div>
             </div>
-
-            {/* <div className="bg-white dark:bg-(--card-dark) rounded-xl shadow-sm border p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Delivery revenue</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {isLoading
-                  ? "—"
-                  : `₦${Number(stats?.total_delivery_revenue ?? 0).toLocaleString()}`}
-              </p>
-            </div>
-            <Wallet className="w-8 h-8 text-green-500" />
-          </div>
-        </div> */}
 
             {ORDER_STATUS_CONFIG.map(({ key, label, status, icon: Icon, cardClass, iconClass }) => (
                <Link key={key} href={`/dashboard/buyer/orders?status=${status}`} className="bg-white dark:bg-(--card-dark) rounded-xl shadow-sm border p-5 hover:border-green-300 transition-colors">

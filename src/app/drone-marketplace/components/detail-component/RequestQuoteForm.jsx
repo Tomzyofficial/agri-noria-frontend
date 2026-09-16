@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { quoteRequestSchema } from "@/_lib/validations/DroneQuoteRequestSchema";
 import { formatPrice } from "@/utils/formatPrice";
 import PhoneInput from "react-phone-number-input/input";
+import { Label } from "@/components/ui/Label";
 
 const RENTAL_PERIOD_LABEL = {
    per_day: "per day",
@@ -76,9 +77,9 @@ export default function RequestQuoteForm({ listing }) {
    }
 
    return (
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4 border border-[#E2E4E3] bg-white p-5">
+      <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4 shadow-md bg-white dark:bg-(--card-dark) p-5 rounded-md">
          <div className="flex items-baseline justify-between">
-            <span className="font-mono text-[11px] tracking-[0.12em] text-[#5B6066]">RENTAL RATE</span>
+            <span className="font-mono text-[11px] tracking-[0.12em] text-[#5B6066] dark:text-foreground">RENTAL RATE</span>
             <span className="text-2xl font-semibold text-[#14171A]">
                {formatPrice(listing.rental_price, listing.country_code, listing.currency)}
                <span className="ml-1 text-sm font-normal text-[#5B6066]">{periodLabel}</span>
@@ -115,7 +116,7 @@ export default function RequestQuoteForm({ listing }) {
          <button
             type="submit"
             disabled={isSubmitting || submitState === "loading"}
-            className="cursor-pointer bg-[#2F5D8A] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#26496e] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#14171A]"
+            className="cursor-pointer rounded-md bg-(--greenish-color) px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-(--dark-green-color) disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#14171A]"
          >
             {submitState === "loading" ? "Sending request…" : "Request a quote"}
          </button>
@@ -130,9 +131,7 @@ export default function RequestQuoteForm({ listing }) {
 function Field({ label, htmlFor, error, children }) {
    return (
       <div className="flex flex-col gap-1">
-         <label htmlFor={htmlFor} className="text-sm text-[#5B6066]">
-            {label}
-         </label>
+         <Label htmlFor={htmlFor}>{label}</Label>
          {children}
          {error && (
             <span className="text-xs text-[#B3432B]" role="alert">

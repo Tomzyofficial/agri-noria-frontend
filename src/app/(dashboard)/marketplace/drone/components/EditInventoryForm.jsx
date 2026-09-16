@@ -8,15 +8,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { updateDroneListingSchema, mapInventoryToFormValues } from "@/_lib/validations/validateDroneListing";
 import SubmitButton from "@/components/dashboard/SubmitButton";
 import { toast } from "react-toastify";
-import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import ImageUploadPreview from "@/components/dashboard/ImageUploadPreview";
 
 export default function EditInventoryForm({ inventory }) {
-   // console.log(inventory);
    const router = useRouter();
    const [loading, setLoading] = useState(false);
-   const [existingImages] = useState(inventory?.image || []);
+   const [imagePreviews, setImagePreviews] = useState(inventory?.image || []);
 
    const { register, watch, handleSubmit } = useForm({
       resolver: zodResolver(updateDroneListingSchema),
@@ -24,6 +23,16 @@ export default function EditInventoryForm({ inventory }) {
    });
 
    const listingType = watch("listingType");
+   const imageField = register("image");
+
+   useEffect(() => {
+      return () => imagePreviews.filter((preview) => preview.startsWith("blob:")).forEach((preview) => URL.revokeObjectURL(preview));
+   }, [imagePreviews]);
+
+   const handleImageChange = (event) => {
+      imageField.onChange(event);
+      setImagePreviews(Array.from(event.target.files ?? []).map((file) => URL.createObjectURL(file)));
+   };
 
    const onInvalid = (errors) => {
       const firstError = Object.values(errors)[0];
@@ -76,7 +85,7 @@ export default function EditInventoryForm({ inventory }) {
    };
 
    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-(--card-dark) p-6">
+      <div className="min-h-screen bg-gray-50 rounded-md dark:bg-(--card-dark) p-6">
          <div className="max-w-5xl mx-auto">
             <div className="mb-8">
                <h1 className="text-3xl font-bold">Edit Drone Marketplace Listing</h1>
@@ -84,6 +93,11 @@ export default function EditInventoryForm({ inventory }) {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="rounded-xl shadow p-6 space-y-10">
+               <section>
+                  <h2 className="text-xl font-semibold mb-5">Drone Images</h2>
+                  <ImageUploadPreview handleChange={handleImageChange} preview={imagePreviews} loading={loading} inputProps={{ ...imageField, id: "image" }} />
+               </section>
+
                <section>
                   <h2 className="text-xl font-semibold mb-5">Drone Information</h2>
 
@@ -238,35 +252,7 @@ export default function EditInventoryForm({ inventory }) {
                   <Input placeholder="Service type (Spraying, Mapping, Monitoring...)" {...register("serviceType")} />
                </section>
 
-               <section>
-                  <h2 className="text-xl font-semibold mb-5">Drone Images</h2>
-
-                  {existingImages.length > 0 && (
-                     <div className="mb-4">
-                        <p className="text-sm text-gray-500 mb-3">Current images</p>
-                        <div className="flex flex-wrap gap-3">
-                           {existingImages.map((img, index) => (
-                              <div key={index} className="relative w-24 h-24 rounded-lg overflow-hidden border">
-                                 <Image src={img} alt={`Drone image ${index + 1}`} fill className="object-cover" />
-                              </div>
-                           ))}
-                        </div>
-                     </div>
-                  )}
-
-                  <Label htmlFor="image">
-                     Upload new images <span className="text-gray-500">(optional)</span>
-                     <Input id="image" {...register("image")} accept="image/*" type="file" multiple />
-                  </Label>
-               </section>
-
-               <div className="flex justify-end gap-4">
-                  <button type="button" onClick={() => router.push("/marketplace/drone/inventory")} className="cursor-pointer px-6 py-3 rounded-lg border">
-                     Cancel
-                  </button>
-
-                  <SubmitButton loading={loading} text="Save Changes" loadingText="Saving..." className="px-6 py-3 rounded-lg bg-green-600 text-white" />
-               </div>
+               <SubmitButton loading={loading} text="Save Changes" />
             </form>
          </div>
       </div>

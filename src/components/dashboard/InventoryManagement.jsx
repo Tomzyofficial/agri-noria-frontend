@@ -183,11 +183,11 @@ export function InventoryManagement({ inventoryUrl, deleteUrl, addNewHref, viewH
                                  </div>
 
                                  <div className={`${openActionListView === product.id ? "absolute rounded right-0 top-10 bg-(--background) w-34 p-1 space-y-2" : "hidden"}`}>
-                                    <Link href={`/marketplace/store/products/${product.id}/view-item`} className="px-1 flex items-center gap-2 hover:bg-(--greenish-color) transition transition-background rounded hover:text-(--background) text-sm">
+                                    <Link href={`/marketplace/store/products/${product.id}/view`} className="px-1 flex items-center gap-2 hover:bg-(--greenish-color) transition transition-background rounded hover:text-(--background) text-sm">
                                        <Eye className="h-4 w-4" />
                                        View
                                     </Link>
-                                    <Link href={`/marketplace/store/products/${product.id}/edit-item`} className="px-1 flex items-center gap-2 hover:bg-(--greenish-color) transition transition-background rounded hover:text-(--background) text-sm">
+                                    <Link href={`/marketplace/store/products/${product.id}/edit`} className="px-1 flex items-center gap-2 hover:bg-(--greenish-color) transition transition-background rounded hover:text-(--background) text-sm">
                                        <Edit className="h-4 w-4" />
                                        Edit
                                     </Link>

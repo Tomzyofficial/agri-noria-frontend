@@ -5,7 +5,7 @@ import useSWR from "swr";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
-import { MapPin, Truck, ArrowLeft, Eye, Check, X } from "lucide-react";
+import { MapPin, Truck, ArrowLeft, Eye, Check, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import React from "react";
 import { ORDER_STATUS_CONFIG, getStatusBadgeClass } from "@/components/dashboard/orders/OrderStatusUtils";
@@ -19,16 +19,34 @@ export function LogisticsOrdersList() {
    const statusFilter = searchParams.get("status") || "";
    const [selectedOrder, setSelectedOrder] = useState(null);
    const [actingId, setActingId] = useState(null);
+   const pageSize = 10;
+   const page = Math.max(parseInt(searchParams.get("page"), 10) || 1, 1);
 
    const ordersUrl = useMemo(() => {
       const params = new URLSearchParams();
       if (statusFilter) params.set("status", statusFilter);
+      params.set("limit", pageSize.toString());
+      params.set("offset", ((page - 1) * pageSize).toString());
       const qs = params.toString();
       return `/api/proxy/vendor/logistics/orders${qs ? `?${qs}` : ""}`;
-   }, [statusFilter]);
+   }, [statusFilter, page, pageSize]);
 
    const { data, error, isLoading, mutate } = useSWR(ordersUrl, fetcher);
    const orders = data?.data ?? [];
+   const totalOrders = data?.pagination?.total ?? 0;
+   const totalPages = Math.max(Math.ceil(totalOrders / pageSize), 1);
+   const currentPage = Math.min(page, totalPages);
+
+   const goToPage = (nextPage) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (nextPage === 1) {
+         params.delete("page");
+      } else {
+         params.set("page", nextPage.toString());
+      }
+      const query = params.toString();
+      router.push(`/marketplace/logistics/orders${query ? `?${query}` : ""}`);
+   };
 
    const getVehicleTitle = (order) => {
       return order.metadata?.logistics_provider?.vehicle_title || "—";
@@ -167,6 +185,26 @@ export function LogisticsOrdersList() {
                         ))}
                      </tbody>
                   </table>
+                  <div className="flex items-center justify-between gap-4 border-t px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                     <span>
+                        Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalOrders)} of {totalOrders}
+                     </span>
+                     {totalPages > 1 && (
+                        <div className="flex items-center gap-2">
+                           <Button type="button" aria-label="Previous page" disabled={currentPage === 1} onClick={() => goToPage(currentPage - 1)} className="inline-flex items-center gap-1 border px-2 py-1 disabled:opacity-40 cursor-pointer">
+                              <ChevronLeft className="h-4 w-4" />
+                              Previous
+                           </Button>
+                           <span>
+                              Page {currentPage} of {totalPages}
+                           </span>
+                           <Button type="button" aria-label="Next page" disabled={currentPage === totalPages} onClick={() => goToPage(currentPage + 1)} className="inline-flex items-center gap-1 border px-2 py-1 disabled:opacity-40 cursor-pointer">
+                              Next
+                              <ChevronRight className="h-4 w-4" />
+                           </Button>
+                        </div>
+                     )}
+                  </div>
                </div>
             )}
          </div>

@@ -9,7 +9,6 @@ import SubmitButton from "@/components/dashboard/SubmitButton";
 import { createJobSchema } from "@/_lib/validations/validateJob";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
 import { Textarea } from "@/components/ui/Textarea";
 import { Country, State } from "country-state-city";
 

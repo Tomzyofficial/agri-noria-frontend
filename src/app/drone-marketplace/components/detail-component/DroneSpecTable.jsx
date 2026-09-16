@@ -9,12 +9,6 @@ const SPEC_ROWS = [
    { key: "location", label: "Location" },
 ];
 
-/**
- * DroneSpecTable
- *
- * Renders only the spec rows that have a value, so sale-only or
- * rent-only listings never show blank rows.
- */
 export default function DroneSpecTable({ listing }) {
    const rows = SPEC_ROWS.filter((row) => listing[row.key]);
 

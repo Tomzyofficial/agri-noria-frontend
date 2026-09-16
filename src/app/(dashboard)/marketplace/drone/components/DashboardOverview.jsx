@@ -22,7 +22,7 @@ export function DashboardOverview({ user }) {
    const { data: sellerStatsData, error: sellerStatsError, isLoading: sellerStatsLoading } = useSWR("/api/proxy/buyer/orders/seller/stats", fetcher);
 
    // Calculate sales increase
-   const currentMonthSales = Number(sellerStatsData?.data?.current_month_sales ?? 0);
+   /*  const currentMonthSales = Number(sellerStatsData?.data?.current_month_sales ?? 0);
    const previousMonthSales = Number(sellerStatsData?.data?.previous_month_sales ?? 0);
 
    let salesText = "No sales yet";
@@ -33,7 +33,7 @@ export function DashboardOverview({ user }) {
       const percentage = ((currentMonthSales - previousMonthSales) / previousMonthSales) * 100;
 
       salesText = `${percentage > 0 ? "+" : ""}${percentage.toFixed(2)}% from last month`;
-   }
+   } */
 
    return (
       <div className="my-25 lg:my-5 dark:text-(--foreground)">
@@ -44,11 +44,11 @@ export function DashboardOverview({ user }) {
             </div>
          </div>
 
-         <div className="grid md:grid-cols-4 gap-6 mb-8">
+         <div className="grid md:grid-cols-3 gap-6 mb-8">
             <StatCard isLoading={isLoading} error={error} title="Total products" value={stats?.total ?? 0} subValue={`${stats?.active} active`} icon={Package} />
-            <StatCard isLoading={sellerStatsLoading} error={sellerStatsError} title="Revenue" value={formatPrice(sellerStatsData?.data?.total_revenue ?? 0, sellerStatsData?.data?.country_code, sellerStatsData?.data?.currency) ?? 0} subValue={salesText} icon={DollarSign} />
-            <StatCard isLoading={sellerStatsLoading} error={sellerStatsError} title="Active Buyers" value={sellerStatsData?.data?.active_buyers ?? 0} subValue="new this week" icon={Users} />
-            <StatCard isLoading={sellerStatsLoading} error={sellerStatsError} title="Total Orders" value={sellerStatsData?.data?.total_orders ?? 0} subValue="orders this week" icon={Package} />
+            {/* <StatCard isLoading={sellerStatsLoading} error={sellerStatsError} title="Revenue" value={formatPrice(sellerStatsData?.data?.total_revenue ?? 0, sellerStatsData?.data?.country_code, sellerStatsData?.data?.currency) ?? 0} subValue={salesText} icon={DollarSign} /> */}
+            <StatCard isLoading={sellerStatsLoading} error={sellerStatsError} title="Active Buyers" value={sellerStatsData?.data?.active_buyers ?? 0} subValue="all time buyers" icon={Users} />
+            <StatCard isLoading={sellerStatsLoading} error={sellerStatsError} title="Total Orders" value={sellerStatsData?.data?.total_orders ?? 0} subValue="all time orders" icon={Package} />
          </div>
 
          <div className="grid md:grid-cols-2 gap-6 mb-8">

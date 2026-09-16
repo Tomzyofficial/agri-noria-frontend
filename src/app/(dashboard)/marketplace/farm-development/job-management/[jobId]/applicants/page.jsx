@@ -1,5 +1,5 @@
 // import JobApplicantsPage from "./applicantpage";
-import JobApplicantsPage from "@/components/dashboard/jobs/applicantpage";
+import JobApplicantsPage from "@/components/dashboard/jobs/applicantpage.jsx";
 import { apiUrl } from "@/_lib/api";
 import { cookieStoreFnc } from "@/actions/session";
 import { verifyVendorSession } from "@/actions/session";
