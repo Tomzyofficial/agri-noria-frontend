@@ -45,9 +45,12 @@ export default function DashboardLayout({ children }) {
       };
       checkExistingUser();
 
-      const interval = setInterval(() => {
-         checkExistingUser();
-      }, 30000);
+      const interval = setInterval(
+         () => {
+            checkExistingUser();
+         },
+         24 * 60 * 60 * 1000
+      );
 
       return () => clearInterval(interval);
    }, [router]);

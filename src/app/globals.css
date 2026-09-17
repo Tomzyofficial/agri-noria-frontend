@@ -206,7 +206,3 @@ form:not(.job-search-form) :is(input:not([type="checkbox"]), select:not(.booking
    @apply border-1 border-transparent ring ring-(--greenish-color) dark:ring-gray-700 outline-none bg-(--gray-color) dark:bg-(--background) focus:border-(--dark-green-color) dark:focus:border-gray-500 rounded p-2 w-full;
    resize: none;
 }
-
-/* form label {
-   @apply text-[14px] text-start font-medium text-gray-900 dark:text-white mb-1;
-} */

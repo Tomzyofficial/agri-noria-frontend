@@ -12,6 +12,7 @@ import axios from "axios";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import Breadcrumbs from "@/components/dashboard/BreadCrumbs";
+import ImageUploadPreview from "@/components/dashboard/ImageUploadPreview";
 
 export default function AddDroneListingPage() {
    const {
@@ -25,9 +26,11 @@ export default function AddDroneListingPage() {
       resolver: zodResolver(createDroneListingSchema),
    });
    const [loading, setLoading] = useState(false);
+   const [imagePreviews, setImagePreviews] = useState([]);
 
    const listingType = watch("listingType");
    const provideService = watch("provideService");
+   const imageField = register("image");
 
    const showSaleFields = listingType === "sale" || listingType === "both";
    const showRentFields = listingType === "rent" || listingType === "both";
@@ -52,6 +55,17 @@ export default function AddDroneListingPage() {
          resetField("serviceType");
       }
    }, [provideService, resetField]);
+
+   useEffect(() => {
+      return () => imagePreviews.forEach((preview) => URL.revokeObjectURL(preview));
+   }, [imagePreviews]);
+
+   const handleImageChange = (event) => {
+      imageField.onChange(event);
+      setImagePreviews(Array.from(event.target.files ?? []).map((file) => URL.createObjectURL(file)));
+   };
+
+   const clearImagePreviews = () => setImagePreviews([]);
 
    // const onInvalid = (errors) => {
    //    const firstError = Object.values(errors)[0];
@@ -80,6 +94,7 @@ export default function AddDroneListingPage() {
          await axios.post("/api/proxy/vendor/drone/create", formData);
          toast.success("Listing created successfully");
          reset();
+         clearImagePreviews();
       } catch (error) {
          console.error(error);
          toast.error("Failed to create listing. Please try again later.");
@@ -101,8 +116,13 @@ export default function AddDroneListingPage() {
                },
             ]}
          />
-         <div className="max-w-5xl my-10 mx-auto  bg-gray-50 dark:bg-(--card-dark) rounded-md">
-            <form onSubmit={handleSubmit(onSubmit)} className="rounded-xl shadow p-6 space-y-10">
+         <div className="max-w-5xl my-10 mx-auto bg-gray-50 dark:bg-(--card-dark) rounded-md">
+            <form noValidate onSubmit={handleSubmit(onSubmit)} onReset={clearImagePreviews} className="rounded-xl shadow p-6 space-y-10">
+               <section>
+                  <ImageUploadPreview handleChange={handleImageChange} preview={imagePreviews} loading={loading} inputProps={{ ...imageField, id: "image" }} />
+                  {errors.image && <p className="text-sm text-red-500 mt-1">{errors.image.message}</p>}
+               </section>
+
                <section>
                   <h2 className="text-xl font-semibold mb-5">Drone Information</h2>
                   <div className="grid md:grid-cols-2 gap-5">
@@ -316,18 +336,12 @@ export default function AddDroneListingPage() {
                   )}
                </section>
 
-               <section>
-                  <h2 className="text-xl font-semibold mb-5">Drone Image</h2>
-                  <Input {...register("image")} accept="image/*" type="file" multiple />
-                  {errors.image && <p className="text-sm text-red-500 mt-1">{errors.image.message}</p>}
-               </section>
-
                <div className="flex justify-end gap-4">
                   <Button type="reset" onClick={() => reset()} className="cursor-pointer px-6 py-3 rounded-md bg-gray-400 text-white">
                      Reset
                   </Button>
 
-                  <SubmitButton loading={loading} text="Create Listing" />
+                  <SubmitButton loading={loading} />
                </div>
             </form>
          </div>

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { MapPin, Truck, ArrowLeft, Eye } from "lucide-react";
+import { MapPin, Truck, ArrowLeft, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 import React from "react";
@@ -17,19 +17,35 @@ export function OrdersList() {
    const router = useRouter();
    const searchParams = useSearchParams();
    const statusFilter = searchParams.get("status") || "";
+   const pageSize = 10;
+   const page = Math.max(parseInt(searchParams.get("page"), 10) || 1, 1);
    const [selectedOrder, setSelectedOrder] = useState(null);
-
-   // console.log(selectedOrder);
 
    const ordersUrl = useMemo(() => {
       const params = new URLSearchParams();
       if (statusFilter) params.set("status", statusFilter);
+      params.set("limit", pageSize.toString());
+      params.set("offset", ((page - 1) * pageSize).toString());
       const qs = params.toString();
       return `/api/proxy/buyer/orders/seller${qs ? `?${qs}` : ""}`;
-   }, [statusFilter]);
+   }, [page, pageSize, statusFilter]);
 
    const { data, error, isLoading, mutate } = useSWR(ordersUrl, fetcher);
    const orders = data?.data ?? [];
+   const totalOrders = data?.pagination?.total ?? 0;
+   const totalPages = Math.max(Math.ceil(totalOrders / pageSize), 1);
+   const currentPage = Math.min(page, totalPages);
+
+   const goToPage = (nextPage) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (nextPage === 1) {
+         params.delete("page");
+      } else {
+         params.set("page", nextPage.toString());
+      }
+      const query = params.toString();
+      router.push(`/marketplace/store/orders${query ? `?${query}` : ""}`);
+   };
 
    const getVehicleTitle = (order) => {
       return order.metadata?.logistics_provider?.vehicle_title || "—";
@@ -49,12 +65,12 @@ export function OrdersList() {
 
          <div className="flex flex-wrap gap-2">
             <Button type="button" onClick={() => router.push("/marketplace/store/orders")} className={`px-3 cursor-pointer py-1.5 rounded-full text-sm border ${!statusFilter ? "bg-green-100 border-green-300 text-green-800" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
-               All {isLoading ? "—" : orders && orders.length > 0 ? orders[0].all_orders : 0}
+               All
             </Button>
             {ORDER_STATUS_CONFIG.map(({ status, icon, label }) => (
                <Link key={status} href={`/marketplace/store/orders?status=${status}`} className={`px-2 flex items-center gap-2 py-1.5 rounded-full text-sm border ${statusFilter === status ? "bg-green-100 border-green-300 text-green-800" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
                   {icon && React.createElement(icon, { className: "w-4 h-4" })}
-                  {label} {isLoading ? "—" : orders && orders.length > 0 ? orders[0][status] : 0}
+                  {label}
                </Link>
             ))}
          </div>
@@ -111,6 +127,26 @@ export function OrdersList() {
                         ))}
                      </tbody>
                   </table>
+                  <div className="flex items-center justify-between gap-4 border-t px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                     <span>
+                        Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalOrders)} of {totalOrders}
+                     </span>
+                     {totalPages > 1 && (
+                        <div className="flex items-center gap-2">
+                           <Button type="button" aria-label="Previous page" disabled={currentPage === 1} onClick={() => goToPage(currentPage - 1)} className="inline-flex items-center gap-1 border px-2 py-1 disabled:opacity-40 cursor-pointer">
+                              <ChevronLeft className="h-4 w-4" />
+                              Previous
+                           </Button>
+                           <span>
+                              Page {currentPage} of {totalPages}
+                           </span>
+                           <Button type="button" aria-label="Next page" disabled={currentPage === totalPages} onClick={() => goToPage(currentPage + 1)} className="inline-flex items-center gap-1 border px-2 py-1 disabled:opacity-40 cursor-pointer">
+                              Next
+                              <ChevronRight className="h-4 w-4" />
+                           </Button>
+                        </div>
+                     )}
+                  </div>
                </div>
             )}
          </div>

@@ -5,13 +5,13 @@ import useSWR from "swr";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
-import { MapPin, Truck, ArrowLeft, ThumbsUp } from "lucide-react";
+import { MapPin, Truck, ArrowLeft, ThumbsUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import React from "react";
 import { fetcher } from "@/utils/otherUtils";
-import { formatLabel } from "@/utils/otherUtils";
+import { formatLabel, formatDate } from "@/utils/otherUtils";
 import { ORDER_STATUS_CONFIG, getStatusBadgeClass } from "@/components/dashboard/orders/OrderStatusUtils";
-import { OrderDetailModal } from "../../../../../components/dashboard/orders/OrderDetailModal";
+import { OrderDetailModal } from "@/components/dashboard/orders/OrderDetailModal";
 import { OTPVerificationModal } from "../../../marketplace/logistics/components/OTPVerificationModal";
 
 export function BuyerOrdersList() {
@@ -23,38 +23,40 @@ export function BuyerOrdersList() {
    const [verifyingOTP, setVerifyingOTP] = useState(false);
    const [otpError, setOtpError] = useState(null);
    const [loading, setLoading] = useState(false);
+   const pageSize = 10;
+   const page = Math.max(parseInt(searchParams.get("page"), 10) || 1, 1);
 
    const ordersUrl = useMemo(() => {
       const params = new URLSearchParams();
       if (statusFilter) params.set("status", statusFilter);
+      params.set("limit", pageSize.toString());
+      params.set("offset", ((page - 1) * pageSize).toString());
       const qs = params.toString();
       return `/api/proxy/buyer/orders${qs ? `?${qs}` : ""}`;
-   }, [statusFilter]);
+   }, [statusFilter, page, pageSize]);
 
    const { data, error, isLoading, mutate } = useSWR(ordersUrl, fetcher);
    const orders = data?.data ?? [];
+   const totalOrders = data?.pagination?.total ?? 0;
+   const totalPages = Math.max(Math.ceil(totalOrders / pageSize), 1);
+   const currentPage = Math.min(page, totalPages);
 
-   // console.log(orders);
-
-   // Helper to extract seller name from order metadata
-   const getSellerName = (order) => {
-      const vendorInfo = order.metadata?.vendor_info || {};
-      const fname = vendorInfo.seller_fname || order.seller_fname || "";
-      const lname = vendorInfo.seller_lname || order.seller_lname || "";
-      return [fname, lname].filter(Boolean).join(" ") || "—";
+   const goToPage = (nextPage) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (nextPage === 1) {
+         params.delete("page");
+      } else {
+         params.set("page", nextPage.toString());
+      }
+      const query = params.toString();
+      router.push(`/dashboard/buyer/orders${query ? `?${query}` : ""}`);
    };
 
-   // Helper to extract vehicle title from order metadata
    const getVehicleTitle = (order) => {
       return order.metadata?.logistics_provider?.vehicle_title || "—";
    };
 
-   const handleSatisfied = (orderId) => {
-      setSatisfiedOrderId(orderId);
-      setOtpError(null);
-   };
-
-   const handleOTPVerify = async (orderId) => {
+   const handleConfirmSatisfaction = async (orderId) => {
       setVerifyingOTP(true);
       setOtpError(null);
       setLoading(true);
@@ -89,8 +91,6 @@ export function BuyerOrdersList() {
       }
    };
 
-   const canRespond = (status) => status === "paid";
-
    return (
       <div className="space-y-6">
          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -100,11 +100,8 @@ export function BuyerOrdersList() {
                   Back to overview
                </Link>
                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Purchased orders</h1>
-               <p className="text-gray-600 dark:text-gray-400 mt-1">Review, accept, or decline delivery assignments for your fleet</p>
+               <p className="text-gray-600 dark:text-gray-400 mt-1">Curated list of your purchased orders</p>
             </div>
-            <Link href="/dashboard/logistics/shipments" className="text-sm font-medium text-green-700 hover:text-green-800">
-               Go to shipments →
-            </Link>
          </div>
 
          <div className="flex flex-wrap gap-2">
@@ -124,7 +121,7 @@ export function BuyerOrdersList() {
 
             {isLoading && <div className="p-10 text-center text-gray-500">Loading orders...</div>}
 
-            {!isLoading && !error && orders.length === 0 && <div className="p-10 text-center text-gray-500">{statusFilter ? `No orders with status "${formatLabel(statusFilter)}".` : "No orders assigned to your vehicles yet."}</div>}
+            {!isLoading && !error && orders.length === 0 && <div className="p-10 text-center text-gray-500">{statusFilter ? `No orders with status "${formatLabel(statusFilter)}".` : "No purchased orders yet."}</div>}
 
             {!isLoading && !error && orders.length > 0 && (
                <div className="overflow-x-auto">
@@ -162,7 +159,7 @@ export function BuyerOrdersList() {
                               <td className="px-4 py-4 whitespace-nowrap">
                                  <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${getStatusBadgeClass(order.status)}`}>{formatLabel(order.status)}</span>
                               </td>
-                              <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">{order.created_at ? new Date(order.created_at).toLocaleDateString() : "—"}</td>
+                              <td className="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">{order.created_at ? formatDate(order.created_at) : "—"}</td>
                               <td className="px-4 py-4 whitespace-nowrap">
                                  <div className="flex flex-wrap gap-2">
                                     <Button type="button" onClick={() => setSelectedOrder(order)} className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
@@ -170,7 +167,7 @@ export function BuyerOrdersList() {
                                        View
                                     </Button>
                                     {order.status === "delivered" && (
-                                       <Button type="button" disabled={loading} onClick={() => handleOTPVerify(order.id)} className="disabled:opacity-50 cursor-pointer inline-flex items-center gap-1 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded">
+                                       <Button type="button" disabled={loading} onClick={() => handleConfirmSatisfaction(order.id)} className="disabled:opacity-50 cursor-pointer inline-flex items-center gap-1 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded">
                                           {loading ? "Please wait" : <ThumbsUp className="w-3.5 h-3.5" />}
                                           Satisfied
                                        </Button>
@@ -181,6 +178,26 @@ export function BuyerOrdersList() {
                         ))}
                      </tbody>
                   </table>
+                  <div className="flex items-center justify-between gap-4 border-t px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                     <span>
+                        Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalOrders)} of {totalOrders}
+                     </span>
+                     {totalPages > 1 && (
+                        <div className="flex items-center gap-2">
+                           <Button type="button" aria-label="Previous page" disabled={currentPage === 1} onClick={() => goToPage(currentPage - 1)} className="inline-flex items-center gap-1 border px-2 py-1 disabled:opacity-40 cursor-pointer">
+                              <ChevronLeft className="h-4 w-4" />
+                              Previous
+                           </Button>
+                           <span>
+                              Page {currentPage} of {totalPages}
+                           </span>
+                           <Button type="button" aria-label="Next page" disabled={currentPage === totalPages} onClick={() => goToPage(currentPage + 1)} className="inline-flex items-center gap-1 border px-2 py-1 disabled:opacity-40 cursor-pointer">
+                              Next
+                              <ChevronRight className="h-4 w-4" />
+                           </Button>
+                        </div>
+                     )}
+                  </div>
                </div>
             )}
          </div>
@@ -193,7 +210,7 @@ export function BuyerOrdersList() {
                setSatisfiedOrderId(null);
                setOtpError(null);
             }}
-            onConfirm={handleOTPVerify}
+            onConfirm={handleConfirmSatisfaction}
             title="Confirm Satisfaction"
             description="Enter the 6-digit OTP code from your shipment confirmation email to confirm you are satisfied with the delivery"
             loading={verifyingOTP}

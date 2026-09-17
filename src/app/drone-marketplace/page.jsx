@@ -15,7 +15,7 @@ export default async function Page() {
    let pageNum = 1;
 
    try {
-      const res = await fetch(apiUrl(`/api/drone-marketplace/public/listings?page=1&limit=24&${country}`));
+      const res = await fetch(apiUrl(`/api/drone-marketplace/public/listings?page=1&limit=24&${country}`), { next: { revalidate: 3600 } });
       if (!res.ok) {
          error = "Error";
       } else {
@@ -29,24 +29,6 @@ export default async function Page() {
    } catch {
       listings = [];
    }
-
-   // try {
-   //    const [res, sponsored] = await Promise.all([fetch(apiUrl(`/api/drone-marketplace/public/listings?page=1&limit=24`), { cache: "no-store" }), getDroneAdCampaigns()]);
-   //    if (!res.ok) {
-   //       error = "Error";
-   //    } else {
-   //       const data = await res.json();
-   //       if (data?.data) {
-   //          listings = data.data.listings || [];
-   //          total = data.data.total || 0;
-   //          pageNum = data.data.page || 1;
-   //       }
-   //    }
-   //    campaigns = Array.isArray(sponsored) ? sponsored : [];
-   // } catch (error) {
-   //    console.error("Build fetch error for drone marketplace:", error);
-   //    error = "Error";
-   // }
 
    return (
       <>

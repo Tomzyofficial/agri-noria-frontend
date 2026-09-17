@@ -310,7 +310,7 @@ export default function CreateListingForm() {
                      Next
                   </Button>
                ) : (
-                  <SubmitButton loading={loading} loadingText="Please wait..." text="Publish listing" />
+                  <SubmitButton loading={loading} />
                )}
             </div>
          </form>

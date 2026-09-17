@@ -111,7 +111,7 @@ export const getDroneAdCampaigns = async () => {
          headers: {
             Cookie: cookieStr,
          },
-         next: { revalidate: 60 },
+         next: { revalidate: 3600 },
       });
 
       if (!res.ok) {

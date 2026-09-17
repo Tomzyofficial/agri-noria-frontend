@@ -5,7 +5,7 @@ import NavBar from "@/components/ui/NavBar/NavBar";
 
 async function getListing(id) {
    const response = await fetch(apiUrl(`/api/drone-marketplace/public/listings/${id}`), {
-      cache: "no-store",
+      next: { revalidate: 3600 },
    });
 
    if (response.status === 404) return null;
@@ -22,7 +22,7 @@ export default async function ListingPage({ params }) {
    return (
       <>
          <NavBar />
-         <section className="m-4 md:m-10 mb-10 flex flex-col lg:flex-row gap-4">
+         <section className="m-4 md:m-8 mb-10">
             <DroneListingDetail listing={listing?.data} />
          </section>
       </>

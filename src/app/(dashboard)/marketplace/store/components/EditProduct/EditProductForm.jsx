@@ -23,7 +23,7 @@ export function EditProductForm({ product }) {
                   ) : formData.category === "food_items" ? (
                      <FoodItemFields formData={formData} handleChange={handleChange} loading={loading} />
                   ) : null}
-                  <SubmitButton loading={loading} text="Update" loadingText="Updating..." />
+                  <SubmitButton loading={loading} text="Save Changes" />
                </form>
             </CardContent>
          </Card>

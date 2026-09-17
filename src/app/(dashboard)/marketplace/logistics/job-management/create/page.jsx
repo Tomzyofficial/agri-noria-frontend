@@ -1,4 +1,4 @@
-import { JobForm } from "../../../../../../components/dashboard/jobs/job-form";
+import { JobForm } from "@/components/dashboard/jobs/job-form";
 import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import { verifyVendorSession } from "@/actions/session";
 

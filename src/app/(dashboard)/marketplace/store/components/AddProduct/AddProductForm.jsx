@@ -25,7 +25,7 @@ export function AddProductForm() {
                      <FoodItemFields formData={formData} handleChange={handleChange} loading={loading} />
                   ) : null}
 
-                  <SubmitButton loading={loading} text="Create Listing" loadingText="Submitting..." />
+                  <SubmitButton loading={loading} />
                </form>
             </CardContent>
          </Card>

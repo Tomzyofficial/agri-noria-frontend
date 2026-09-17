@@ -111,7 +111,7 @@ export default function JobsPage({ createHref, role }) {
                                  </td>
                                  <td className="p-4">{job.applicants_count}</td>
                                  <td className="p-4">
-                                    <span className="rounded-full bg-green-200 px-3 py-1 text-xs">Active</span>
+                                    <span className="rounded-full bg-green-200 dark:bg-green-700 px-3 py-1 text-xs">Active</span>
                                  </td>
                                  <td className="p-4">{formatDate(job.created_at)}</td>
 

@@ -127,15 +127,15 @@ export function StorageFacility() {
                               </div>
 
                               <div className={`${openActionId === listing.id ? "absolute rounded right-0 top-10 bg-(--background) w-1/2 p-1 space-y-2" : "hidden"}`}>
-                                 <Link href={`/marketplace/storage-facility/storage-facilities/view-item/${listing.id}`} className="px-1 flex items-center gap-2 hover:bg-(--greenish-color) transition transition-background rounded hover:text-(--background) text-sm">
+                                 <Link href={`/marketplace/storage-facility/storage-facilities/${listing.id}/view-item`} className="px-1 flex items-center gap-2 hover:bg-(--greenish-color) transition transition-background rounded hover:text-(--background) text-sm">
                                     <Eye className="h-4 w-4" />
                                     View
                                  </Link>
-                                 <Link href={`/marketplace/storage-facility/storage-facilities/edit-item/${listing.id}`} className="px-1 flex items-center gap-2 hover:bg-(--greenish-color) transition transition-background rounded hover:text-(--background) text-sm">
+                                 <Link href={`/marketplace/storage-facility/storage-facilities/${listing.id}/edit-item`} className="px-1 flex items-center gap-2 hover:bg-(--greenish-color) transition transition-background rounded hover:text-(--background) text-sm">
                                     <Edit className="h-4 w-4" />
                                     Edit
                                  </Link>
-                                 <Button className="w-full px-1 flex items-center gap-2 hover:bg-red-300 cursor-pointer transition transition-background rounded hover:text-red-700 text-sm" onClick={() => handleDelete(listing.id)} disabled={isDeleting[listing.id]}>
+                                 <Button className="w-full px-1 flex items-center gap-2 hover:bg-red-400 cursor-pointer transition transition-background rounded text-red-700 text-sm" onClick={() => handleDelete(listing.id)} disabled={isDeleting[listing.id]}>
                                     {isDeleting[listing.id] ? <FaSpinner className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                                     Delete
                                  </Button>
@@ -178,15 +178,15 @@ export function StorageFacility() {
                               </div>
 
                               <div className={`${openActionListView === listing.id ? "absolute rounded right-0 top-10 bg-(--background) w-34 p-1 space-y-2" : "hidden"}`}>
-                                 <Link href={`/marketplace/storage-facility/storage-facilities/view-item/${listing.id}`} className="px-1 flex items-center gap-2 hover:bg-(--greenish-color) transition transition-background rounded hover:text-(--background) text-sm">
+                                 <Link href={`/marketplace/storage-facility/storage-facilities/${listing.id}/view-item`} className="px-1 flex items-center gap-2 hover:bg-(--greenish-color) transition transition-background rounded hover:text-(--background) text-sm">
                                     <Eye className="h-4 w-4" />
                                     View
                                  </Link>
-                                 <Link href={`/marketplace/storage-facility/storage-facilities/edit-item/${listing.id}`} className="px-1 flex items-center gap-2 hover:bg-(--greenish-color) transition transition-background rounded hover:text-(--background) text-sm">
+                                 <Link href={`/marketplace/storage-facility/storage-facilities/${listing.id}/edit-item`} className="px-1 flex items-center gap-2 hover:bg-(--greenish-color) transition transition-background rounded hover:text-(--background) text-sm">
                                     <Edit className="h-4 w-4" />
                                     Edit
                                  </Link>
-                                 <Button className="w-full px-1 flex items-center gap-2 hover:bg-red-300 cursor-pointer transition transition-background rounded hover:text-red-700 text-sm" onClick={() => handleDelete(listing.id)} disabled={isDeleting[listing.id]}>
+                                 <Button className="w-full px-1 flex items-center gap-2 hover:bg-red-400 cursor-pointer transition transition-background rounded text-red-700 text-sm" onClick={() => handleDelete(listing.id)} disabled={isDeleting[listing.id]}>
                                     {isDeleting[listing.id] ? <FaSpinner className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                                     Delete
                                  </Button>

@@ -33,7 +33,7 @@ export function DroneCard({ listing, campaignId = listing?.campaign_id, sponsore
             <CardContent className="p-0">
                <div className={`relative bg-gray-100 dark:bg-gray-800 ${featured ? "h-72" : "h-48"}`}>
                   {mainImage ? (
-                     <Image src={mainImage} alt={listing_name} fill className="object-cover" />
+                     <Image src={mainImage} alt={listing_name} fill sizes="(max-width: 1024px) 200px, 100vw" className="object-cover" />
                   ) : (
                      <div className="flex items-center justify-center h-full text-gray-400">
                         <Package className="h-12 w-12" />

@@ -26,7 +26,7 @@ export default async function ViewPage({ params }) {
       const cookieHeader = await cookieStoreFnc();
       const res = await fetch(apiUrl(`/api/vendor/products/view-item/${id}`), {
          method: "GET",
-         cache: "no-store",
+         next: { revalidate: 60 },
          headers: {
             Cookie: cookieHeader,
          },

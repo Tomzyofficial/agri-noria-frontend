@@ -11,7 +11,7 @@ export function EditItem({ storage }) {
          <Card>
             <CardContent className="p-4 lg:p-6">
                <form onSubmit={handleSubmit} noValidate aria-busy={loading} className="space-y-8">
-                  <FormFields formData={formData} handleChange={handleChange} handleSubmit={handleSubmit} preview={preview} loading={loading} handleAddFeature={handleAddFeature} handleRemoveFeature={handleRemoveFeature} featureText={featureText} setFeatureText={setFeatureText} />
+                  <FormFields editForm={true} formData={formData} handleChange={handleChange} handleSubmit={handleSubmit} preview={preview} loading={loading} handleAddFeature={handleAddFeature} handleRemoveFeature={handleRemoveFeature} featureText={featureText} setFeatureText={setFeatureText} />
                </form>
             </CardContent>
          </Card>

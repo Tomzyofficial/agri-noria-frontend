@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Image from "next/image";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
@@ -16,7 +15,6 @@ import { ImageGalleryDisplay } from "@/components/dashboard/ImageGalleryDisplay"
 export function ViewItem({ result }) {
    const router = useRouter();
    const [isDeleting, setIsDeleting] = useState(false);
-   const [activeIndex, setActiveIndex] = useState(0);
 
    if (!result) {
       return (
@@ -29,9 +27,6 @@ export function ViewItem({ result }) {
          </div>
       );
    }
-
-   const gallery = result && result.image.length > 0 ? result.image : null;
-   const active = gallery[activeIndex];
 
    // Parse attributes if it's a string
    let parsedAttributes = result?.attributes;
@@ -73,7 +68,7 @@ export function ViewItem({ result }) {
 
          toast.success(data.message || "Product deleted successfully");
          router.refresh();
-         router.push("/dashboard/store/products");
+         router.push("/marketplace/store/products");
       } catch (error) {
          toast.error(error?.message || "Failed to delete product");
       } finally {

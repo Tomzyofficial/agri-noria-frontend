@@ -8,7 +8,7 @@ import ImageUploadPreview from "@/components/dashboard/ImageUploadPreview";
 
 const storageTypes = ["Cold Storage", "Dry Storage", "Controlled Atmosphere", "Refrigerated"];
 
-export default function FormFields({ formData, handleChange, preview, loading, handleAddFeature, handleRemoveFeature, featureText, setFeatureText }) {
+export default function FormFields({ editForm = false, formData, handleChange, preview, loading, handleAddFeature, handleRemoveFeature, featureText, setFeatureText }) {
    return (
       <>
          <ImageUploadPreview handleChange={handleChange} preview={preview} loading={loading} />
@@ -87,7 +87,7 @@ export default function FormFields({ formData, handleChange, preview, loading, h
                <Textarea required name="description" id="description" value={formData.description} onChange={handleChange} className={`col-span-2 ${loading ? "cursor-not-allowed opacity-50" : ""}`} rows="3" placeholder="Enter description, clearly describe your storage facility..." />
             </div>
          </div>
-         <SubmitButton loading={loading} text="Create Listing" />
+         <SubmitButton loading={loading} text={editForm ? "Save Changes" : "Create Listing"} />
       </>
    );
 }

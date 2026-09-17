@@ -19,8 +19,6 @@ export function CheckoutSummaryPage({ buyer, cart, vendors }) {
    const [selectedLogistics, setSelectedLogistics] = useState(null);
    const [isProcessing, setIsProcessing] = useState(false);
    const searchParams = useSearchParams();
-   console.log("selectedLogistics", selectedLogistics);
-
    // Calculate totals
    const itemsCount = cart ? cart.reduce((sum, item) => sum + item.quantity || 1, 0) : 0;
    const subtotal = cart ? cart.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0) : 0;
@@ -77,7 +75,7 @@ export function CheckoutSummaryPage({ buyer, cart, vendors }) {
             window.location.href = "/dashboard/buyer/orders";
          } catch (error) {
             console.error("Payment verification error:", error);
-            toast.error(error.message || "Payment verification failed");
+            toast.error("Payment verification failed");
          } finally {
             setIsProcessing(false);
          }

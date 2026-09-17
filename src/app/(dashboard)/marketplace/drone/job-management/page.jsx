@@ -8,5 +8,9 @@ export default async function Page() {
       return <Unauthorized />;
    }
 
-   return <JobsPage createHref="/marketplace/drone/job-management/create" role={session.role} />;
+   return (
+      <>
+         <JobsPage createHref="/marketplace/drone/job-management/create" role={session.role} />;
+      </>
+   );
 }
