@@ -6,11 +6,10 @@ import { IoSearch } from "react-icons/io5";
 import { FaRegCheckCircle } from "react-icons/fa";
 import { IoIosFunnel } from "react-icons/io";
 import Link from "next/link";
-import { useSearchParams } from "node_modules/next/navigation";
 import { useState } from "react";
 import { NoSearchResults } from "./NoSearchResult";
 import { NoJobsAvailable } from "./NoJobsAvailable";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { formatLabel } from "@/utils/otherUtils";
 
 export function JobsPageClient({ jobs }) {

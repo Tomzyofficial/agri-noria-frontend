@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { FaPlusCircle, FaBoxOpen, FaInfoCircle, FaHandHoldingUsd } from "react-icons/fa";
 import { useFarmerData } from "../useFarmerData";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import InputRequestModal from "@/app/components/dashboard/InputRequestModal";
 import { toast } from "react-toastify";
 
@@ -13,6 +13,28 @@ export default function FinancingPage() {
    const [isRequestingFunding, setIsRequestingFunding] = useState(false);
    const [selectingForRequest, setSelectingForRequest] = useState(null);
    const [lockedFunds, setLockedFunds] = useState(null);
+   const [activeTab, setActiveTab] = useState("requests");
+   const [repayments, setRepayments] = useState([]);
+   const [settlements, setSettlements] = useState([]);
+
+   const loadRepaymentsAndSettlements = async () => {
+      try {
+         const [repRes, settRes] = await Promise.all([
+            fetch("/api/proxy/pipeline/repayments/mine"),
+            fetch("/api/proxy/pipeline/settlements/mine")
+         ]);
+         const repJson = await repRes.json();
+         const settJson = await settRes.json();
+         if (repJson.success) setRepayments(repJson.data || []);
+         if (settJson.success) setSettlements(settJson.data || []);
+      } catch (err) {
+         console.error("Error loading financial ledgers:", err);
+      }
+   };
+
+   useEffect(() => {
+      loadRepaymentsAndSettlements();
+   }, []);
 
    if (loading) return <div className="p-8 text-center animate-pulse font-black text-gray-400">Loading Financing Data...</div>;
 
@@ -135,29 +157,142 @@ export default function FinancingPage() {
             )}
          </div>
 
-         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
-               <Card className="border-none shadow-xl bg-white dark:bg-gray-950 rounded-3xl overflow-hidden">
-                  <CardHeader className="p-8 border-b border-gray-50 dark:border-gray-900 flex flex-row items-center justify-between">
-                     <CardTitle className="text-xl font-black">Request History</CardTitle>
-                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{inputRequests.length} Total Requests</span>
-                  </CardHeader>
-                  <CardContent className="p-8">
-                     {inputRequests.length > 0 ? (
-                        <div className="space-y-4">
-                           {inputRequests.map((req, i) => (
-                              <RequestRow key={i} req={req} />
-                           ))}
-                        </div>
-                     ) : (
-                        <div className="text-center py-20 bg-gray-50 dark:bg-gray-900/50 rounded-3xl border-2 border-dashed border-gray-100 dark:border-gray-800">
-                           <FaHandHoldingUsd className="text-5xl text-gray-200 mx-auto mb-4" />
-                           <p className="text-sm font-bold text-gray-400 uppercase tracking-widest italic">No funding requests found</p>
-                        </div>
-                     )}
-                  </CardContent>
-               </Card>
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+             <div className="lg:col-span-2 space-y-6">
+                <Card className="border-none shadow-xl bg-white dark:bg-gray-950 rounded-3xl overflow-hidden">
+                   <CardHeader className="p-6 border-b border-gray-50 dark:border-gray-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-900 rounded-2xl">
+                         <button
+                            onClick={() => setActiveTab("requests")}
+                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${
+                               activeTab === "requests"
+                                  ? "bg-white dark:bg-gray-800 text-emerald-600 shadow-sm"
+                                  : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"
+                            }`}
+                         >
+                            Requests ({inputRequests.length})
+                         </button>
+                         <button
+                            onClick={() => setActiveTab("repayments")}
+                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${
+                               activeTab === "repayments"
+                                  ? "bg-white dark:bg-gray-800 text-purple-600 shadow-sm"
+                                  : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"
+                            }`}
+                         >
+                            Loan Debt ({repayments.length})
+                         </button>
+                         <button
+                            onClick={() => setActiveTab("settlements")}
+                            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${
+                               activeTab === "settlements"
+                                  ? "bg-white dark:bg-gray-800 text-blue-600 shadow-sm"
+                                  : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"
+                            }`}
+                         >
+                            Settlements ({settlements.length})
+                         </button>
+                      </div>
+                   </CardHeader>
+                   <CardContent className="p-6 sm:p-8">
+                      {activeTab === "requests" && (
+                         inputRequests.length > 0 ? (
+                            <div className="space-y-4">
+                               {inputRequests.map((req, i) => (
+                                  <RequestRow key={i} req={req} />
+                               ))}
+                            </div>
+                         ) : (
+                            <div className="text-center py-20 bg-gray-50 dark:bg-gray-900/50 rounded-3xl border-2 border-dashed border-gray-100 dark:border-gray-800">
+                               <FaHandHoldingUsd className="text-5xl text-gray-200 mx-auto mb-4" />
+                               <p className="text-sm font-bold text-gray-400 uppercase tracking-widest italic">No funding requests found</p>
+                            </div>
+                         )
+                      )}
+
+                      {activeTab === "repayments" && (
+                         repayments.length > 0 ? (
+                            <div className="space-y-4">
+                               {repayments.map((rep) => (
+                                  <div key={rep.id} className="p-6 bg-gray-50/50 dark:bg-gray-900/30 rounded-[2rem] border border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+                                     <div>
+                                        <div className="flex items-center gap-2">
+                                           <span className="font-bold text-base text-gray-900 dark:text-gray-100">{rep.program_name || 'Agri-Financing Facility'}</span>
+                                           <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-widest ${
+                                              rep.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                                           }`}>
+                                              {rep.status === 'completed' ? 'Fully Repaid' : 'Active Loan'}
+                                           </span>
+                                        </div>
+                                        <p className="text-xs text-gray-400 font-bold mt-1">Disbursed on {new Date(rep.created_at).toLocaleDateString()}</p>
+                                     </div>
+                                     <div className="flex flex-wrap items-center gap-6 text-right">
+                                        <div>
+                                           <p className="text-[10px] text-gray-400 uppercase font-black">Principal Debt</p>
+                                           <p className="font-bold text-sm">₦{parseFloat(rep.financing_amount || 0).toLocaleString()}</p>
+                                        </div>
+                                        <div>
+                                           <p className="text-[10px] text-emerald-600 uppercase font-black">Recovered</p>
+                                           <p className="font-bold text-sm text-emerald-600">₦{parseFloat(rep.recovered_amount || 0).toLocaleString()}</p>
+                                        </div>
+                                        <div>
+                                           <p className="text-[10px] text-amber-600 uppercase font-black">Remaining Balance</p>
+                                           <p className="font-black text-lg text-amber-600">₦{parseFloat(rep.balance || 0).toLocaleString()}</p>
+                                        </div>
+                                     </div>
+                                  </div>
+                               ))}
+                            </div>
+                         ) : (
+                            <div className="text-center py-20 bg-gray-50 dark:bg-gray-900/50 rounded-3xl border-2 border-dashed border-gray-100 dark:border-gray-800">
+                               <p className="text-sm font-bold text-gray-400 uppercase tracking-widest italic">No loan debt records</p>
+                            </div>
+                         )
+                      )}
+
+                      {activeTab === "settlements" && (
+                         settlements.length > 0 ? (
+                            <div className="space-y-4">
+                               {settlements.map((sett) => (
+                                  <div key={sett.settlement_id} className="p-6 bg-gray-50/50 dark:bg-gray-900/30 rounded-[2rem] border border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+                                     <div>
+                                        <div className="flex items-center gap-2">
+                                           <span className="font-bold text-base text-gray-900 dark:text-gray-100">Batch {sett.batch_number}</span>
+                                           <span className="text-xs font-bold text-emerald-600 uppercase">({sett.crop})</span>
+                                           <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-black uppercase tracking-widest ${
+                                              sett.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
+                                           }`}>
+                                              {sett.status === 'completed' ? 'Disbursed' : 'Pending Authorization'}
+                                           </span>
+                                        </div>
+                                        <p className="text-xs text-gray-400 font-bold mt-1">Settlement Date: {new Date(sett.created_at).toLocaleDateString()}</p>
+                                     </div>
+                                     <div className="flex flex-wrap items-center gap-6 text-right">
+                                        <div>
+                                           <p className="text-[10px] text-gray-400 uppercase font-black">Gross Sale</p>
+                                           <p className="font-bold text-sm">₦{parseFloat(sett.buyer_payment || 0).toLocaleString()}</p>
+                                        </div>
+                                        <div>
+                                           <p className="text-[10px] text-amber-600 uppercase font-black">Debt Recovered</p>
+                                           <p className="font-bold text-sm text-amber-600">-₦{parseFloat(sett.loan_deduction || 0).toLocaleString()}</p>
+                                        </div>
+                                        <div>
+                                           <p className="text-[10px] text-emerald-600 uppercase font-black">Net Wallet Payout</p>
+                                           <p className="font-black text-lg text-emerald-600">₦{parseFloat(sett.final_balance || 0).toLocaleString()}</p>
+                                        </div>
+                                     </div>
+                                  </div>
+                               ))}
+                            </div>
+                         ) : (
+                            <div className="text-center py-20 bg-gray-50 dark:bg-gray-900/50 rounded-3xl border-2 border-dashed border-gray-100 dark:border-gray-800">
+                               <p className="text-sm font-bold text-gray-400 uppercase tracking-widest italic">No harvest off-take settlements recorded</p>
+                            </div>
+                         )
+                      )}
+                   </CardContent>
+                </Card>
+             </div>
 
             <div className="lg:col-span-1 space-y-8">
                <Card className="border-none shadow-xl bg-emerald-600 text-white rounded-3xl overflow-hidden relative">

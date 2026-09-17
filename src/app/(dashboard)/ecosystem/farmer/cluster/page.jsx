@@ -1,13 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
-import { FaUsers, FaMapMarkerAlt, FaCalendarAlt, FaUserTie, FaPhone, FaSeedling, FaPlusCircle } from "react-icons/fa";
+import { FaUsers, FaMapMarkerAlt, FaCalendarAlt, FaUserTie, FaPhone, FaSeedling, FaPlusCircle, FaBuilding } from "react-icons/fa";
 import { toast } from "react-toastify";
 import Link from "next/link";
 import ClusterChat from "../../components/ClusterChat";
 
 export default function MyClusterPage() {
    const [cluster, setCluster] = useState(null);
+   const [farmerOrg, setFarmerOrg] = useState(null);
    const [loading, setLoading] = useState(true);
    const [exploringClusters, setExploringClusters] = useState(false);
    const [clustersList, setClustersList] = useState([]);
@@ -16,12 +17,23 @@ export default function MyClusterPage() {
 
    const fetchMyCluster = async () => {
       try {
-         const res = await fetch("/api/proxy/pipeline/clusters/mine");
+         const [res, profileRes] = await Promise.all([
+            fetch("/api/proxy/pipeline/clusters/mine"),
+            fetch("/api/proxy/pipeline/farmer-profile").catch(() => null)
+         ]);
+
          const data = await res.json();
          if (data.success) {
             setCluster(data.data);
          } else {
             toast.error(data.error || "Failed to load cluster details");
+         }
+
+         if (profileRes && profileRes.ok) {
+            const profileData = await profileRes.json().catch(() => null);
+            if (profileData?.success && profileData.data?.organization) {
+               setFarmerOrg(profileData.data.organization);
+            }
          }
       } catch (error) {
          console.error("Error loading cluster", error);
@@ -120,6 +132,20 @@ export default function MyClusterPage() {
 
             {exploringClusters && (
                <div className="space-y-6">
+                  {farmerOrg && (
+                     <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200 text-xs font-bold flex items-center gap-3">
+                        <FaBuilding className="text-lg text-blue-600 shrink-0" />
+                        <div>
+                           <p className="font-extrabold text-sm text-blue-900 dark:text-blue-100">
+                              {farmerOrg.company_name || farmerOrg.name} ({farmerOrg.role || "Institution Member"})
+                           </p>
+                           <p className="text-blue-700 dark:text-blue-300 font-medium text-xs mt-0.5">
+                              As a registered member of this institution, your cluster participation is designated to clusters formed by your institution.
+                           </p>
+                        </div>
+                     </div>
+                  )}
+
                   <div className="flex items-center justify-between">
                      <h3 className="text-2xl font-black">Available Farming Clusters</h3>
                      <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{clustersList.length} Clusters Found</span>

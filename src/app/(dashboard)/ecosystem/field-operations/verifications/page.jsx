@@ -225,28 +225,28 @@ export default function VerificationsPage() {
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                      <label className="block text-sm font-medium mb-2">Search</label>
-                     <input
-                        type="text"
-                        placeholder="Farmer name or cluster..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-md dark:bg-gray-800"
-                     />
-                  </div>
-                  <div>
-                     <label className="block text-sm font-medium mb-2">Status</label>
-                     <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-md dark:bg-gray-800"
-                     >
-                        <option value="">All Statuses</option>
-                        {statuses.map((status) => (
-                           <option key={status} value={status}>
-                              {status.replace(/_/g, " ")}
-                           </option>
-                        ))}
-                     </select>
+                      <input
+                         type="text"
+                         placeholder="Farmer name or cluster..."
+                         value={searchTerm}
+                         onChange={(e) => setSearchTerm(e.target.value)}
+                         className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 outline-none shadow-sm font-medium"
+                      />
+                   </div>
+                   <div>
+                      <label className="block text-sm font-medium mb-2">Status</label>
+                      <select
+                         value={statusFilter}
+                         onChange={(e) => setStatusFilter(e.target.value)}
+                         className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 outline-none shadow-sm font-medium"
+                      >
+                         <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">All Statuses</option>
+                         {statuses.map((status) => (
+                            <option key={status} value={status} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+                               {status.replace(/_/g, " ")}
+                            </option>
+                         ))}
+                      </select>
                   </div>
                </div>
             </CardContent>

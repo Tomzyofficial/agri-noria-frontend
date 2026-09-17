@@ -48,7 +48,7 @@ export default function StorageDashboard() {
       });
       const data = await res.json();
       if (data.success) {
-        toast.success("Storage batch verified and accepted!");
+        toast.success("Storage batch verified and e-NWR issued!");
         fetchData();
       } else {
         toast.error(data.error || "Failed to accept storage ticket.");
@@ -56,6 +56,26 @@ export default function StorageDashboard() {
     } catch (error) {
       console.error("Error accepting ticket:", error);
       toast.error("Network error while accepting ticket.");
+    }
+  };
+
+  const handleIssueNwr = async (ticketId) => {
+    try {
+      const res = await fetch(`/api/proxy/vendor/commodity-operations/storage/tickets/${ticketId}/issue-nwr`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ grade: "Grade A", moisture_pct: 12.5 })
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`e-NWR ${data.data.nwr_number} successfully issued!`);
+        fetchData();
+      } else {
+        toast.error(data.error || "Failed to issue e-NWR.");
+      }
+    } catch (error) {
+      console.error("Error issuing e-NWR:", error);
+      toast.error("Network error while issuing e-NWR.");
     }
   };
 
@@ -147,18 +167,23 @@ export default function StorageDashboard() {
             {tickets.map((ticket) => (
               <div key={ticket.ticket_id} className="p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 hover:bg-gray-50 dark:hover:bg-gray-900 transition">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-lg">{ticket.ticket_number}</span>
                     <span className={`text-xs px-2 py-1 rounded-full font-bold uppercase ${ticket.status === 'reserved' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
                       {ticket.status}
                     </span>
+                    {ticket.nwr_number && (
+                      <span className="text-xs px-2.5 py-0.5 rounded-full font-mono font-bold bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
+                        e-NWR: {ticket.nwr_number}
+                      </span>
+                    )}
                   </div>
                   <p className="text-sm text-gray-500 font-medium">
                     {ticket.entity_name} ({ticket.entity_role})
                   </p>
                 </div>
                 
-                <div className="flex items-center gap-8 text-sm">
+                <div className="flex flex-wrap items-center gap-6 text-sm">
                   <div>
                     <p className="text-gray-500 uppercase text-xs font-bold mb-1">Produce</p>
                     <p className="font-semibold">{ticket.crop}</p>
@@ -171,16 +196,41 @@ export default function StorageDashboard() {
                     <p className="text-gray-500 uppercase text-xs font-bold mb-1">Duration</p>
                     <p className="font-semibold">{ticket.storage_duration_days} Days</p>
                   </div>
+                  {ticket.grade && (
+                    <div>
+                      <p className="text-gray-500 uppercase text-xs font-bold mb-1">Grade</p>
+                      <p className="font-semibold text-emerald-600">{ticket.grade}</p>
+                    </div>
+                  )}
+                  {ticket.moisture_pct && (
+                    <div>
+                      <p className="text-gray-500 uppercase text-xs font-bold mb-1">Moisture</p>
+                      <p className="font-semibold">{ticket.moisture_pct}%</p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
                   {ticket.status === 'reserved' && (
                     <button 
                       onClick={() => handleAcceptTicket(ticket.ticket_id)}
-                      className="px-4 py-2 bg-(--greenish-color) text-white font-bold rounded-lg hover:opacity-90 transition"
+                      className="px-4 py-2 bg-(--greenish-color) text-white font-bold rounded-lg hover:opacity-90 transition text-sm shadow"
                     >
-                      Verify & Accept Batch
+                      Verify & Issue e-NWR
                     </button>
+                  )}
+                  {ticket.status === 'active' && !ticket.nwr_number && (
+                    <button 
+                      onClick={() => handleIssueNwr(ticket.ticket_id)}
+                      className="px-3 py-1.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition text-xs shadow"
+                    >
+                      Issue e-NWR
+                    </button>
+                  )}
+                  {ticket.status === 'active' && ticket.nwr_number && (
+                    <span className="text-xs text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1.5 rounded-lg border border-emerald-200">
+                      Receipt Verified
+                    </span>
                   )}
                 </div>
               </div>

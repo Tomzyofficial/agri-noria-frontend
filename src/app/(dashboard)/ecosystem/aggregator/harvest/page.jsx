@@ -14,14 +14,21 @@ export default function FarmerHarvestPage() {
   const [requestModal, setRequestModal] = useState({ isOpen: false, type: "", batchId: null });
   const [providersList, setProvidersList] = useState([]);
   const [selectedProvider, setSelectedProvider] = useState("");
+  const [clusters, setClusters] = useState([]);
+  const [sourceType, setSourceType] = useState("individual");
+  const [selectedClusterId, setSelectedClusterId] = useState("");
+  const [farmerCount, setFarmerCount] = useState(1);
 
   const fetchBatches = async () => {
     try {
-      const res = await fetch("/api/proxy/vendor/commodity-operations/harvest/batches");
-      const data = await res.json();
-      if (data.success) {
-        setBatches(data.data);
-      }
+      const [batchRes, clusterRes] = await Promise.all([
+        fetch("/api/proxy/vendor/commodity-operations/harvest/batches"),
+        fetch("/api/proxy/pipeline/clusters")
+      ]);
+      const data = await batchRes.json();
+      const cData = await clusterRes.json();
+      if (data.success) setBatches(data.data);
+      if (cData.success) setClusters(cData.data || []);
     } catch (error) {
       console.error(error);
       toast.error("Failed to load batches");
@@ -36,17 +43,27 @@ export default function FarmerHarvestPage() {
 
   const handleDeclare = async (e) => {
     e.preventDefault();
+    if (sourceType === "cluster_aggregation" && !selectedClusterId) {
+      return toast.error("Please select a cluster for aggregated collection");
+    }
     try {
       const res = await fetch("/api/proxy/vendor/commodity-operations/harvest/declare", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ produces }),
+        body: JSON.stringify({ 
+          produces,
+          source_type: sourceType,
+          cluster_id: sourceType === "cluster_aggregation" ? selectedClusterId : null,
+          farmer_count: sourceType === "cluster_aggregation" ? parseInt(farmerCount) || 1 : 1
+        }),
       });
       const data = await res.json();
       if (data.success) {
         toast.success("Harvest declared successfully!");
         setIsModalOpen(false);
         setProduces([{ crop: "Maize", quantity_mt: "", location: "" }]);
+        setSourceType("individual");
+        setSelectedClusterId("");
         fetchBatches();
       } else {
         toast.error(data.error || "Failed to declare harvest");
@@ -177,7 +194,7 @@ export default function FarmerHarvestPage() {
             <div key={batch.batch_id} className="bg-white dark:bg-gray-800 rounded-xl border overflow-hidden">
               <div className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <h3 className="font-bold text-lg">{batch.batch_number}</h3>
                     <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
                       {batch.status.replace("_", " ").toUpperCase()}
@@ -185,6 +202,11 @@ export default function FarmerHarvestPage() {
                     {batch.insurance_status === 'active' && (
                       <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700 flex items-center gap-1">
                         <ShieldCheck className="w-3 h-3" /> Insured
+                      </span>
+                    )}
+                    {batch.source_type === 'cluster_aggregation' && (
+                      <span className="px-2 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+                        Cluster: {batch.cluster_name || 'Aggregated'} ({batch.farmer_count || 1} Farmers)
                       </span>
                     )}
                   </div>
@@ -239,7 +261,69 @@ export default function FarmerHarvestPage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6">
             <h2 className="text-xl font-bold mb-4">Declare Harvest</h2>
             <form onSubmit={handleDeclare} className="space-y-4">
-              <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-2">
+              <div className="flex rounded-xl bg-gray-100 dark:bg-gray-900 p-1">
+                <button
+                  type="button"
+                  onClick={() => setSourceType("individual")}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+                    sourceType === "individual"
+                      ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
+                      : "text-gray-500"
+                  }`}
+                >
+                  Individual Producer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSourceType("cluster_aggregation")}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+                    sourceType === "cluster_aggregation"
+                      ? "bg-white dark:bg-gray-800 text-purple-600 shadow-sm"
+                      : "text-gray-500"
+                  }`}
+                >
+                  Cluster Aggregation
+                </button>
+              </div>
+
+              {sourceType === "cluster_aggregation" && (
+                <div className="p-3 bg-purple-50 dark:bg-purple-950/30 rounded-xl border border-purple-200 dark:border-purple-800 space-y-3">
+                  <div>
+                    <label className="block text-xs font-bold text-purple-900 dark:text-purple-300 uppercase mb-1">
+                      Target Cluster
+                    </label>
+                    <select
+                      value={selectedClusterId}
+                      onChange={(e) => setSelectedClusterId(e.target.value)}
+                      className="w-full p-2 text-sm border rounded-lg bg-white dark:bg-gray-900"
+                      required
+                    >
+                      <option value="">-- Choose Cluster --</option>
+                      {clusters.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({c.total_members || c.member_count || 0} Farmers)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-purple-900 dark:text-purple-300 uppercase mb-1">
+                      Contributing Farmers Count
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={farmerCount}
+                      onChange={(e) => setFarmerCount(e.target.value)}
+                      className="w-full p-2 text-sm border rounded-lg bg-white dark:bg-gray-900"
+                      placeholder="e.g. 15"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="max-h-[50vh] overflow-y-auto space-y-4 pr-2">
                 {produces.map((prod, index) => (
                   <div key={index} className="p-4 border rounded-lg dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 relative">
                     {produces.length > 1 && (
