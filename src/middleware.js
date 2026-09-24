@@ -86,7 +86,10 @@ export default async function middleware(request) {
    try {
       // VENDOR PROTECTION
       if (pathname.startsWith("/marketplace") || pathname.startsWith("/ecosystem")) {
-         const token = request.cookies.get("vendor-session")?.value;
+         const token =
+            request.cookies.get("vendor-session")?.value ||
+            request.cookies.get("marketplace-session")?.value ||
+            request.cookies.get("ecosystem-session")?.value;
 
          if (!token) {
             return NextResponse.redirect(new URL("/", request.url));
@@ -94,6 +97,30 @@ export default async function middleware(request) {
 
          try {
             const { payload } = await jwtVerify(token, vendorKey);
+
+            const marketplaceRoleRoutes = {
+               seller: "/marketplace/store",
+               farmer: "/marketplace/store",
+               logistics: "/marketplace/logistics",
+               "logistics partner": "/marketplace/logistics",
+               "storage facility": "/marketplace/storage-facility",
+               storage_facility: "/marketplace/storage-facility",
+               trainer: "/marketplace/trainer",
+               drone: "/marketplace/drone",
+               "farm development": "/marketplace/farm-development",
+            };
+
+            if (pathname.startsWith("/marketplace")) {
+               const allowedMarketplaceRoute = marketplaceRoleRoutes[payload.role?.toLowerCase()];
+               if (allowedMarketplaceRoute) {
+                  if (pathname === "/marketplace" || pathname === "/marketplace/") {
+                     return NextResponse.redirect(new URL(allowedMarketplaceRoute, request.url));
+                  }
+                  if (!pathname.startsWith(allowedMarketplaceRoute)) {
+                     return NextResponse.redirect(new URL(allowedMarketplaceRoute, request.url));
+                  }
+               }
+            }
 
             // Role-Based Protection for Ecosystem Routes
             if (pathname.startsWith("/ecosystem")) {

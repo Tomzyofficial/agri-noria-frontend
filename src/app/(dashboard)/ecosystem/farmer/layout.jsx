@@ -3,255 +3,243 @@ import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  LogOut,
-  X,
-  Menu,
-  LayoutDashboard,
-  Sprout,
-  Store,
-  MapPin,
-  Settings,
-  Wallet,
-  GraduationCap,
-  Tractor,
-  CreditCard,
-  Truck,
-  Users,
-  Lock,
-} from "lucide-react";
+import { LogOut, X, Menu, LayoutDashboard, Sprout, Store, MapPin, Settings, Wallet, GraduationCap, Tractor, CreditCard, Truck, Users, Lock } from "lucide-react";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
 import { verifyVendorSession } from "@/actions/session";
 import { FarmerDataProvider } from "./useFarmerData";
 
 export default function FarmerLayout({ children }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [onboardingChecked, setOnboardingChecked] = useState(false);
-  const [isVerified, setIsVerified] = useState(true);
-  const pathname = usePathname();
-  const router = useRouter();
+   const [menuOpen, setMenuOpen] = useState(false);
+   const [onboardingChecked, setOnboardingChecked] = useState(false);
+   const [isVerified, setIsVerified] = useState(true);
+   const pathname = usePathname();
+   const router = useRouter();
 
-  const handleMenuClick = () => setMenuOpen((open) => !open);
+   const handleMenuClick = () => setMenuOpen((open) => !open);
 
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
+   useEffect(() => {
+      setMenuOpen(false);
+   }, [pathname]);
 
-  const handleSignout = async () => {
-    try {
-      toast.info("Signing out...", { autoClose: 2000, toastId: "signout" });
-        const res = await signoutBridge();
-      if (!res) {
-        toast.error("Signout failed. Try again.");
-        return;
-      }
-      window.location.href = "/";
-    } catch {
-      toast.error("Signout failed");
-    }
-  };
-
-  // Auto-verify session
-  useEffect(() => {
-    const checkExistingUser = async () => {
+   const handleSignout = async () => {
       try {
-        const session = await verifyVendorSession();
-        if (session?.authenticated === false) {
-           await handleSignout();
-           return;
-        }
-        // Check onboarding level
-        if (session?.authenticated && session?.role?.toLowerCase() === "farmer") {
-          const hasBasicInfo = session?.onboarding_level >= 1 || (session?.onboarding_status && session?.onboarding_status !== "pending");
-          if (!hasBasicInfo && pathname !== "/ecosystem/farmer/onboarding") {
-             router.replace("/ecosystem/farmer/onboarding");
-             return;
-          }
-          const verified = session?.is_verified === true || session?.onboarding_status === "verified" || session?.onboarding_status === "completed" || session?.onboarding_level >= 2;
-          setIsVerified(verified);
-          const allowedUnverifiedPaths = ["/ecosystem/farmer", "/ecosystem/farmer/settings", "/ecosystem/farmer/onboarding"];
-          if (!verified && !allowedUnverifiedPaths.includes(pathname)) {
-             toast.warning("🔒 Please complete farm mapping & verification to access this section.");
-             router.replace("/ecosystem/farmer");
-             return;
-          }
-        }
-        setOnboardingChecked(true);
-      } catch (e) {
-        console.error(e);
-        setOnboardingChecked(true);
+         toast.info("Signing out...", { autoClose: 2000, toastId: "signout" });
+         const res = await signoutBridge();
+         if (!res) {
+            toast.error("Signout failed. Try again.");
+            return;
+         }
+         window.location.href = "/";
+      } catch {
+         toast.error("Signout failed");
       }
-    };
-    checkExistingUser();
-    const interval = setInterval(checkExistingUser, 30000);
-    return () => clearInterval(interval);
-  }, [pathname, router]);
+   };
 
-  const navMenu = [
-    {
-      label: "Overview",
-      href: "/ecosystem/farmer",
-      icon: <LayoutDashboard className="w-4 h-4" />,
-    },
-    {
-      label: "Harvest & Operations",
-      href: "/ecosystem/farmer/harvest",
-      icon: <Sprout className="w-4 h-4" />,
-    },
-    {
-      label: "Enrolled Programs",
-      href: "/ecosystem/farmer/programs",
-      icon: <Sprout className="w-4 h-4" />,
-    },
-    {
-      label: "My Cluster",
-      href: "/ecosystem/farmer/cluster",
-      icon: <Users className="w-4 h-4" />,
-    },
-    {
-      label: "Training Center",
-      href: "/ecosystem/farmer/training",
-      icon: <GraduationCap className="w-4 h-4" />,
-    },
-    {
-      label: "My Farm",
-      href: "/ecosystem/farmer/farm",
-      icon: <Tractor className="w-4 h-4" />,
-    },
-    {
-      label: "Input Distributors",
-      href: "/ecosystem/farmer/distributors",
-      icon: <Store className="w-4 h-4" />,
-    },
-    {
-      label: "Storage & Logistics",
-      href: "/ecosystem/farmer/logistics",
-      icon: <Truck className="w-4 h-4" />,
-    },
-    {
-      label: "Financing",
-      href: "/ecosystem/farmer/financing",
-      icon: <CreditCard className="w-4 h-4" />,
-    },
-    {
-      label: "My Wallet",
-      href: "/ecosystem/farmer/wallet",
-      icon: <Wallet className="w-4 h-4" />,
-    },
-    {
-      label: "Settings",
-      href: "/ecosystem/farmer/settings",
-      icon: <Settings className="w-4 h-4" />,
-    },
-  ];
+   // Check if user is verified and has completed onboarding, redirect if not
+   useEffect(() => {
+      const checkExistingUser = async () => {
+         try {
+            const check = await fetch("/api/proxy/vendor/auth/onboarding-status", {
+               method: "GET",
+            });
+            if (check.status === 401) {
+               await handleSignout();
+            }
+            if (check.status === 500) {
+               toast.error("Server error. Please try again later.");
+               return;
+            }
+            const data = await check.json();
+            console.log("Onboarding Status:", data?.onboardingStatus);
+            if (data?.onboardingStatus !== "completed" && data?.onboardingStatus !== "verified" && pathname !== "/ecosystem/farmer/onboarding") {
+               router.replace("/ecosystem/farmer/onboarding");
+            }
+         } catch (error) {
+            console.error("Error checking onboarding status:", error);
+         }
+      };
+      checkExistingUser();
+   }, [pathname, router]);
 
-  const navLinksStyle = (path) => {
-    const isActive = pathname === path;
-    return isActive
-      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 p-3 rounded-xl shadow-sm border-l-4 border-green-600"
-      : "hover:bg-gray-100 dark:hover:bg-gray-800 p-3 rounded-xl transition-all duration-200 ml-1 text-gray-500 dark:text-gray-400";
-  };
+   // Auto-verify session
+   useEffect(() => {
+      const checkExistingUser = async () => {
+         try {
+            const session = await verifyVendorSession();
+            if (session?.authenticated === false) {
+               await handleSignout();
+               return;
+            }
+            // Check onboarding level
+            if (session?.authenticated && session?.role?.toLowerCase() === "farmer") {
+               const hasBasicInfo = session?.onboarding_level >= 1 || (session?.onboarding_status && session?.onboarding_status !== "pending");
+               if (!hasBasicInfo && pathname !== "/ecosystem/farmer/onboarding") {
+                  router.replace("/ecosystem/farmer/onboarding");
+                  return;
+               }
+               const verified = session?.is_verified === true || session?.onboarding_status === "verified" || session?.onboarding_status === "completed" || session?.onboarding_level >= 2;
+               setIsVerified(verified);
+               const allowedUnverifiedPaths = ["/ecosystem/farmer", "/ecosystem/farmer/settings", "/ecosystem/farmer/onboarding"];
+               if (!verified && !allowedUnverifiedPaths.includes(pathname)) {
+                  toast.warning("🔒 Please complete farm mapping & verification to access this section.");
+                  router.replace("/ecosystem/farmer");
+                  return;
+               }
+            }
+            setOnboardingChecked(true);
+         } catch (e) {
+            console.error(e);
+            setOnboardingChecked(true);
+         }
+      };
+      checkExistingUser();
+      const interval = setInterval(checkExistingUser, 30000);
+      return () => clearInterval(interval);
+   }, [pathname, router]);
 
-  if (pathname === "/ecosystem/farmer/onboarding") {
-    return (
-      <FarmerDataProvider>
-        <div className="min-h-screen bg-(--background)">
-          {children}
-        </div>
-      </FarmerDataProvider>
-    );
-  }
+   const navMenu = [
+      {
+         label: "Overview",
+         href: "/ecosystem/farmer",
+         icon: <LayoutDashboard className="w-4 h-4" />,
+      },
+      {
+         label: "Harvest & Operations",
+         href: "/ecosystem/farmer/harvest",
+         icon: <Sprout className="w-4 h-4" />,
+      },
+      {
+         label: "Enrolled Programs",
+         href: "/ecosystem/farmer/programs",
+         icon: <Sprout className="w-4 h-4" />,
+      },
+      {
+         label: "My Cluster",
+         href: "/ecosystem/farmer/cluster",
+         icon: <Users className="w-4 h-4" />,
+      },
+      {
+         label: "Training Center",
+         href: "/ecosystem/farmer/training",
+         icon: <GraduationCap className="w-4 h-4" />,
+      },
+      {
+         label: "My Farm",
+         href: "/ecosystem/farmer/farm",
+         icon: <Tractor className="w-4 h-4" />,
+      },
+      {
+         label: "Input Distributors",
+         href: "/ecosystem/farmer/distributors",
+         icon: <Store className="w-4 h-4" />,
+      },
+      {
+         label: "Storage & Logistics",
+         href: "/ecosystem/farmer/logistics",
+         icon: <Truck className="w-4 h-4" />,
+      },
+      {
+         label: "Financing",
+         href: "/ecosystem/farmer/financing",
+         icon: <CreditCard className="w-4 h-4" />,
+      },
+      {
+         label: "My Wallet",
+         href: "/ecosystem/farmer/wallet",
+         icon: <Wallet className="w-4 h-4" />,
+      },
+      {
+         label: "Settings",
+         href: "/ecosystem/farmer/settings",
+         icon: <Settings className="w-4 h-4" />,
+      },
+   ];
 
-  // Show loading screen while checking onboarding status — never flash the dashboard
-  if (!onboardingChecked) {
-    return (
-      <div className="min-h-screen bg-(--background) flex items-center justify-center">
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            width: '40px', height: '40px', border: '4px solid #e5e7eb',
-            borderTop: '4px solid #10b981', borderRadius: '50%',
-            animation: 'spin 0.8s linear infinite', margin: '0 auto 16px'
-          }} />
-          <p style={{ color: '#6b7280', fontSize: '14px' }}>Loading your dashboard...</p>
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        </div>
-      </div>
-    );
-  }
+   const navLinksStyle = (path) => {
+      const isActive = pathname === path;
+      return isActive ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 p-3 rounded-xl shadow-sm border-l-4 border-green-600" : "hover:bg-gray-100 dark:hover:bg-gray-800 p-3 rounded-xl transition-all duration-200 ml-1 text-gray-500 dark:text-gray-400";
+   };
 
-  return (
-    <FarmerDataProvider>
-      <div className="flex min-h-screen bg-(--background)">
-        <aside>
-          <div
-            aria-label="Open menu"
-            onClick={handleMenuClick}
-            className="lg:hidden fixed z-50 bg-black dark:bg-white right-4 top-4 cursor-pointer shadow-md p-2 rounded"
-          >
-            {menuOpen ? (
-              <X className="text-white dark:text-black" />
-            ) : (
-              <Menu className="text-white dark:text-black" />
-            )}
-          </div>
+   if (pathname === "/ecosystem/farmer/onboarding") {
+      return (
+         <FarmerDataProvider>
+            <div className="min-h-screen bg-(--background)">{children}</div>
+         </FarmerDataProvider>
+      );
+   }
 
-          <div
-            className={`${menuOpen ? "left-0 w-64 h-full bg-white shadow-xl" : "-left-64"} transition-all duration-300 fixed z-40 top-0 lg:left-0 lg:w-64 lg:h-screen dark:bg-gray-950 dark:text-(--foreground) lg:bg-white lg:shadow-md p-4 flex flex-col border-r border-gray-100 dark:border-gray-800`}
-          >
-            <div className="mb-8 px-2">
-              <h2 className="text-2xl font-black text-green-600 tracking-tighter uppercase">
-                Agri-Noria
-              </h2>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">
-                Industrial Farmer
-              </p>
+   // Show loading screen while checking onboarding status — never flash the dashboard
+   if (!onboardingChecked) {
+      return (
+         <div className="min-h-screen bg-(--background) flex items-center justify-center">
+            <div style={{ textAlign: "center" }}>
+               <div
+                  style={{
+                     width: "40px",
+                     height: "40px",
+                     border: "4px solid #e5e7eb",
+                     borderTop: "4px solid #10b981",
+                     borderRadius: "50%",
+                     animation: "spin 0.8s linear infinite",
+                     margin: "0 auto 16px",
+                  }}
+               />
+               <p style={{ color: "#6b7280", fontSize: "14px" }}>Loading your dashboard...</p>
+               <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
+         </div>
+      );
+   }
 
-            <nav className="flex flex-col space-y-1 flex-grow overflow-y-auto pr-2 custom-scrollbar">
-              {navMenu.map((item) => {
-                const isUnrestricted = item.href === "/ecosystem/farmer" || item.href === "/ecosystem/farmer/settings";
-                const isDisabled = !isVerified && !isUnrestricted;
-                if (isDisabled) {
-                  return (
-                    <div
-                      key={item.label}
-                      onClick={() => toast.warning("🔒 Complete farm mapping to verify your account and unlock this feature.")}
-                      className="flex items-center justify-between gap-3 font-bold text-sm text-gray-400 dark:text-gray-600 opacity-60 cursor-not-allowed p-3 rounded-xl ml-1 hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-all select-none"
-                    >
-                      <div className="flex items-center gap-3">
-                        {item.icon} {item.label}
-                      </div>
-                      <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" title="Locked until verified" />
-                    </div>
-                  );
-                }
-                return (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className={`flex items-center gap-3 font-bold text-sm ${navLinksStyle(item.href)}`}
-                  >
-                    {item.icon} {item.label}
-                  </Link>
-                );
-              })}
+   return (
+      <FarmerDataProvider>
+         <div className="flex min-h-screen bg-(--background)">
+            <aside>
+               <div aria-label="Open menu" onClick={handleMenuClick} className="lg:hidden fixed z-50 bg-black dark:bg-white right-4 top-4 cursor-pointer shadow-md p-2 rounded">
+                  {menuOpen ? <X className="text-white dark:text-black" /> : <Menu className="text-white dark:text-black" />}
+               </div>
 
-              <Button
-                onClick={handleSignout}
-                className="mt-8 cursor-pointer flex items-center text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 p-3 rounded-xl transition-all font-black text-xs uppercase tracking-widest"
-                variant="ghost"
-              >
-                <LogOut className="w-4 mr-2" />
-                Sign out
-              </Button>
-            </nav>
-          </div>
-        </aside>
-        <main className="lg:ml-64 w-full lg:p-10 p-4 bg-gray-50 dark:bg-black/20 min-h-screen">
-          {children}
-        </main>
-      </div>
-    </FarmerDataProvider>
-  );
+               <div className={`${menuOpen ? "left-0 w-64 h-full bg-white shadow-xl" : "-left-64"} transition-all duration-300 fixed z-40 top-0 lg:left-0 lg:w-64 lg:h-screen dark:bg-gray-950 dark:text-(--foreground) lg:bg-white lg:shadow-md p-4 flex flex-col border-r border-gray-100 dark:border-gray-800`}>
+                  <div className="mb-8 px-2">
+                     <h2 className="text-2xl font-black text-green-600 tracking-tighter uppercase">Agri-Noria</h2>
+                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Industrial Farmer</p>
+                  </div>
+
+                  <nav className="flex flex-col space-y-1 flex-grow overflow-y-auto pr-2 custom-scrollbar">
+                     {navMenu.map((item) => {
+                        const isUnrestricted = item.href === "/ecosystem/farmer" || item.href === "/ecosystem/farmer/settings";
+                        const isDisabled = !isVerified && !isUnrestricted;
+                        if (isDisabled) {
+                           return (
+                              <div
+                                 key={item.label}
+                                 onClick={() => toast.warning("🔒 Complete farm mapping to verify your account and unlock this feature.")}
+                                 className="flex items-center justify-between gap-3 font-bold text-sm text-gray-400 dark:text-gray-600 opacity-60 cursor-not-allowed p-3 rounded-xl ml-1 hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-all select-none"
+                              >
+                                 <div className="flex items-center gap-3">
+                                    {item.icon} {item.label}
+                                 </div>
+                                 <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" title="Locked until verified" />
+                              </div>
+                           );
+                        }
+                        return (
+                           <Link key={item.label} href={item.href} className={`flex items-center gap-3 font-bold text-sm ${navLinksStyle(item.href)}`}>
+                              {item.icon} {item.label}
+                           </Link>
+                        );
+                     })}
+
+                     <Button onClick={handleSignout} className="mt-8 cursor-pointer flex items-center text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 p-3 rounded-xl transition-all font-black text-xs uppercase tracking-widest" variant="ghost">
+                        <LogOut className="w-4 mr-2" />
+                        Sign out
+                     </Button>
+                  </nav>
+               </div>
+            </aside>
+            <main className="lg:ml-64 w-full lg:p-10 p-4 bg-gray-50 dark:bg-black/20 min-h-screen">{children}</main>
+         </div>
+      </FarmerDataProvider>
+   );
 }

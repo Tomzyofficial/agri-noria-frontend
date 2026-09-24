@@ -12,6 +12,8 @@ import { signoutBridge } from "@/actions/authActions";
 import { IoBriefcaseOutline } from "react-icons/io5";
 import { GiShoppingCart } from "react-icons/gi";
 import { IoSchoolOutline } from "react-icons/io5";
+import { verifyVendorSession } from "@/actions/session";
+import { FaGlobe } from "react-icons/fa";
 
 export default function DashboardLayout({ children }) {
    const [menuOpen, setMenuOpen] = useState(false);
@@ -19,17 +21,20 @@ export default function DashboardLayout({ children }) {
    const [dismissed, setDismissed] = useState(false);
    const pathname = usePathname();
    const router = useRouter();
+   const [role, setRole] = useState(null);
 
-   const handleMenuClick = () => {
-      setMenuOpen((open) => !open);
-   };
+   useEffect(() => {
+      verifyVendorSession().then((session) => {
+         setRole(session?.role?.toLowerCase());
+      });
+   }, []);
 
    // Close menu on route change (using pathname as dependency)
    useEffect(() => {
       setMenuOpen(false);
    }, [pathname]);
 
-   // When user in payload doesn't exist in, db bounce em back
+   // When user in payload doesn't exist in db bounce em back
    useEffect(() => {
       const checkExistingUser = async () => {
          try {
@@ -81,23 +86,6 @@ export default function DashboardLayout({ children }) {
       if (dismissedFlag) setDismissed(true);
    }, [verified, dismissed]);
 
-   // Signout
-   const handleSignout = async () => {
-      try {
-         toast.info("Signing out...", { autoClose: 2000, toastId: "signout" });
-         const res = await signoutBridge();
-
-         if (!res) {
-            toast.error("Signout failed. Try again later.");
-            return;
-         }
-         router.refresh();
-         router.push("/");
-      } catch {
-         toast.error("Signout failed. Try again later.");
-      }
-   };
-
    const navMenu = [
       {
          label: "Overview",
@@ -145,6 +133,39 @@ export default function DashboardLayout({ children }) {
          icon: <CreditCard className="w-4 h-4" />,
       },
    ];
+   const menuItems = [
+      ...navMenu,
+      ...(role === "farmer"
+         ? [
+              {
+                 label: "Ecosystem",
+                 href: "/ecosystem/farmer",
+                 icon: <FaGlobe className="w-4 h-4" />,
+              },
+           ]
+         : []),
+   ];
+
+   const handleMenuClick = () => {
+      setMenuOpen((open) => !open);
+   };
+
+   // Signout
+   const handleSignout = async () => {
+      try {
+         toast.info("Signing out...", { autoClose: 2000, toastId: "signout" });
+         const res = await signoutBridge();
+
+         if (!res) {
+            toast.error("Signout failed. Try again later.");
+            return;
+         }
+         router.refresh();
+         router.push("/");
+      } catch {
+         toast.error("Signout failed. Try again later.");
+      }
+   };
 
    const navLinksStyle = (path) => {
       return path === pathname ? "bg-gray-200 dark:bg-(--card-dark) p-2 rounded" : "hover:bg-gray-200 dark:hover:bg-(--card-dark) dark:focus:bg-(--card-dark) p-2 focus:bg-gray-200 rounded transition delay-50 duration-150 ease-in-out";
@@ -165,7 +186,7 @@ export default function DashboardLayout({ children }) {
                   ${menuOpen ? "flex flex-col" : "hidden"} lg:flex lg:flex-col space-y-2
                `}
                >
-                  {navMenu.map((item) => (
+                  {menuItems.map((item) => (
                      <Link key={item.label} href={item.href} className={`flex items-center gap-2 ${navLinksStyle(item.href)}`}>
                         {item.icon} {item.label}
                      </Link>

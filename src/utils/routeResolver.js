@@ -73,8 +73,10 @@ export const marketplaceRoleRoutes = {
    farmer: "store",
    drone: "drone",
    logistics: "logistics",
+   "logistics partner": "logistics",
    "farm development": "farm-development",
    "storage facility": "storage-facility",
+   storage_facility: "storage-facility",
    trainer: "trainer",
 };
 
