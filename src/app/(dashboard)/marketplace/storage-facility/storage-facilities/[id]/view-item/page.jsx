@@ -4,11 +4,12 @@ import { verifyVendorSession } from "@/actions/session";
 import Breadcrumbs from "@/components/dashboard/BreadCrumbs";
 import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import { cookieStoreFnc } from "@/actions/session";
+import { isAllowedMarketplaceRole } from "@/utils/roleHelper";
 
 export default async function ViewPage({ params }) {
    const session = await verifyVendorSession();
 
-   if (!session?.authenticated || session.role !== "storage facility" || session.workspace !== "marketplace") {
+   if (!session?.authenticated || !isAllowedMarketplaceRole(session.role, "storage")) {
       return <Unauthorized />;
    }
 

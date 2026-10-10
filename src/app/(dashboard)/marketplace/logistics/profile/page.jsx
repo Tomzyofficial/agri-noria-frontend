@@ -4,6 +4,7 @@ import { apiUrl } from "@/_lib/api";
 import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import { cookieStoreFnc } from "@/actions/session";
 import { ErrorUi } from "@/components/ui/Error";
+import { isAllowedMarketplaceRole } from "@/utils/roleHelper";
 
 export const metadata = {
    title: "Dashboard Profile",
@@ -36,7 +37,7 @@ async function getVendorProfileInfo() {
    try {
       const res = await fetch(apiUrl("/api/vendor/get-profile-info"), {
          method: "GET",
-         cache: "force-cache",
+         cache: "no-store",
          headers: {
             Cookie: cookieHeader,
          },
@@ -60,7 +61,12 @@ async function getVendorProfileInfo() {
          };
       }
 
-      return result.data;
+      const payload = result.data?.data ? result.data.data : result.data;
+
+      return {
+         success: true,
+         data: payload,
+      };
    } catch (error) {
       console.error(error.message);
       return {
@@ -85,7 +91,7 @@ async function getProfileImage() {
    try {
       const res = await fetch(apiUrl("/api/vendor/get-profile-image"), {
          method: "GET",
-         cache: "force-cache",
+         cache: "no-store",
          headers: {
             Cookie: cookieHeader,
          },
@@ -105,7 +111,7 @@ async function getProfileImage() {
 
 export default async function Page() {
    const session = await verifyVendorSession();
-   if (!session?.authenticated || session.role !== "logistics" || session.workspace !== "marketplace") {
+   if (!session?.authenticated || !isAllowedMarketplaceRole(session.role, "logistics")) {
       return <Unauthorized />;
    }
 
@@ -115,19 +121,21 @@ export default async function Page() {
       const getProfileImg = await getProfileImage();
 
       const isVerified = verify_status;
+      const fullName = [session.fname, session.lname].filter(Boolean).join(" ").trim();
+      const defaultBusinessName = fullName ? `${fullName} Enterprise` : "Agri-Noria Partner";
 
       return (
          <VendorProfilePage
-            rows={profileInfo.data.rows}
-            license_status={profileInfo.data.license_status}
-            id_front_status={profileInfo.data.id_front_status}
-            id_back_status={profileInfo.data.id_back_status}
+            rows={profileInfo?.data?.rows || profileInfo?.data}
+            license_status={profileInfo?.data?.license_status}
+            id_front_status={profileInfo?.data?.id_front_status}
+            id_back_status={profileInfo?.data?.id_back_status}
             is_verified={isVerified}
             initialVendor={{
-               business_name: profileInfo.data.business_name,
-               hot_line_phone_number: profileInfo.data.hot_line_phone_number,
-               address: profileInfo.data.address,
-               business_desc: profileInfo.data.business_desc,
+               business_name: profileInfo?.data?.business_name || defaultBusinessName,
+               hot_line_phone_number: profileInfo?.data?.hot_line_phone_number || session.phone || "",
+               address: profileInfo?.data?.address || "Nigeria",
+               business_desc: profileInfo?.data?.business_desc || "Logistics Provider operating on the Agri-Noria platform.",
             }}
             initialProfileImg={getProfileImg}
          />

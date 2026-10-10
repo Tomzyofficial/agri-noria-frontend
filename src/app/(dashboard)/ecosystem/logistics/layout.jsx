@@ -11,9 +11,11 @@ import {
   Wallet,
   Settings,
   Activity,
+  Truck,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
+import { WorkspaceSwitcher } from "@/components/dashboard/WorkspaceSwitcher";
 
 export default function LogisticsLayout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -46,11 +48,11 @@ export default function LogisticsLayout({ children }) {
       href: "/ecosystem/logistics",
       icon: <LayoutDashboard className="w-4 h-4" />,
     },
-    // {
-    //   label: "Commodity Movement",
-    //   href: "/ecosystem/logistics/commodity-movement",
-    //   icon: <Activity className="w-4 h-4" />,
-    // },
+    {
+      label: "Fleet & Vehicles",
+      href: "/ecosystem/logistics/vehicles",
+      icon: <Truck className="w-4 h-4" />,
+    },
     {
       label: "My Wallet",
       href: "/ecosystem/logistics/wallet",
@@ -97,6 +99,10 @@ export default function LogisticsLayout({ children }) {
               </p>
             </div>
           </div>
+        </div>
+
+        <div className="px-4 pt-3">
+          <WorkspaceSwitcher currentWorkspace="ecosystem" role="logistics" />
         </div>
 
         <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1">

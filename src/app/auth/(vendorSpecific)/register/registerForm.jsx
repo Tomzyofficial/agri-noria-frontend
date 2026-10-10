@@ -344,7 +344,13 @@ export function RegisterForm() {
 
          if (!res?.success) {
             setIsLoading(false);
-            toast.error([res.error].join(" ") || "Failed to register");
+            const errorMsg = Array.isArray(res.error) ? res.error.join(" ") : String(res.error || "Failed to register");
+            if (errorMsg.toLowerCase().includes("already in use") || errorMsg.toLowerCase().includes("already registered")) {
+               toast.info("An account with this email already exists! You can sign in directly.", { autoClose: 5000 });
+               setErrors({ general: "This email is already registered. Please sign in with your credentials." });
+            } else {
+               toast.error(errorMsg);
+            }
             return;
          }
 

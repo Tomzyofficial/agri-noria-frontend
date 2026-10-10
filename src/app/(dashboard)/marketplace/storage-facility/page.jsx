@@ -1,6 +1,7 @@
 import { DashboardOverview } from "@/app/(dashboard)/marketplace/storage-facility/components/DashboardOverview";
 import { verifyVendorSession } from "@/actions/session";
 import { Unauthorized } from "@/components/dashboard/Unauthorized";
+import { isAllowedMarketplaceRole } from "@/utils/roleHelper";
 
 export const metadata = {
    title: "Dashboard Overview",
@@ -9,7 +10,7 @@ export const metadata = {
 
 export default async function Dashboard() {
    const session = await verifyVendorSession();
-   if (!session?.authenticated || session.workspace !== "marketplace" || session.role !== "storage facility") {
+   if (!session?.authenticated || !isAllowedMarketplaceRole(session.role, "storage")) {
       return <Unauthorized />;
    }
 

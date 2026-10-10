@@ -1,10 +1,11 @@
 import { verifyVendorSession } from "@/actions/session";
 import JobsPage from "@/components/dashboard/jobs/Jobspage";
 import { Unauthorized } from "@/components/dashboard/Unauthorized";
+import { isAllowedMarketplaceRole } from "@/utils/roleHelper";
 
 export default async function Page() {
    const session = await verifyVendorSession();
-   if (!session?.authenticated || session.role !== "logistics" || session.workspace !== "marketplace") {
+   if (!session?.authenticated || !isAllowedMarketplaceRole(session.role, "logistics")) {
       return <Unauthorized />;
    }
 

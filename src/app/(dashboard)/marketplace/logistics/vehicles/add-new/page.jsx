@@ -2,6 +2,7 @@ import { verifyVendorSession } from "@/actions/session";
 import { VehicleForm } from "@/app/(dashboard)/marketplace/logistics/components/VehicleForm";
 import Breadcrumbs from "@/components/dashboard/BreadCrumbs";
 import { Unauthorized } from "@/components/dashboard/Unauthorized";
+import { isAllowedMarketplaceRole } from "@/utils/roleHelper";
 
 export const metadata = {
    title: "Add New Vehicle",
@@ -11,7 +12,7 @@ export const metadata = {
 export default async function AddNewVehiclePage() {
    const session = await verifyVendorSession();
 
-   if ((!session?.authenticated && session.role !== "logistics") || session.workspace !== "marketplace") {
+   if (!session?.authenticated || !isAllowedMarketplaceRole(session.role, "logistics")) {
       return <Unauthorized />;
    }
 

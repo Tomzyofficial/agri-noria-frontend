@@ -1,6 +1,7 @@
 import { verifyVendorSession } from "@/actions/session";
 import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import { LogisticsOrdersList } from "../components/LogisticsOrdersList";
+import { isAllowedMarketplaceRole } from "@/utils/roleHelper";
 
 export const metadata = {
    title: "Logistics Orders",
@@ -10,7 +11,7 @@ export const metadata = {
 export default async function OrdersPage() {
    const session = await verifyVendorSession();
 
-   if (!session?.authenticated || session.role !== "logistics" || session.workspace !== "marketplace") {
+   if (!session?.authenticated || !isAllowedMarketplaceRole(session.role, "logistics")) {
       return <Unauthorized />;
    }
 

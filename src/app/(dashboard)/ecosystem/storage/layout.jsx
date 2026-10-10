@@ -11,9 +11,11 @@ import {
   Wallet,
   Settings,
   Activity,
+  Calendar,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
+import { WorkspaceSwitcher } from "@/components/dashboard/WorkspaceSwitcher";
 
 export default function StorageLayout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -46,11 +48,11 @@ export default function StorageLayout({ children }) {
       href: "/ecosystem/storage",
       icon: <LayoutDashboard className="w-4 h-4" />,
     },
-    // {
-    //   label: "Commodity Movement",
-    //   href: "/ecosystem/storage/commodity-movement",
-    //   icon: <Activity className="w-4 h-4" />,
-    // },
+    {
+      label: "Availability Calendar",
+      href: "/ecosystem/storage/calendar",
+      icon: <Calendar className="w-4 h-4" />,
+    },
     {
       label: "My Wallet",
       href: "/ecosystem/storage/wallet",
@@ -97,6 +99,10 @@ export default function StorageLayout({ children }) {
               </p>
             </div>
           </div>
+        </div>
+
+        <div className="px-4 pt-3">
+          <WorkspaceSwitcher currentWorkspace="ecosystem" role="storage" />
         </div>
 
         <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1">

@@ -20,9 +20,11 @@ async function getData(jobId) {
       return data.data;
    }
 }
+import { isAllowedMarketplaceRole } from "@/utils/roleHelper";
+
 export default async function page({ params }) {
    const session = await verifyVendorSession();
-   if (!session?.authenticated || session.role !== "storage facility" || session.workspace !== "marketplace") {
+   if (!session?.authenticated || !isAllowedMarketplaceRole(session.role, "storage")) {
       return <Unauthorized />;
    }
    const { jobId } = await params;

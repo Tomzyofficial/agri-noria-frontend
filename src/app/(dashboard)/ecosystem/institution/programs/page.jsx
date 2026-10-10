@@ -5,7 +5,8 @@ const fetcher = (url) => fetch(url).then((res) => res.json());
 import { 
    Landmark, Plus, Calendar, User, MapPin, 
    Search, Filter, ChevronRight, Edit3, Loader2,
-   CheckCircle2, Clock, AlertCircle, Coins, Wallet, ArrowUpRight
+   CheckCircle2, Clock, AlertCircle, Coins, Wallet, ArrowUpRight,
+   Users, Check, X, ShieldCheck
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -19,6 +20,8 @@ export default function ProgramsPage() {
    const [isEditing, setIsEditing] = useState(false);
    const [selectedProgram, setSelectedProgram] = useState(null);
    const [saving, setSaving] = useState(false);
+   const [activeTab, setActiveTab] = useState("programs"); // "programs" | "verifications"
+   const [verifyingId, setVerifyingId] = useState(null);
 
    // Funding modal state
    const [fundingProgram, setFundingProgram] = useState(null);
@@ -27,9 +30,38 @@ export default function ProgramsPage() {
 
    const { data: progData, isLoading: loading, mutate: mutatePrograms } = useSWR("/api/proxy/programs/mine", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
    const { data: userData } = useSWR("/api/proxy/auth/verify-vendor", fetcher, { revalidateOnFocus: false });
+   const { data: enrollData, mutate: mutateEnrollments } = useSWR("/api/proxy/programs/institution/enrollments", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
 
    const programs = progData?.success ? (progData.data || []) : [];
    const currentUser = userData?.authenticated ? userData : null;
+
+   const enrolledFarmers = enrollData?.data?.farmers || [];
+   const enrolledClusters = enrollData?.data?.clusters || [];
+   const pendingFarmers = enrolledFarmers.filter(f => f.enrollment_status === 'pending_verification');
+   const pendingClusters = enrolledClusters.filter(c => c.enrollment_status === 'pending_verification');
+   const totalPending = pendingFarmers.length + pendingClusters.length;
+
+   const handleVerifyEnrollment = async (type, id, status) => {
+      setVerifyingId(id);
+      try {
+         const res = await fetch("/api/proxy/programs/enrollments/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type, id, status }),
+         });
+         const json = await res.json();
+         if (res.ok && json.success) {
+            toast.success(json.message || `Enrollment marked as ${status}`);
+            await mutateEnrollments();
+         } else {
+            toast.error(json.error || "Failed to update enrollment verification");
+         }
+      } catch (err) {
+         toast.error("Network error");
+      } finally {
+         setVerifyingId(null);
+      }
+   };
 
    // Form state
    const [formData, setFormData] = useState({
@@ -170,42 +202,79 @@ export default function ProgramsPage() {
             </Button>
          </div>
 
-         {/* Stats */}
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="border-none shadow-sm bg-blue-50 dark:bg-blue-900/20">
-               <CardContent className="p-6">
-                  <p className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Active Programs</p>
-                  <p className="text-3xl font-black mt-1 text-blue-900 dark:text-blue-100">{programs.length}</p>
-               </CardContent>
-            </Card>
-            <Card className="border-none shadow-sm bg-emerald-50 dark:bg-emerald-900/20">
-               <CardContent className="p-6">
-                  <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Programme Funds</p>
-                  <p className="text-3xl font-black mt-1 text-emerald-900 dark:text-emerald-100">
-                     ₦{programs.reduce((acc, p) => acc + (parseFloat(p.wallet_balance) || 0), 0).toLocaleString()}
-                  </p>
-               </CardContent>
-            </Card>
-            <Card className="border-none shadow-sm bg-purple-50 dark:bg-purple-900/20">
-               <CardContent className="p-6">
-                  <p className="text-sm font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">Total Reach</p>
-                  <p className="text-3xl font-black mt-1 text-purple-900 dark:text-purple-100">
-                     {programs.reduce((acc, p) => acc + (parseInt(p.enrolled_farmers) || 0), 0).toLocaleString()}
-                  </p>
-               </CardContent>
-            </Card>
-            <Card className="border-none shadow-sm bg-amber-50 dark:bg-amber-900/20">
-               <CardContent className="p-6">
-                  <p className="text-sm font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Impact Area</p>
-                  <p className="text-3xl font-black mt-1 text-amber-900 dark:text-amber-100">
-                     {programs.reduce((acc, p) => acc + (parseFloat(p.target_hectares) || 0), 0).toLocaleString()} <span className="text-sm font-bold">Ha</span>
-                  </p>
-               </CardContent>
-            </Card>
+         {/* Tabs */}
+         <div className="flex border-b border-gray-200 dark:border-gray-800 gap-6">
+            <button
+               onClick={() => setActiveTab("programs")}
+               className={`pb-3 font-bold text-sm transition-all flex items-center gap-2 cursor-pointer ${
+                  activeTab === "programs"
+                     ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
+                     : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+               }`}
+            >
+               <Landmark className="w-4 h-4" />
+               Programs ({programs.length})
+            </button>
+            <button
+               onClick={() => setActiveTab("verifications")}
+               className={`pb-3 font-bold text-sm transition-all flex items-center gap-2 cursor-pointer ${
+                  activeTab === "verifications"
+                     ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
+                     : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+               }`}
+            >
+               <ShieldCheck className="w-4 h-4" />
+               Enrollment Verifications
+               {totalPending > 0 ? (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-black bg-amber-500 text-white animate-pulse">
+                     {totalPending} Pending
+                  </span>
+               ) : (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                     {enrolledFarmers.length + enrolledClusters.length}
+                  </span>
+               )}
+            </button>
          </div>
 
-         {/* List */}
-         <Card className="border-none shadow-sm overflow-hidden bg-white dark:bg-gray-950">
+         {activeTab === "programs" ? (
+            <>
+               {/* Stats */}
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card className="border-none shadow-sm bg-blue-50 dark:bg-blue-900/20">
+                     <CardContent className="p-6">
+                        <p className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Active Programs</p>
+                        <p className="text-3xl font-black mt-1 text-blue-900 dark:text-blue-100">{programs.length}</p>
+                     </CardContent>
+                  </Card>
+                  <Card className="border-none shadow-sm bg-emerald-50 dark:bg-emerald-900/20">
+                     <CardContent className="p-6">
+                        <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Programme Funds</p>
+                        <p className="text-3xl font-black mt-1 text-emerald-900 dark:text-emerald-100">
+                           ₦{programs.reduce((acc, p) => acc + (parseFloat(p.wallet_balance) || 0), 0).toLocaleString()}
+                        </p>
+                     </CardContent>
+                  </Card>
+                  <Card className="border-none shadow-sm bg-purple-50 dark:bg-purple-900/20">
+                     <CardContent className="p-6">
+                        <p className="text-sm font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">Total Reach</p>
+                        <p className="text-3xl font-black mt-1 text-purple-900 dark:text-purple-100">
+                           {programs.reduce((acc, p) => acc + (parseInt(p.enrolled_farmers) || 0), 0).toLocaleString()}
+                        </p>
+                     </CardContent>
+                  </Card>
+                  <Card className="border-none shadow-sm bg-amber-50 dark:bg-amber-900/20">
+                     <CardContent className="p-6">
+                        <p className="text-sm font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Impact Area</p>
+                        <p className="text-3xl font-black mt-1 text-amber-900 dark:text-amber-100">
+                           {programs.reduce((acc, p) => acc + (parseFloat(p.target_hectares) || 0), 0).toLocaleString()} <span className="text-sm font-bold">Ha</span>
+                        </p>
+                     </CardContent>
+                  </Card>
+               </div>
+
+               {/* List */}
+               <Card className="border-none shadow-sm overflow-hidden bg-white dark:bg-gray-950">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex flex-col md:flex-row justify-between items-md-center gap-4">
                <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -306,6 +375,224 @@ export default function ProgramsPage() {
                </table>
             </div>
          </Card>
+      </>
+   ) : (
+      <div className="space-y-6">
+         {/* Farmers Verifications */}
+         <Card className="border-none shadow-sm overflow-hidden bg-white dark:bg-gray-950">
+            <CardHeader className="p-6 border-b border-gray-100 dark:border-gray-800 flex flex-row items-center justify-between">
+               <div>
+                  <CardTitle className="text-lg font-black flex items-center gap-2">
+                     <User className="w-5 h-5 text-blue-600" /> Farmer Program Enrollments ({enrolledFarmers.length})
+                  </CardTitle>
+                  <p className="text-xs text-gray-500 font-medium mt-0.5">Review and verify individual farmers who have joined your intervention programs.</p>
+               </div>
+               {pendingFarmers.length > 0 && (
+                  <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-black rounded-full">
+                     {pendingFarmers.length} Awaiting Verification
+                  </span>
+               )}
+            </CardHeader>
+            <div className="overflow-x-auto">
+               <table className="w-full text-left">
+                  <thead>
+                     <tr className="bg-gray-50 dark:bg-gray-900 text-gray-500 text-[10px] font-black uppercase tracking-widest">
+                        <th className="px-6 py-4">Farmer</th>
+                        <th className="px-6 py-4">Program</th>
+                        <th className="px-6 py-4">Farm Size</th>
+                        <th className="px-6 py-4">Enrolled Date</th>
+                        <th className="px-6 py-4">Status</th>
+                        <th className="px-6 py-4 text-right">Actions</th>
+                     </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                     {enrolledFarmers.map((f) => {
+                        const isVerified = f.enrollment_status === 'verified';
+                        const isPending = f.enrollment_status === 'pending_verification';
+
+                        return (
+                           <tr key={f.farmer_profile_id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
+                              <td className="px-6 py-4">
+                                 <div>
+                                    <p className="font-bold text-gray-900 dark:text-gray-100">{f.fname} {f.lname}</p>
+                                    <p className="text-xs text-gray-500">{f.email || f.phone || "—"}</p>
+                                 </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                 <p className="font-bold text-sm text-blue-600 dark:text-blue-400">{f.program_name}</p>
+                                 <span className="text-xs text-gray-500 capitalize">{f.program_commodity || f.commodity}</span>
+                              </td>
+                              <td className="px-6 py-4 font-bold text-sm">
+                                 {f.farm_size_hectares ? `${f.farm_size_hectares} Ha` : "—"}
+                              </td>
+                              <td className="px-6 py-4 text-xs text-gray-500">
+                                 {f.enrolled_at ? new Date(f.enrolled_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "—"}
+                              </td>
+                              <td className="px-6 py-4">
+                                 {isVerified ? (
+                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                                       Verified
+                                    </span>
+                                 ) : f.enrollment_status === 'rejected' ? (
+                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+                                       Rejected
+                                    </span>
+                                 ) : (
+                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                                       Pending Verification
+                                    </span>
+                                 )}
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                 <div className="flex items-center justify-end gap-2">
+                                    {!isVerified && (
+                                       <Button
+                                          size="sm"
+                                          disabled={verifyingId === f.farmer_profile_id}
+                                          onClick={() => handleVerifyEnrollment('farmer', f.farmer_profile_id, 'verified')}
+                                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8 px-3 rounded-lg font-bold flex items-center gap-1 shadow-xs"
+                                       >
+                                          {verifyingId === f.farmer_profile_id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                          Verify
+                                       </Button>
+                                    )}
+                                    {f.enrollment_status !== 'rejected' && (
+                                       <Button
+                                          size="sm"
+                                          variant="outline"
+                                          disabled={verifyingId === f.farmer_profile_id}
+                                          onClick={() => handleVerifyEnrollment('farmer', f.farmer_profile_id, 'rejected')}
+                                          className="text-rose-600 hover:bg-rose-50 border-rose-200 text-xs h-8 px-3 rounded-lg font-bold"
+                                       >
+                                          Reject
+                                       </Button>
+                                    )}
+                                 </div>
+                              </td>
+                           </tr>
+                        );
+                     })}
+                     {enrolledFarmers.length === 0 && (
+                        <tr>
+                           <td colSpan="6" className="text-center py-8 text-gray-500 font-medium">
+                              No farmers enrolled in your programs yet.
+                           </td>
+                        </tr>
+                     )}
+                  </tbody>
+               </table>
+            </div>
+         </Card>
+
+         {/* Clusters Verifications */}
+         <Card className="border-none shadow-sm overflow-hidden bg-white dark:bg-gray-950">
+            <CardHeader className="p-6 border-b border-gray-100 dark:border-gray-800 flex flex-row items-center justify-between">
+               <div>
+                  <CardTitle className="text-lg font-black flex items-center gap-2">
+                     <Users className="w-5 h-5 text-purple-600" /> Cluster Program Enrollments ({enrolledClusters.length})
+                  </CardTitle>
+                  <p className="text-xs text-gray-500 font-medium mt-0.5">Review and verify farmer clusters enrolled in your agricultural intervention programs.</p>
+               </div>
+               {pendingClusters.length > 0 && (
+                  <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-black rounded-full">
+                     {pendingClusters.length} Awaiting Verification
+                  </span>
+               )}
+            </CardHeader>
+            <div className="overflow-x-auto">
+               <table className="w-full text-left">
+                  <thead>
+                     <tr className="bg-gray-50 dark:bg-gray-900 text-gray-500 text-[10px] font-black uppercase tracking-widest">
+                        <th className="px-6 py-4">Cluster Name</th>
+                        <th className="px-6 py-4">Program</th>
+                        <th className="px-6 py-4">Supervisor</th>
+                        <th className="px-6 py-4">Farmers in Cluster</th>
+                        <th className="px-6 py-4">Status</th>
+                        <th className="px-6 py-4 text-right">Actions</th>
+                     </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                     {enrolledClusters.map((c) => {
+                        const isVerified = c.enrollment_status === 'verified';
+
+                        return (
+                           <tr key={c.cluster_id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
+                              <td className="px-6 py-4">
+                                 <div>
+                                    <p className="font-bold text-gray-900 dark:text-gray-100">{c.cluster_name}</p>
+                                    <p className="text-xs text-gray-500">{c.region || "All Regions"}</p>
+                                 </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                 <p className="font-bold text-sm text-purple-600 dark:text-purple-400">{c.program_name}</p>
+                                 <span className="text-xs text-gray-500 capitalize">{c.program_commodity}</span>
+                              </td>
+                              <td className="px-6 py-4">
+                                 <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                    {c.supervisor_fname ? `${c.supervisor_fname} ${c.supervisor_lname || ''}` : "Assigned Supervisor"}
+                                 </p>
+                                 <p className="text-xs text-gray-500">{c.supervisor_phone || ""}</p>
+                              </td>
+                              <td className="px-6 py-4 font-bold text-sm">
+                                 {c.farmer_count || 0} Farmers
+                              </td>
+                              <td className="px-6 py-4">
+                                 {isVerified ? (
+                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                                       Verified
+                                    </span>
+                                 ) : c.enrollment_status === 'rejected' ? (
+                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+                                       Rejected
+                                    </span>
+                                 ) : (
+                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                                       Pending Verification
+                                    </span>
+                                 )}
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                 <div className="flex items-center justify-end gap-2">
+                                    {!isVerified && (
+                                       <Button
+                                          size="sm"
+                                          disabled={verifyingId === c.cluster_id}
+                                          onClick={() => handleVerifyEnrollment('cluster', c.cluster_id, 'verified')}
+                                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8 px-3 rounded-lg font-bold flex items-center gap-1 shadow-xs"
+                                       >
+                                          {verifyingId === c.cluster_id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                          Verify
+                                       </Button>
+                                    )}
+                                    {c.enrollment_status !== 'rejected' && (
+                                       <Button
+                                          size="sm"
+                                          variant="outline"
+                                          disabled={verifyingId === c.cluster_id}
+                                          onClick={() => handleVerifyEnrollment('cluster', c.cluster_id, 'rejected')}
+                                          className="text-rose-600 hover:bg-rose-50 border-rose-200 text-xs h-8 px-3 rounded-lg font-bold"
+                                       >
+                                          Reject
+                                       </Button>
+                                    )}
+                                 </div>
+                              </td>
+                           </tr>
+                        );
+                     })}
+                     {enrolledClusters.length === 0 && (
+                        <tr>
+                           <td colSpan="6" className="text-center py-8 text-gray-500 font-medium">
+                              No clusters enrolled in your programs yet.
+                           </td>
+                        </tr>
+                     )}
+                  </tbody>
+               </table>
+            </div>
+         </Card>
+      </div>
+   )}
 
          {/* Fund Programme Modal */}
          {fundingProgram && (

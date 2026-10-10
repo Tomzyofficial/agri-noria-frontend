@@ -4,6 +4,7 @@ import { apiUrl } from "@/_lib/api";
 import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import EditInventoryForm from "../../../components/EditInventoryForm";
 import axios from "axios";
+import { isAllowedMarketplaceRole } from "@/utils/roleHelper";
 
 export const metadata = {
    title: "Edit Drone Listing",
@@ -13,7 +14,7 @@ export const metadata = {
 export default async function EditDroneListingPage({ params }) {
    const session = await verifyVendorSession();
 
-   if (!session?.authenticated || session.workspace !== "marketplace" || session.role !== "drone") {
+   if (!session?.authenticated || !isAllowedMarketplaceRole(session.role, "drone")) {
       return <Unauthorized />;
    }
 

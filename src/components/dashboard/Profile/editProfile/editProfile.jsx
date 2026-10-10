@@ -9,7 +9,7 @@ import { BusinessInfo } from "@/components/dashboard/Profile/editProfile/Step1Bu
 import { BusinessDocs } from "@/components/dashboard/Profile/editProfile/Step2BusinessDocs";
 import { BusinessBank } from "@/components/dashboard/Profile/editProfile/Step3BusinessBank";
 
-export function VendorProfileEdit({ onProfileEdit }) {
+export function VendorProfileEdit({ onProfileEdit, initialVendor }) {
    const [IDFrontpreview, setIDFrontPreview] = useState(null);
    const [IDBackpreview, setIDBackPreview] = useState(null);
    const [Licensepreview, setLicensePreview] = useState(null);
@@ -17,7 +17,6 @@ export function VendorProfileEdit({ onProfileEdit }) {
    const [step, setStep] = useState(1);
    const totalStep = 3;
    const steps = ["info", "docs", "bank"];
-   // const [banks, setBanks] = useState([]);
 
    const goToStep = (n) => {
       const clamped = Math.max(1, Math.min(n, totalStep));
@@ -26,10 +25,10 @@ export function VendorProfileEdit({ onProfileEdit }) {
    };
 
    const [formData, setFormData] = useState({
-      business_name: "",
-      hot_line_phone_number: "",
-      address: "",
-      business_desc: "",
+      business_name: initialVendor?.business_name || "",
+      hot_line_phone_number: initialVendor?.hot_line_phone_number || "",
+      address: initialVendor?.address || "",
+      business_desc: initialVendor?.business_desc || "",
       id_front_url: "",
       id_back_url: "",
       license_url: "",
@@ -38,6 +37,18 @@ export function VendorProfileEdit({ onProfileEdit }) {
       bank_name: "",
       bank_code: "",
    });
+
+   useEffect(() => {
+      if (initialVendor) {
+         setFormData((prev) => ({
+            ...prev,
+            business_name: prev.business_name || initialVendor.business_name || "",
+            hot_line_phone_number: prev.hot_line_phone_number || initialVendor.hot_line_phone_number || "",
+            address: prev.address || initialVendor.address || "",
+            business_desc: prev.business_desc || initialVendor.business_desc || "",
+         }));
+      }
+   }, [initialVendor]);
 
    let banks = [];
    const { data, error, isLoading } = useSwr("/api/proxy/vendor/wallet/banks", fetcher);
@@ -137,15 +148,16 @@ export function VendorProfileEdit({ onProfileEdit }) {
 
             toast.success(data.message || "Profile info saved");
 
-            // Clear formata on successful update
-            Object.entries(formData).forEach(([key, val]) => {
-               if (val !== undefined && val !== null) {
-                  setFormData((prev) => ({
-                     ...prev,
-                     [key]: "",
-                  }));
-               }
-            });
+            // Update local formData with saved data
+            if (data.updateDoc) {
+               setFormData((prev) => ({
+                  ...prev,
+                  business_name: data.updateDoc.business_name ?? prev.business_name,
+                  hot_line_phone_number: data.updateDoc.hot_line_phone_number ?? prev.hot_line_phone_number,
+                  address: data.updateDoc.address ?? prev.address,
+                  business_desc: data.updateDoc.business_desc ?? prev.business_desc,
+               }));
+            }
          });
       } catch (error) {
          toast.error(error.message || "Error saving profile info");

@@ -1,10 +1,11 @@
 import { JobForm } from "../../../../../../components/dashboard/jobs/job-form";
 import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import { verifyVendorSession } from "@/actions/session";
+import { isAllowedMarketplaceRole } from "@/utils/roleHelper";
 
 export default async function CreateJobPage() {
    const session = await verifyVendorSession();
-   if (!session?.authenticated || (session.role !== "farmer" && session.role !== "seller")) {
+   if (!session?.authenticated || !isAllowedMarketplaceRole(session.role, "store")) {
       return <Unauthorized />;
    }
    return (

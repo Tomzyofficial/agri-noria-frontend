@@ -5,6 +5,7 @@ import { cookieStoreFnc } from "@/actions/session";
 import { verifyVendorSession } from "@/actions/session";
 import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import Breadcrumbs from "@/components/dashboard/BreadCrumbs";
+import { isAllowedMarketplaceRole } from "@/utils/roleHelper";
 
 async function getData(jobId) {
    const cookieHeader = await cookieStoreFnc();
@@ -23,7 +24,7 @@ async function getData(jobId) {
 }
 export default async function page({ params }) {
    const session = await verifyVendorSession();
-   if (!session?.authenticated || session.role !== "drone" || session.workspace !== "marketplace") {
+   if (!session?.authenticated || !isAllowedMarketplaceRole(session.role, "drone")) {
       return <Unauthorized />;
    }
    const { jobId } = await params;

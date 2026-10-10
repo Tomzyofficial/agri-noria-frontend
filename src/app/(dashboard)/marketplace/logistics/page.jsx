@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { verifyVendorSession } from "@/actions/session";
 import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import { LogisticsOverview } from "./components/LogisticsOverview";
+import { isAllowedMarketplaceRole } from "@/utils/roleHelper";
 
 export const metadata = {
    title: "Logistics Dashboard",
@@ -11,7 +12,7 @@ export const metadata = {
 export default async function LogisticsDashboardPage() {
    const session = await verifyVendorSession();
 
-   if (!session?.authenticated || session.workspace !== "marketplace" || session.role !== "logistics") {
+   if (!session?.authenticated || !isAllowedMarketplaceRole(session.role, "logistics")) {
       return <Unauthorized />;
    }
 

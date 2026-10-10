@@ -26,7 +26,7 @@ export function HomePage({ marketPlace, error, campaigns, campaignError }) {
    const { bannerCampaigns, sponsoredProductCampaigns } = useMemo(() => {
       const banners = [];
       const sponsoredProducts = [];
-      (campaigns || []).forEach((c) => {
+      (Array.isArray(campaigns) ? campaigns : []).forEach((c) => {
          if (c.placement === "Banner") banners.push(c);
          else sponsoredProducts.push(c);
       });

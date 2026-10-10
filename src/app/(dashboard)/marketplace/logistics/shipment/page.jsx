@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { verifyVendorSession } from "@/actions/session";
 import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import { LogisticsShipmentsList } from "../components/LogisticsShipmentsList";
+import { isAllowedMarketplaceRole } from "@/utils/roleHelper";
 
 export const metadata = {
    title: "Shipment Management",
@@ -11,7 +12,7 @@ export const metadata = {
 export default async function ShipmentPage() {
    const session = await verifyVendorSession();
 
-   if (!session?.authenticated || session.role !== "Logistics_Partner") {
+   if (!session?.authenticated || !isAllowedMarketplaceRole(session.role, "logistics")) {
       return <Unauthorized />;
    }
 

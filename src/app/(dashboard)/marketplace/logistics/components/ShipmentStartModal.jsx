@@ -22,6 +22,24 @@ export function ShipmentStartModal({ orderId, open, onClose, onSuccess }) {
    const [loading, setLoading] = useState(false);
    const [error, setError] = useState(null);
    const [validationErrors, setValidationErrors] = useState({});
+   const [geoLoc, setGeoLoc] = useState({ lat: null, lng: null, accuracy: null, timestamp: null });
+
+   const captureGPS = () => {
+      if (typeof window !== "undefined" && navigator.geolocation) {
+         navigator.geolocation.getCurrentPosition(
+            (pos) => {
+               setGeoLoc({
+                  lat: pos.coords.latitude,
+                  lng: pos.coords.longitude,
+                  accuracy: pos.coords.accuracy,
+                  timestamp: new Date(pos.timestamp).toISOString(),
+               });
+            },
+            () => {},
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+         );
+      }
+   };
 
    const handleInputChange = (e) => {
       const { name, value, type, checked } = e.target;
@@ -53,6 +71,7 @@ export function ShipmentStartModal({ orderId, open, onClose, onSuccess }) {
 
          setPickupPhoto(file);
          setPreviewUrl(URL.createObjectURL(file));
+         captureGPS();
          setError(null);
          if (validationErrors.pickup_photo) {
             setValidationErrors((prev) => ({ ...prev, pickup_photo: null }));
@@ -118,6 +137,15 @@ export function ShipmentStartModal({ orderId, open, onClose, onSuccess }) {
          formDataToSend.append("pickup_location", formData.pickup_location);
          formDataToSend.append("delivery_location", formData.delivery_location);
          formDataToSend.append("pickup_photo", pickupPhoto);
+         if (geoLoc.lat && geoLoc.lng) {
+            formDataToSend.append("pickup_latitude", geoLoc.lat);
+            formDataToSend.append("pickup_longitude", geoLoc.lng);
+            formDataToSend.append("pickup_geospatial_metadata", JSON.stringify({
+               accuracy: geoLoc.accuracy,
+               timestamp: geoLoc.timestamp,
+               geotagged: true
+            }));
+         }
 
          const response = await fetch(`/api/proxy/vendor/logistics/orders/${orderId}/start-shipment-confirm`, {
             method: "POST",
@@ -324,6 +352,12 @@ export function ShipmentStartModal({ orderId, open, onClose, onSuccess }) {
                            )}
                         </div>
                      </div>
+                     {geoLoc.lat && geoLoc.lng && (
+                        <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-600 font-mono font-bold bg-emerald-50 dark:bg-emerald-950/40 p-2 rounded-lg border border-emerald-200">
+                           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
+                           <span>🛰️ Real Geotagged Pickup: {Number(geoLoc.lat).toFixed(4)}, {Number(geoLoc.lng).toFixed(4)} (±{Math.round(geoLoc.accuracy)}m)</span>
+                        </div>
+                     )}
                      {validationErrors.pickup_photo && <p className="mt-1 text-sm text-red-500">{validationErrors.pickup_photo}</p>}
                   </div>
 
