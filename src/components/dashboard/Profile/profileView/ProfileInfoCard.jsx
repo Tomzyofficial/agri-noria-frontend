@@ -55,28 +55,28 @@ export function ProfileInfoCard({ is_verified, vendor, loading, imageSrc, setOpe
                <Input type="file" onChange={handleProfileImageChange} name="profile_image" accept="image/*" id="profile_image" className="hidden" />
             </div>
 
-            <div>
-               {vendor?.business_name && vendor?.hot_line_phone_number && vendor?.address && vendor?.business_desc ? (
+            <div className="flex-1">
+               {vendor?.business_name || vendor?.hot_line_phone_number || vendor?.address || vendor?.business_desc ? (
                   <div className="space-y-4">
                      <div>
-                        <p className="text-[18px] font-[18px]">Enterprise Name</p>
-                        <p className="text-[14px] font-normal">{vendor?.business_name}</p>
+                        <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Enterprise / Business Name</p>
+                        <p className="text-base font-medium text-gray-900 dark:text-gray-100">{vendor?.business_name || "Agri-Noria Partner"}</p>
                      </div>
                      <div>
-                        <p className="text-[18px] font-[18px]">Phone Number</p>
-                        <p className="text-[14px] font-normal">{vendor?.hot_line_phone_number}</p>
+                        <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Phone Number</p>
+                        <p className="text-base font-medium text-gray-900 dark:text-gray-100">{vendor?.hot_line_phone_number || "Not provided"}</p>
                      </div>
                      <div>
-                        <p className="text-[18px] font-[18px]">Address</p>
-                        <p className="text-[14px] font-normal">{vendor?.address}</p>
+                        <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Address</p>
+                        <p className="text-base font-medium text-gray-900 dark:text-gray-100">{vendor?.address || "Not provided"}</p>
                      </div>
                      <div>
-                        <p className="text-[18px] font-[18px]">Bio</p>
-                        <p className="text-[14px] font-normal">{vendor?.business_desc}</p>
+                        <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Bio / Business Overview</p>
+                        <p className="text-base font-medium text-gray-900 dark:text-gray-100">{vendor?.business_desc || "Agri-Noria verified partner."}</p>
                      </div>
                   </div>
                ) : (
-                  <p className="text-lg font-[18px]">No data available</p>
+                  <p className="text-base text-gray-500">No profile details available. Click &quot;Edit profile&quot; above to add your business details.</p>
                )}
             </div>
          </div>

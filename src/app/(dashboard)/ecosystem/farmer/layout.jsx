@@ -8,11 +8,13 @@ import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
 import { verifyVendorSession } from "@/actions/session";
 import { FarmerDataProvider } from "./useFarmerData";
+import { WorkspaceSwitcher } from "@/components/dashboard/WorkspaceSwitcher";
 
 export default function FarmerLayout({ children }) {
    const [menuOpen, setMenuOpen] = useState(false);
    const [onboardingChecked, setOnboardingChecked] = useState(false);
    const [isVerified, setIsVerified] = useState(true);
+   const [isApproved, setIsApproved] = useState(true);
    const pathname = usePathname();
    const router = useRouter();
 
@@ -36,33 +38,7 @@ export default function FarmerLayout({ children }) {
       }
    };
 
-   // Check if user is verified and has completed onboarding, redirect if not
-   useEffect(() => {
-      const checkExistingUser = async () => {
-         try {
-            const check = await fetch("/api/proxy/vendor/auth/onboarding-status", {
-               method: "GET",
-            });
-            if (check.status === 401) {
-               await handleSignout();
-            }
-            if (check.status === 500) {
-               toast.error("Server error. Please try again later.");
-               return;
-            }
-            const data = await check.json();
-            console.log("Onboarding Status:", data?.onboardingStatus);
-            if (data?.onboardingStatus !== "completed" && data?.onboardingStatus !== "verified" && pathname !== "/ecosystem/farmer/onboarding") {
-               router.replace("/ecosystem/farmer/onboarding");
-            }
-         } catch (error) {
-            console.error("Error checking onboarding status:", error);
-         }
-      };
-      checkExistingUser();
-   }, [pathname, router]);
-
-   // Auto-verify session
+   // Auto-verify session & admin approval
    useEffect(() => {
       const checkExistingUser = async () => {
          try {
@@ -71,17 +47,27 @@ export default function FarmerLayout({ children }) {
                await handleSignout();
                return;
             }
-            // Check onboarding level
+            // Check onboarding level and approval
             if (session?.authenticated && session?.role?.toLowerCase() === "farmer") {
                const hasBasicInfo = session?.onboarding_level >= 1 || (session?.onboarding_status && session?.onboarding_status !== "pending");
                if (!hasBasicInfo && pathname !== "/ecosystem/farmer/onboarding") {
                   router.replace("/ecosystem/farmer/onboarding");
                   return;
                }
-               const verified = session?.is_verified === true || session?.onboarding_status === "verified" || session?.onboarding_status === "completed" || session?.onboarding_level >= 2;
+
+               const approved = session?.approval_status === "approved";
+               setIsApproved(approved);
+
+               const verified = (session?.is_verified === true || session?.onboarding_status === "verified" || session?.onboarding_status === "completed" || session?.onboarding_level >= 2) && approved;
                setIsVerified(verified);
-               const allowedUnverifiedPaths = ["/ecosystem/farmer", "/ecosystem/farmer/settings", "/ecosystem/farmer/onboarding"];
-               if (!verified && !allowedUnverifiedPaths.includes(pathname)) {
+
+               const allowedUnrestrictedPaths = ["/ecosystem/farmer", "/ecosystem/farmer/settings", "/ecosystem/farmer/onboarding"];
+               if (!approved && !allowedUnrestrictedPaths.includes(pathname)) {
+                  toast.warning("🔒 Account pending SuperAdmin approval. Operations are locked.");
+                  router.replace("/ecosystem/farmer");
+                  return;
+               }
+               if (!verified && !allowedUnrestrictedPaths.includes(pathname)) {
                   toast.warning("🔒 Please complete farm mapping & verification to access this section.");
                   router.replace("/ecosystem/farmer");
                   return;
@@ -201,26 +187,33 @@ export default function FarmerLayout({ children }) {
                </div>
 
                <div className={`${menuOpen ? "left-0 w-64 h-full bg-white shadow-xl" : "-left-64"} transition-all duration-300 fixed z-40 top-0 lg:left-0 lg:w-64 lg:h-screen dark:bg-gray-950 dark:text-(--foreground) lg:bg-white lg:shadow-md p-4 flex flex-col border-r border-gray-100 dark:border-gray-800`}>
-                  <div className="mb-8 px-2">
+                  <div className="mb-4 px-2">
                      <h2 className="text-2xl font-black text-green-600 tracking-tighter uppercase">Agri-Noria</h2>
                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">Industrial Farmer</p>
+                     <WorkspaceSwitcher currentWorkspace="ecosystem" role="farmer" />
                   </div>
 
                   <nav className="flex flex-col space-y-1 flex-grow overflow-y-auto pr-2 custom-scrollbar">
                      {navMenu.map((item) => {
                         const isUnrestricted = item.href === "/ecosystem/farmer" || item.href === "/ecosystem/farmer/settings";
-                        const isDisabled = !isVerified && !isUnrestricted;
+                        const isDisabled = (!isApproved || !isVerified) && !isUnrestricted;
                         if (isDisabled) {
                            return (
                               <div
                                  key={item.label}
-                                 onClick={() => toast.warning("🔒 Complete farm mapping to verify your account and unlock this feature.")}
+                                 onClick={() => {
+                                    if (!isApproved) {
+                                       toast.warning("⏳ Account Pending SuperAdmin Approval: Actions remain locked until approved.");
+                                    } else {
+                                       toast.warning("🔒 Complete farm mapping to verify your account and unlock this feature.");
+                                    }
+                                 }}
                                  className="flex items-center justify-between gap-3 font-bold text-sm text-gray-400 dark:text-gray-600 opacity-60 cursor-not-allowed p-3 rounded-xl ml-1 hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-all select-none"
                               >
                                  <div className="flex items-center gap-3">
                                     {item.icon} {item.label}
                                  </div>
-                                 <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" title="Locked until verified" />
+                                 <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" title={!isApproved ? "Pending Admin Approval" : "Locked until verified"} />
                               </div>
                            );
                         }
@@ -238,7 +231,20 @@ export default function FarmerLayout({ children }) {
                   </nav>
                </div>
             </aside>
-            <main className="lg:ml-64 w-full lg:p-10 p-4 bg-gray-50 dark:bg-black/20 min-h-screen">{children}</main>
+            <main className="lg:ml-64 w-full lg:p-10 p-4 bg-gray-50 dark:bg-black/20 min-h-screen">
+               {!isApproved && pathname === "/ecosystem/farmer" && (
+                  <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 text-amber-900 dark:text-amber-200 shadow-xs">
+                     <Lock className="w-5 h-5 mt-0.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                     <div className="space-y-1">
+                        <h4 className="font-bold text-sm">Account Pending SuperAdmin Approval</h4>
+                        <p className="text-xs text-amber-800/90 dark:text-amber-300/90 leading-relaxed">
+                           Welcome to Agri-Noria! Your registration and onboarding details have been recorded. Before you can request inputs, join programs, participate in clusters, or perform operations, your account must be reviewed and approved by the SuperAdmin.
+                        </p>
+                     </div>
+                  </div>
+               )}
+               {children}
+            </main>
          </div>
       </FarmerDataProvider>
    );

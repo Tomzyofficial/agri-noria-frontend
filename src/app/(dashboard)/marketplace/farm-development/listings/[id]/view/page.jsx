@@ -3,6 +3,7 @@ import { ViewListingPage } from "@/app/(dashboard)/marketplace/farm-development/
 import { apiUrl } from "@/_lib/api";
 import { verifyVendorSession } from "@/actions/session";
 import { Unauthorized } from "@/components/dashboard/Unauthorized";
+import { isAllowedMarketplaceRole } from "@/utils/roleHelper";
 
 export const metadata = {
    title: "Service listings view",
@@ -11,7 +12,7 @@ export const metadata = {
 
 export default async function Page({ params }) {
    const session = await verifyVendorSession();
-   if (!session?.authenticated || session.role !== "farm development" || session.workspace !== "marketplace") {
+   if (!session?.authenticated || !isAllowedMarketplaceRole(session.role, "farm development")) {
       return <Unauthorized />;
    }
    const { id } = await params;

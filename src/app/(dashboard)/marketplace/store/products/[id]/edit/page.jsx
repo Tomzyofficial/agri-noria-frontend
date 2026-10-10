@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/dashboard/BreadCrumbs";
 import { apiUrl } from "@/_lib/api";
 import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import { toast } from "react-toastify";
+import { isAllowedMarketplaceRole } from "@/utils/roleHelper";
 
 export const metadata = {
    title: "Edit Item",
@@ -13,7 +14,7 @@ export const metadata = {
 export default async function EditProductPage({ params }) {
    const session = await verifyVendorSession();
 
-   if (!session?.authenticated || (session.role !== "farmer" && session.role !== "seller")) {
+   if (!session?.authenticated || !isAllowedMarketplaceRole(session.role, "store")) {
       return <Unauthorized />;
    }
 

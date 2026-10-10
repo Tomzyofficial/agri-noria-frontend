@@ -21,6 +21,64 @@ export default function FarmerOnboarding() {
         if (targetStep && !isNaN(targetStep) && targetStep >= 1 && targetStep <= 20) {
             setStep(targetStep);
         }
+
+        const loadExistingProfile = async () => {
+            try {
+                const res = await fetch("/api/proxy/pipeline/farmer-profile/me");
+                if (res.ok) {
+                    const data = await res.json();
+                    const p = data?.data;
+                    if (p) {
+                        setFormData(prev => ({
+                            ...prev,
+                            middle_name: p.middle_name || prev.middle_name,
+                            gender: p.gender || prev.gender,
+                            dob: p.dob ? (p.dob.includes('T') ? p.dob.split('T')[0] : p.dob) : prev.dob,
+                            phone: p.phone || prev.phone,
+                            nin: p.nin || prev.nin,
+                            voter_id: p.voter_id || prev.voter_id,
+                            passport_id: p.passport_id || prev.passport_id,
+                            drivers_license: p.drivers_license || prev.drivers_license,
+                            id_front_url: p.id_front_url || prev.id_front_url,
+                            id_back_url: p.id_back_url || prev.id_back_url,
+                            live_selfie_url: p.live_selfie_url || prev.live_selfie_url,
+                            marital_status: p.marital_status || prev.marital_status,
+                            household_size: p.household_size ?? prev.household_size,
+                            dependents: p.dependents ?? prev.dependents,
+                            years_of_experience: p.years_of_experience ?? prev.years_of_experience,
+                            primary_activity: p.primary_activity || prev.primary_activity,
+                            cooperative_name: p.cooperative_name || prev.cooperative_name,
+                            farmer_group: p.farmer_group || prev.farmer_group,
+                            association: p.association || prev.association,
+                            crop: p.commodity || prev.crop,
+                            farm_name: p.farm_name || prev.farm_name,
+                            ownership_type: p.ownership_type || prev.ownership_type,
+                            farm_size_hectares: p.farm_size_hectares ?? prev.farm_size_hectares,
+                            boundary_polygon: p.boundary_polygon || prev.boundary_polygon,
+                            boundary_file_url: p.boundary_file_url || prev.boundary_file_url,
+                            land_title_url: p.land_title_url || prev.land_title_url,
+                            farm_entrance_photo_url: p.farm_entrance_photo_url || prev.farm_entrance_photo_url,
+                            farm_interior_photo_url: p.farm_interior_photo_url || prev.farm_interior_photo_url,
+                            crop_photo_url: p.crop_photo_url || prev.crop_photo_url,
+                        }));
+
+                        // If no explicit step param in URL, smartly resume at current incomplete level
+                        if (!targetStep) {
+                            const level = p.vendor_onboarding_level || p.onboarding_level || 0;
+                            const status = p.vendor_onboarding_status || p.onboarding_status;
+                            if (level >= 2 || status === 'verified' || status === 'completed') {
+                                setStep(14); // Step 14 is start of Level 3
+                            } else if (level >= 1 || (status && status !== 'pending')) {
+                                setStep(8); // Step 8 is start of Level 2 (Farm Verification)
+                            }
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Error loading farmer profile in onboarding:", err);
+            }
+        };
+        loadExistingProfile();
     }, []);
 
     const [localPreviews, setLocalPreviews] = useState({});
@@ -94,6 +152,20 @@ export default function FarmerOnboarding() {
             const result = await res.json();
             if (result.success) {
                 setFormData(prev => ({ ...prev, [fieldName]: result.data.url }));
+                if (['farm_entrance_photo_url', 'farm_interior_photo_url'].includes(fieldName) && typeof window !== "undefined" && navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((pos) => {
+                        setFormData(prev => ({
+                            ...prev,
+                            farm_evidence_geospatial: {
+                                latitude: pos.coords.latitude,
+                                longitude: pos.coords.longitude,
+                                accuracy: pos.coords.accuracy,
+                                timestamp: new Date(pos.timestamp).toISOString(),
+                                geotagged: true
+                            }
+                        }));
+                    }, () => {}, { enableHighAccuracy: true, timeout: 10000 });
+                }
             } else {
                 alert(result.error || "Upload failed");
                 setLocalPreviews(prev => ({ ...prev, [fieldName]: null }));
@@ -453,6 +525,12 @@ export default function FarmerOnboarding() {
                                 </div>
                             )}
                         </div>
+                        {formData.farm_evidence_geospatial?.latitude && (
+                            <div className="mt-3 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 text-xs text-emerald-700 dark:text-emerald-300 font-mono font-bold flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
+                                <span>🛰️ Real Geotagged Evidence: {Number(formData.farm_evidence_geospatial.latitude).toFixed(4)}, {Number(formData.farm_evidence_geospatial.longitude).toFixed(4)} (±{Math.round(formData.farm_evidence_geospatial.accuracy || 10)}m)</span>
+                            </div>
+                        )}
                     </div>
                 );
             case 13:

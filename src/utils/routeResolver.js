@@ -59,6 +59,8 @@ export const ecosystemRoleRoutes = {
    processor: "buyer-partner",
    "logistics partner": "logistics",
    logistics: "logistics",
+   logistic: "logistics",
+   "logistics supplier": "logistics",
    aggregator: "aggregator",
    "sales manager": "sales-&-distribution",
    "logistics coordinator": "sales-&-distribution",
@@ -66,6 +68,10 @@ export const ecosystemRoleRoutes = {
    "data analyst": "intelligence-&-monitoring",
    "satellite monitor": "intelligence-&-monitoring",
    "field auditor": "intelligence-&-monitoring",
+   storage: "storage",
+   "storage facility": "storage",
+   storage_facility: "storage",
+   "storage supplier": "storage",
 };
 
 export const marketplaceRoleRoutes = {
@@ -74,9 +80,13 @@ export const marketplaceRoleRoutes = {
    drone: "drone",
    logistics: "logistics",
    "logistics partner": "logistics",
+   logistic: "logistics",
+   "logistics supplier": "logistics",
    "farm development": "farm-development",
    "storage facility": "storage-facility",
    storage_facility: "storage-facility",
+   storage: "storage-facility",
+   "storage supplier": "storage-facility",
    trainer: "trainer",
 };
 

@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { apiUrl } from "@/_lib/api";
 
 export const cookieStoreFnc = async () => {
@@ -11,13 +11,16 @@ export const cookieStoreFnc = async () => {
       .join("; ");
 
    if (!cookieHeader) {
-      return { authenticated: false };
+      return "";
    }
    return cookieHeader;
 };
 
 export async function verifyBuyerSession() {
    const cookieHeader = await cookieStoreFnc();
+   if (!cookieHeader) {
+      return { authenticated: false };
+   }
    try {
       const res = await fetch(apiUrl("/api/auth/verify-buyer"), {
          method: "GET",
@@ -45,11 +48,36 @@ export async function verifyBuyerSession() {
  */
 export async function verifyVendorSession() {
    const cookieHeader = await cookieStoreFnc();
+   if (!cookieHeader) {
+      return { authenticated: false };
+   }
+
+   let activeWorkspace = "ecosystem";
+   try {
+      const headerList = await headers();
+      const directWorkspace = headerList.get("x-active-workspace");
+      const currentPath = headerList.get("x-pathname") || "";
+      const referer = headerList.get("referer") || "";
+
+      if (directWorkspace) {
+         activeWorkspace = directWorkspace;
+      } else if (currentPath.includes("/marketplace")) {
+         activeWorkspace = "marketplace";
+      } else if (currentPath.includes("/ecosystem")) {
+         activeWorkspace = "ecosystem";
+      } else if (referer.includes("/marketplace")) {
+         activeWorkspace = "marketplace";
+      } else if (referer.includes("/ecosystem")) {
+         activeWorkspace = "ecosystem";
+      }
+   } catch {}
+
    try {
       const res = await fetch(apiUrl("/api/auth/verify-vendor"), {
          method: "GET",
          headers: {
             Cookie: cookieHeader,
+            "x-active-workspace": activeWorkspace,
          },
       });
 

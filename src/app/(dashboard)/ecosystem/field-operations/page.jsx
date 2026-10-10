@@ -12,6 +12,7 @@ export default function FieldOperationsDashboard() {
    const [clusters, setClusters] = useState([]);
    const [selectedCluster, setSelectedCluster] = useState(null);
    const [clusterFarmers, setClusterFarmers] = useState([]);
+   const [officerFarmers, setOfficerFarmers] = useState([]);
    const [selectedFarmer, setSelectedFarmer] = useState(null);
    const [supervision, setSupervision] = useState(null);
    const [isSaving, setIsSaving] = useState(false);
@@ -55,6 +56,7 @@ export default function FieldOperationsDashboard() {
          if (res.ok && json.success) {
             toast.success(json.message || "Farmer registered successfully!");
             setFarmerRegData({ fname: "", lname: "", email: "", phone: "", pword: "", country_name: "Nigeria", country_code: "NG", state_name: "", currency: "NGN" });
+            await fetchInitialData();
          } else {
             toast.error(json.error?.[0] || "Failed to register farmer.");
          }
@@ -80,7 +82,11 @@ export default function FieldOperationsDashboard() {
          if (sessionRes.ok) { const d = await sessionRes.json(); setUserRole(d.role?.toLowerCase() || ""); }
          
          let globalFarmers = [];
-         if (farmersRes.ok) { const d = await farmersRes.json(); globalFarmers = d.data || []; }
+         if (farmersRes.ok) { 
+            const d = await farmersRes.json(); 
+            globalFarmers = d.data || []; 
+            setOfficerFarmers(globalFarmers);
+         }
 
          if (clustersRes.ok) {
             const d = await clustersRes.json();
@@ -723,16 +729,35 @@ export default function FieldOperationsDashboard() {
                {activeSection === "capture_boundary" && (
                   <div className="space-y-6">
                      <Card className="border-none shadow-xl rounded-3xl p-6 bg-white dark:bg-gray-800">
-                        <CardTitle className="text-sm font-black uppercase mb-4 flex items-center gap-2">
+                        <CardTitle className="text-sm font-black uppercase mb-2 flex items-center gap-2">
                            <FaMapMarkerAlt className="text-teal-500" /> Search & Select Farmer for Boundary Capture
                         </CardTitle>
-                        <p className="text-sm text-gray-500 mb-4">Search by full name, phone number, or unapproved AIN to proceed with farm mapping.</p>
-                        <select className="w-full p-3 border rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white" onChange={(e) => setSelectedFarmer(clusterFarmers.find(f => f.farmer_id === e.target.value))} value={selectedFarmer?.farmer_id || ""}>
-                           <option value="">-- Select Farmer --</option>
-                           {clusterFarmers.map(f => (
-                              <option key={f.farmer_id} value={f.farmer_id}>{f.fname} {f.lname} | AIN: {f.ain || 'Pending'} | Phone: {f.phone || 'N/A'}</option>
-                           ))}
-                        </select>
+                        <p className="text-xs text-teal-600 dark:text-teal-400 font-bold uppercase tracking-wider mb-4">
+                           Listing farmers registered by you ({officerFarmers.length} registered)
+                        </p>
+                        {officerFarmers.length === 0 ? (
+                           <div className="p-6 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-200 dark:border-amber-800 text-center">
+                              <p className="text-sm font-bold text-amber-800 dark:text-amber-200">
+                                 You have not added any farmers yet.
+                              </p>
+                              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                                 Field officers can only map farms for farmers they themselves registered. Click the "Register Farmer" tab above to add a farmer first.
+                              </p>
+                           </div>
+                        ) : (
+                           <select 
+                              className="w-full p-3 border rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white font-medium" 
+                              onChange={(e) => setSelectedFarmer(officerFarmers.find(f => f.farmer_id === e.target.value))} 
+                              value={selectedFarmer?.farmer_id || ""}
+                           >
+                              <option value="">-- Select Farmer You Registered --</option>
+                              {officerFarmers.map(f => (
+                                 <option key={f.farmer_id} value={f.farmer_id}>
+                                    {f.fname} {f.lname} | AIN: {f.ain || 'Pending'} | Phone: {f.phone || 'N/A'}
+                                 </option>
+                              ))}
+                           </select>
+                        )}
                      </Card>
                      
                      {selectedFarmer ? (

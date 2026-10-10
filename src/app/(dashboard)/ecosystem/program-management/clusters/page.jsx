@@ -167,11 +167,11 @@ export default function ClusterOperationsPage() {
 
    // Derive button state for a cluster
    const getClusterButtonState = (cluster) => {
-      if (cluster.request_items_status === "delivered") {
+      if (cluster.request_items_status === "confirmed_delivered" || cluster.request_status === "distributed") {
          return "completed"; // Delivery confirmed, now ready for distribution
       }
-      if (cluster.request_items_status === "dispatched") {
-         return "needs_confirmation"; // Items dispatched by distributor, needs confirmation
+      if (cluster.request_items_status === "dispatched" || cluster.request_items_status === "delivered") {
+         return "needs_confirmation"; // Items dispatched/delivered by distributor, needs confirmation
       }
       if (cluster.request_status === "approved" && cluster.request_items_status !== "pending") {
          return "processing"; // Still processing / not dispatched yet

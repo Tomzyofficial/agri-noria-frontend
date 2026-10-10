@@ -59,12 +59,14 @@ export function FarmerDataProvider({ children }) {
       }
    };
 
-   const isVerified = profile?.is_verified === true || profile?.vendor_is_verified === true || profile?.onboarding_status === "verified" || profile?.onboarding_status === "completed" || profile?.vendor_onboarding_status === "verified" || profile?.onboarding_level >= 2 || profile?.vendor_onboarding_level >= 2;
+   const isApproved = profile?.vendor_approval_status === "approved" || profile?.approval_status === "approved";
+   const isVerified = (profile?.is_verified === true || profile?.vendor_is_verified === true || profile?.onboarding_status === "verified" || profile?.onboarding_status === "completed" || profile?.vendor_onboarding_status === "verified" || profile?.onboarding_level >= 2 || profile?.vendor_onboarding_level >= 2) && isApproved;
 
    const value = {
       loading,
       profile,
       isVerified,
+      isApproved,
       wallet,
       transactions,
       inputRequests,

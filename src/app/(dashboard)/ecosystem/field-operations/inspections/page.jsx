@@ -1,7 +1,10 @@
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useState, useEffect } from "react";
-import { Loader2, Search, Filter, MapPin, CheckCircle, AlertCircle, Clock, Plus } from "lucide-react";
+import { 
+   Loader2, Search, Filter, MapPin, CheckCircle, AlertCircle, Clock, Plus,
+   Camera, Video, Navigation, X, Eye, ShieldCheck, RefreshCw, UploadCloud, ExternalLink
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { toast } from "react-toastify";
 
@@ -19,9 +22,90 @@ export default function InspectionsPage() {
       status: "verified",
       notes: ""
    });
+
+   // Geospatial & Media Evidence states
+   const [mediaFiles, setMediaFiles] = useState([]); // Max 5 media files
+   const [gps, setGps] = useState({ latitude: null, longitude: null, accuracy: null, timestamp: null });
+   const [gpsLoading, setGpsLoading] = useState(false);
+   const [previewMedia, setPreviewMedia] = useState(null);
    const [submitting, setSubmitting] = useState(false);
 
    const statuses = ["SCHEDULED", "IN_PROGRESS", "COMPLETED", "PENDING_REVIEW", "verified", "failed", "pending"];
+
+   const captureGpsLocation = () => {
+      if (typeof window === "undefined" || !navigator.geolocation) {
+         toast.warn("Geolocation is not supported by your browser");
+         return;
+      }
+      setGpsLoading(true);
+      navigator.geolocation.getCurrentPosition(
+         (pos) => {
+            const coords = {
+               latitude: Number(pos.coords.latitude.toFixed(6)),
+               longitude: Number(pos.coords.longitude.toFixed(6)),
+               accuracy: Math.round(pos.coords.accuracy),
+               timestamp: new Date().toISOString()
+            };
+            setGps(coords);
+            setGpsLoading(false);
+            toast.success("📍 GPS location locked!");
+         },
+         (err) => {
+            console.warn("GPS capture warning:", err);
+            setGpsLoading(false);
+            toast.warn("Could not retrieve GPS location automatically. Click 'Refresh GPS' to retry.");
+         },
+         { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
+   };
+
+   useEffect(() => {
+      if (showForm) {
+         captureGpsLocation();
+      }
+   }, [showForm]);
+
+   const handleFileChange = (e) => {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+
+      if (mediaFiles.length + files.length > 5) {
+         toast.error(`Maximum 5 media files allowed. You can only add ${5 - mediaFiles.length} more.`);
+         return;
+      }
+
+      files.forEach((file) => {
+         const isVideo = file.type.startsWith("video/");
+         const isImage = file.type.startsWith("image/");
+         if (!isImage && !isVideo) {
+            toast.error(`${file.name} is not a valid image or video file.`);
+            return;
+         }
+
+         const reader = new FileReader();
+         reader.onload = (event) => {
+            setMediaFiles((prev) => {
+               if (prev.length >= 5) return prev;
+               return [
+                  ...prev,
+                  {
+                     id: Math.random().toString(36).substring(2, 9),
+                     type: isVideo ? "video" : "image",
+                     name: file.name,
+                     size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
+                     url: event.target.result,
+                  },
+               ];
+            });
+         };
+         reader.readAsDataURL(file);
+      });
+      e.target.value = "";
+   };
+
+   const removeMedia = (id) => {
+      setMediaFiles((prev) => prev.filter((m) => m.id !== id));
+   };
 
    const fetchInspections = async () => {
       try {
@@ -50,7 +134,7 @@ export default function InspectionsPage() {
       } catch (err) {
          console.error("Failed to fetch farmers:", err);
       }
-   }
+   };
 
    useEffect(() => {
       Promise.all([fetchInspections(), fetchFarmers()]).finally(() => {
@@ -80,18 +164,38 @@ export default function InspectionsPage() {
       e.preventDefault();
       setSubmitting(true);
       try {
+         const payload = {
+            farmer_id: formData.farmer_id,
+            status: formData.status,
+            notes: formData.notes,
+            latitude: gps.latitude,
+            longitude: gps.longitude,
+            geospatial_metadata: {
+               latitude: gps.latitude,
+               longitude: gps.longitude,
+               accuracy: gps.accuracy,
+               timestamp: gps.timestamp || new Date().toISOString(),
+               device: typeof navigator !== "undefined" ? navigator.userAgent : null,
+               is_verified_geotag: !!gps.latitude,
+            },
+            image_urls: mediaFiles.filter((m) => m.type === "image").map((m) => m.url),
+            video_url: mediaFiles.find((m) => m.type === "video")?.url || null,
+         };
+
          const res = await fetch("/api/proxy/field-operations/inspections", {
             method: "POST",
             headers: {
                "Content-Type": "application/json"
             },
-            body: JSON.stringify(formData)
+            body: JSON.stringify(payload)
          });
          if (res.ok) {
-            toast.success("Inspection recorded successfully");
+            toast.success("Inspection recorded with geospatial media successfully!");
             setShowForm(false);
             fetchInspections(); // Refresh data
             setFormData({ farmer_id: "", status: "verified", notes: "" });
+            setMediaFiles([]);
+            setGps({ latitude: null, longitude: null, accuracy: null, timestamp: null });
          } else {
             toast.error("Failed to record inspection");
          }
@@ -215,9 +319,115 @@ export default function InspectionsPage() {
                               className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all outline-none shadow-sm resize-none text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
                               value={formData.notes}
                               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                              rows={4}
-                              placeholder="Add inspection notes here..."
+                              rows={3}
+                              placeholder="Add inspection observations, crop health, soil conditions, etc..."
                            />
+                        </div>
+
+                        {/* Real-time Geospatial Geolocation Section */}
+                        <div className="md:col-span-2 p-5 bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 rounded-2xl">
+                           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                 <div className="p-2.5 rounded-xl bg-emerald-600 text-white shadow-sm">
+                                    <Navigation className="w-5 h-5 animate-pulse" />
+                                 </div>
+                                 <div>
+                                    <h4 className="text-sm font-bold text-emerald-950 dark:text-emerald-100 flex items-center gap-2">
+                                       Geospatial Verification Coordinates
+                                       <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
+                                          Real Field GPS
+                                       </span>
+                                    </h4>
+                                    <p className="text-xs text-emerald-800/80 dark:text-emerald-300/80 mt-0.5">
+                                       {gps.latitude && gps.longitude
+                                          ? `Latitude: ${gps.latitude}° | Longitude: ${gps.longitude}° (Accuracy: ±${gps.accuracy}m)`
+                                          : gpsLoading
+                                          ? "Capturing high-precision GPS coordinates from your device..."
+                                          : "GPS not captured yet. Click refresh to query device location."}
+                                    </p>
+                                 </div>
+                              </div>
+                              <Button
+                                 type="button"
+                                 variant="outline"
+                                 size="sm"
+                                 onClick={captureGpsLocation}
+                                 disabled={gpsLoading}
+                                 className="border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-xl text-xs h-9 font-bold flex items-center gap-1.5"
+                              >
+                                 <RefreshCw className={`w-3.5 h-3.5 ${gpsLoading ? "animate-spin" : ""}`} />
+                                 {gps.latitude ? "Re-acquire GPS" : "Capture GPS"}
+                              </Button>
+                           </div>
+                        </div>
+
+                        {/* Media Upload Section (Max 5 Images & Videos) */}
+                        <div className="md:col-span-2 space-y-3">
+                           <div className="flex items-center justify-between">
+                              <div>
+                                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                    Inspection Evidence (Photos & Video)
+                                 </label>
+                                 <p className="text-xs text-gray-500">
+                                    Upload real on-site photos or inspection video (Max 5 files total)
+                                 </p>
+                              </div>
+                              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                 {mediaFiles.length} / 5 Max
+                              </span>
+                           </div>
+
+                           {/* Upload drop/click area */}
+                           {mediaFiles.length < 5 && (
+                              <label className="border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-emerald-500 rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all bg-gray-50/50 dark:bg-gray-800/40 hover:bg-emerald-50/20">
+                                 <UploadCloud className="w-8 h-8 text-emerald-600 mb-2" />
+                                 <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                    Click or tap to upload images or video
+                                 </p>
+                                 <p className="text-xs text-gray-400 mt-1">
+                                    Supports JPEG, PNG, WEBP, MP4, WEBM (up to 5 items)
+                                 </p>
+                                 <input
+                                    type="file"
+                                    multiple
+                                    accept="image/*,video/*"
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                 />
+                              </label>
+                           )}
+
+                           {/* Previews Grid */}
+                           {mediaFiles.length > 0 && (
+                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-2">
+                                 {mediaFiles.map((m) => (
+                                    <div
+                                       key={m.id}
+                                       className="relative group rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-black aspect-video flex items-center justify-center shadow-xs"
+                                    >
+                                       {m.type === "image" ? (
+                                          <img src={m.url} alt={m.name} className="w-full h-full object-cover" />
+                                       ) : (
+                                          <div className="flex flex-col items-center justify-center text-white">
+                                             <Video className="w-6 h-6 mb-1 text-emerald-400" />
+                                             <span className="text-[10px] font-bold">Video</span>
+                                          </div>
+                                       )}
+                                       <button
+                                          type="button"
+                                          onClick={() => removeMedia(m.id)}
+                                          className="absolute top-1 right-1 bg-rose-600 hover:bg-rose-700 text-white rounded-full p-1 opacity-90 hover:opacity-100 transition shadow-md"
+                                          title="Remove file"
+                                       >
+                                          <X className="w-3.5 h-3.5" />
+                                       </button>
+                                       <div className="absolute bottom-0 inset-x-0 bg-black/60 backdrop-blur-xs px-1.5 py-0.5 text-[9px] text-white truncate">
+                                          {m.name}
+                                       </div>
+                                    </div>
+                                 ))}
+                              </div>
+                           )}
                         </div>
                      </div>
                      <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
@@ -311,46 +521,103 @@ export default function InspectionsPage() {
                            <th className="text-left py-3 px-4 font-semibold">Inspection ID</th>
                            <th className="text-left py-3 px-4 font-semibold">Farmer</th>
                            <th className="text-left py-3 px-4 font-semibold">Location</th>
-                           <th className="text-left py-3 px-4 font-semibold">Crop</th>
-                           <th className="text-left py-3 px-4 font-semibold">Size</th>
+                           <th className="text-left py-3 px-4 font-semibold">Crop & Area</th>
+                           <th className="text-left py-3 px-4 font-semibold">Geospatial & Evidence</th>
                            <th className="text-left py-3 px-4 font-semibold">Date</th>
                            <th className="text-left py-3 px-4 font-semibold">Status</th>
                            <th className="text-left py-3 px-4 font-semibold">Result</th>
                         </tr>
                      </thead>
                      <tbody>
-                        {filteredInspections.map((insp) => (
-                           <tr
-                              key={insp.id}
-                              className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
-                           >
-                              <td className="py-3 px-4 font-medium">{insp.id.substring(0, 8)}...</td>
-                              <td className="py-3 px-4">{insp.farmerName}</td>
-                              <td className="py-3 px-4 text-sm flex items-center gap-1">
-                                 <MapPin className="w-4 h-4" /> {insp.farmLocation}
-                              </td>
-                              <td className="py-3 px-4">{insp.cropType}</td>
-                              <td className="py-3 px-4">{insp.areaSize}</td>
-                              <td className="py-3 px-4 text-sm">{new Date(insp.date).toLocaleDateString()}</td>
-                              <td className="py-3 px-4">
-                                 <span
-                                    className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${getStatusColor(insp.status)}`}
-                                 >
-                                    {getStatusIcon(insp.status)}
-                                    {insp.status.replace(/_/g, " ")}
-                                 </span>
-                              </td>
-                              <td className="py-3 px-4">
-                                 {insp.result && (
+                        {filteredInspections.map((insp) => {
+                           const hasGps = insp.latitude != null && insp.longitude != null && !isNaN(Number(insp.latitude)) && !isNaN(Number(insp.longitude));
+                           const images = Array.isArray(insp.image_urls) ? insp.image_urls : [];
+                           const video = insp.video_url;
+
+                           return (
+                              <tr
+                                 key={insp.id}
+                                 className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900"
+                              >
+                                 <td className="py-3 px-4 font-mono text-xs">{insp.id.substring(0, 8)}...</td>
+                                 <td className="py-3 px-4 font-semibold">{insp.farmerName}</td>
+                                 <td className="py-3 px-4 text-sm">
+                                    <div className="flex items-center gap-1">
+                                       <MapPin className="w-3.5 h-3.5 text-gray-400" /> {insp.farmLocation}
+                                    </div>
+                                 </td>
+                                 <td className="py-3 px-4 text-sm">
+                                    <p className="font-semibold">{insp.cropType || "—"}</p>
+                                    <p className="text-xs text-gray-500">{insp.areaSize}</p>
+                                 </td>
+                                 <td className="py-3 px-4">
+                                    <div className="space-y-1.5">
+                                       {hasGps ? (
+                                          <a
+                                             href={`https://www.google.com/maps?q=${insp.latitude},${insp.longitude}`}
+                                             target="_blank"
+                                             rel="noreferrer"
+                                             className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100/70 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full hover:underline"
+                                             title="Open location on Google Maps"
+                                          >
+                                             <Navigation className="w-2.5 h-2.5" />
+                                             {Number(insp.latitude).toFixed(4)}, {Number(insp.longitude).toFixed(4)}
+                                             <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                                          </a>
+                                       ) : (
+                                          <span className="text-[10px] text-gray-400 italic">No GPS tag</span>
+                                       )}
+
+                                       {/* Media thumbnails */}
+                                       <div className="flex items-center gap-1.5 flex-wrap">
+                                          {images.slice(0, 4).map((url, i) => (
+                                             <button
+                                                key={i}
+                                                type="button"
+                                                onClick={() => setPreviewMedia({ type: "image", url })}
+                                                className="w-7 h-7 rounded-md overflow-hidden border border-gray-200 dark:border-gray-700 hover:scale-110 transition shadow-2xs"
+                                                title="View photo"
+                                             >
+                                                <img src={url} alt="Proof" className="w-full h-full object-cover" />
+                                             </button>
+                                          ))}
+                                          {images.length > 4 && (
+                                             <span className="text-[10px] font-bold text-gray-400">+{images.length - 4}</span>
+                                          )}
+                                          {video && (
+                                             <button
+                                                type="button"
+                                                onClick={() => setPreviewMedia({ type: "video", url: video })}
+                                                className="px-1.5 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-[10px] font-bold flex items-center gap-1"
+                                                title="Watch inspection video"
+                                             >
+                                                <Video className="w-3 h-3" /> Video
+                                             </button>
+                                          )}
+                                       </div>
+                                    </div>
+                                 </td>
+                                 <td className="py-3 px-4 text-sm text-gray-500">{new Date(insp.date).toLocaleDateString()}</td>
+                                 <td className="py-3 px-4">
                                     <span
-                                       className={`px-2 py-1 rounded-full text-xs font-medium ${getResultColor(insp.result)}`}
+                                       className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${getStatusColor(insp.status)}`}
                                     >
-                                       {insp.result}
+                                       {getStatusIcon(insp.status)}
+                                       {insp.status.replace(/_/g, " ")}
                                     </span>
-                                 )}
-                              </td>
-                           </tr>
-                        ))}
+                                 </td>
+                                 <td className="py-3 px-4">
+                                    {insp.result && (
+                                       <span
+                                          className={`px-2 py-1 rounded-full text-xs font-medium ${getResultColor(insp.result)}`}
+                                       >
+                                          {insp.result}
+                                       </span>
+                                    )}
+                                 </td>
+                              </tr>
+                           );
+                        })}
                      </tbody>
                   </table>
                   {filteredInspections.length === 0 && (
@@ -359,6 +626,40 @@ export default function InspectionsPage() {
                </div>
             </CardContent>
          </Card>
+
+         {/* Lightbox / Media Preview Modal */}
+         {previewMedia && (
+            <div
+               onClick={() => setPreviewMedia(null)}
+               className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in"
+            >
+               <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative max-w-3xl w-full bg-black rounded-2xl overflow-hidden shadow-2xl"
+               >
+                  <button
+                     onClick={() => setPreviewMedia(null)}
+                     className="absolute top-3 right-3 z-10 bg-black/60 hover:bg-black/90 text-white rounded-full p-2 transition"
+                  >
+                     <X className="w-5 h-5" />
+                  </button>
+                  {previewMedia.type === "image" ? (
+                     <img
+                        src={previewMedia.url}
+                        alt="Evidence Preview"
+                        className="w-full max-h-[80vh] object-contain mx-auto"
+                     />
+                  ) : (
+                     <video
+                        src={previewMedia.url}
+                        controls
+                        autoPlay
+                        className="w-full max-h-[80vh] mx-auto"
+                     />
+                  )}
+               </div>
+            </div>
+         )}
       </div>
    );
 }

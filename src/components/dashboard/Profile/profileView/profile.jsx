@@ -97,7 +97,7 @@ export function VendorProfilePage({ rows, license_status, id_front_status, id_ba
          <main className="my-25 lg:my-5">
             {/* Modal form for profile edit */}
             <Modal isOpen={openModal} onClick={() => setOpenModal(false)}>
-               <VendorProfileEdit onProfileEdit={handleProfileEdit} />
+               <VendorProfileEdit initialVendor={vendor} onProfileEdit={handleProfileEdit} />
             </Modal>
             {/* Dashboard Grid Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

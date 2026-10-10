@@ -9,6 +9,7 @@ import { VerifyNotiBanner } from "@/components/dashboard/VerifyNotiBanner";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
 import { IoBriefcaseOutline } from "react-icons/io5";
+import { WorkspaceSwitcher } from "@/components/dashboard/WorkspaceSwitcher";
 
 export default function DashboardLayout({ children }) {
    const [menuOpen, setMenuOpen] = useState(false);
@@ -152,6 +153,8 @@ export default function DashboardLayout({ children }) {
                   ${menuOpen ? "flex flex-col" : "hidden"} lg:flex lg:flex-col space-y-2
                `}
                >
+                  <WorkspaceSwitcher currentWorkspace="marketplace" role="storage facility" />
+
                   {sidebarNavMenu.map((item) => (
                      <Link key={item.label} href={item.href} className={`flex items-center gap-2 ${navLinksStyle(item.href)}`}>
                         {item.icon} {item.label}

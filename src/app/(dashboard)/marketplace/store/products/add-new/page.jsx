@@ -2,6 +2,7 @@ import { verifyVendorSession } from "@/actions/session";
 import { AddProductForm } from "@/app/(dashboard)/marketplace/store/components/AddProduct/AddProductForm";
 import Breadcrumbs from "@/components/dashboard/BreadCrumbs";
 import { Unauthorized } from "@/components/dashboard/Unauthorized";
+import { isAllowedMarketplaceRole } from "@/utils/roleHelper";
 
 export const metadata = {
    title: "Add New Product",
@@ -11,7 +12,7 @@ export const metadata = {
 export default async function AddProducePage() {
    const session = await verifyVendorSession();
 
-   if (!session?.authenticated || (session.role !== "farmer" && session.role !== "seller")) {
+   if (!session?.authenticated || !isAllowedMarketplaceRole(session.role, "store")) {
       return <Unauthorized />;
    }
 

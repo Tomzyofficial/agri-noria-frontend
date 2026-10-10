@@ -21,13 +21,15 @@ export async function signinBridge(credentials) {
       }
 
       const cookieStore = await cookies();
-      cookieStore.set("vendor-session", data.user.token, {
+      const cookieOptions = {
          httpOnly: true,
-         secure: true, // Production uses HTTPS
+         secure: true,
          sameSite: "none",
          path: "/",
-         // maxAge: 60 * 60 * 24, // 1 day
-      });
+      };
+      cookieStore.set("vendor-session", data.user.token, cookieOptions);
+      cookieStore.set("marketplace-session", data.user.token, cookieOptions);
+      cookieStore.set("ecosystem-session", data.user.token, cookieOptions);
 
       return { success: true };
    } catch (error) {
@@ -50,13 +52,15 @@ export async function registerBridge(credentials) {
       if (!res.ok || !data.success) return { success: false, error: data.error };
 
       const cookieStore = await cookies();
-      cookieStore.set("vendor-session", data.user.token, {
+      const cookieOptions = {
          httpOnly: true,
          secure: true,
          sameSite: "none",
          path: "/",
-         // maxAge: 60 * 60 * 24, // 1 day
-      });
+      };
+      cookieStore.set("vendor-session", data.user.token, cookieOptions);
+      cookieStore.set("marketplace-session", data.user.token, cookieOptions);
+      cookieStore.set("ecosystem-session", data.user.token, cookieOptions);
 
       return { success: true };
    } catch (error) {
@@ -68,13 +72,15 @@ export async function registerBridge(credentials) {
 export async function signoutBridge() {
    const cookieStore = await cookies();
 
-   const client = cookieStore.delete("vendor-session");
+   cookieStore.delete("vendor-session");
+   cookieStore.delete("marketplace-session");
+   cookieStore.delete("ecosystem-session");
 
    const backend = await fetch(apiUrl("/api/auth/vendor/signout"), {
       method: "POST",
    });
 
-   if (!client || !backend.ok) {
+   if (!backend.ok) {
       return false;
    }
    return true;

@@ -2,6 +2,7 @@ import BillingPage from "@/components/dashboard/Billing/BillingPage";
 import { verifyVendorSession } from "@/actions/session";
 import { apiUrl } from "@/_lib/api";
 import { Unauthorized } from "@/components/dashboard/Unauthorized";
+import { isAllowedMarketplaceRole } from "@/utils/roleHelper";
 
 export const metadata = {
    title: "Dashboard Billing",
@@ -25,7 +26,7 @@ async function GetPlans() {
 
 export default async function Page() {
    const session = await verifyVendorSession();
-   if (!session?.authenticated || (session.role !== "trainer" && session.workspace !== "marketplace")) {
+   if (!session?.authenticated || !isAllowedMarketplaceRole(session.role, "trainer")) {
       return <Unauthorized />;
    }
 

@@ -47,9 +47,21 @@ export default function EnrolledProgramsPage() {
                 </div>
               </div>
             </div>
-            <span className="px-6 py-2.5 bg-green-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-green-500/20">
-              Active Enrollment
-            </span>
+            <div className="flex items-center gap-3">
+              {profile.program_enrollment_status === 'verified' ? (
+                <span className="px-5 py-2 bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/20">
+                  ✓ Verified by Institution
+                </span>
+              ) : profile.program_enrollment_status === 'rejected' ? (
+                <span className="px-5 py-2 bg-rose-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-rose-500/20">
+                  ✕ Enrollment Rejected
+                </span>
+              ) : (
+                <span className="px-5 py-2 bg-amber-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-amber-500/20">
+                  ⏳ Pending Institution Verification
+                </span>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="p-10">
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">

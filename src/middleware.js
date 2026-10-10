@@ -68,6 +68,13 @@ export default async function middleware(request) {
    const shouldDetectLocation = !existingLocation;
    const countryData = existingLocation || (shouldDetectLocation ? await getLocation(request) : null);
 
+   requestHeaders.set("x-pathname", pathname);
+   if (pathname.startsWith("/marketplace")) {
+      requestHeaders.set("x-active-workspace", "marketplace");
+   } else if (pathname.startsWith("/ecosystem")) {
+      requestHeaders.set("x-active-workspace", "ecosystem");
+   }
+
    if (countryData) {
       requestHeaders.set("x-user-location", JSON.stringify(countryData));
       requestHeaders.set("x-user-country", countryData.country_code);
@@ -103,8 +110,12 @@ export default async function middleware(request) {
                farmer: "/marketplace/store",
                logistics: "/marketplace/logistics",
                "logistics partner": "/marketplace/logistics",
+               logistic: "/marketplace/logistics",
+               "logistics supplier": "/marketplace/logistics",
                "storage facility": "/marketplace/storage-facility",
                storage_facility: "/marketplace/storage-facility",
+               storage: "/marketplace/storage-facility",
+               "storage supplier": "/marketplace/storage-facility",
                trainer: "/marketplace/trainer",
                drone: "/marketplace/drone",
                "farm development": "/marketplace/farm-development",
@@ -150,6 +161,8 @@ export default async function middleware(request) {
                   processor: "/ecosystem/buyer-partner",
                   "logistics partner": "/ecosystem/logistics",
                   logistics: "/ecosystem/logistics",
+                  logistic: "/ecosystem/logistics",
+                  "logistics supplier": "/ecosystem/logistics",
                   aggregator: "/ecosystem/aggregator",
                   "sales manager": "/ecosystem/sales-&-distribution",
                   "logistics coordinator": "/ecosystem/sales-&-distribution",
@@ -159,6 +172,8 @@ export default async function middleware(request) {
                   "field auditor": "/ecosystem/intelligence-&-monitoring",
                   storage: "/ecosystem/storage",
                   "storage facility": "/ecosystem/storage",
+                  storage_facility: "/ecosystem/storage",
+                  "storage supplier": "/ecosystem/storage",
                };
 
                const userRole = payload.role?.toLowerCase();

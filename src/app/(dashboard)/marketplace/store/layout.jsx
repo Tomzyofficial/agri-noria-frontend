@@ -15,6 +15,8 @@ import { IoSchoolOutline } from "react-icons/io5";
 import { verifyVendorSession } from "@/actions/session";
 import { FaGlobe } from "react-icons/fa";
 
+import { WorkspaceSwitcher } from "@/components/dashboard/WorkspaceSwitcher";
+
 export default function DashboardLayout({ children }) {
    const [menuOpen, setMenuOpen] = useState(false);
    const [verified, setVerified] = useState(null);
@@ -133,18 +135,6 @@ export default function DashboardLayout({ children }) {
          icon: <CreditCard className="w-4 h-4" />,
       },
    ];
-   const menuItems = [
-      ...navMenu,
-      ...(role === "farmer"
-         ? [
-              {
-                 label: "Ecosystem",
-                 href: "/ecosystem/farmer",
-                 icon: <FaGlobe className="w-4 h-4" />,
-              },
-           ]
-         : []),
-   ];
 
    const handleMenuClick = () => {
       setMenuOpen((open) => !open);
@@ -186,7 +176,9 @@ export default function DashboardLayout({ children }) {
                   ${menuOpen ? "flex flex-col" : "hidden"} lg:flex lg:flex-col space-y-2
                `}
                >
-                  {menuItems.map((item) => (
+                  <WorkspaceSwitcher currentWorkspace="marketplace" role={role} />
+
+                  {navMenu.map((item) => (
                      <Link key={item.label} href={item.href} className={`flex items-center gap-2 ${navLinksStyle(item.href)}`}>
                         {item.icon} {item.label}
                      </Link>

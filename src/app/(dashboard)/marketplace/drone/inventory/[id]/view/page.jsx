@@ -4,11 +4,12 @@ import { Unauthorized } from "@/components/dashboard/Unauthorized";
 import { apiUrl } from "@/_lib/api";
 import axios from "axios";
 import { cookieStoreFnc } from "@/actions/session";
+import { isAllowedMarketplaceRole } from "@/utils/roleHelper";
 
 export default async function Page({ params }) {
    const cookieHeader = await cookieStoreFnc();
    const session = await verifyVendorSession();
-   if (!session.authenticated || session.workspace !== "marketplace" || session.role !== "drone") {
+   if (!session?.authenticated || !isAllowedMarketplaceRole(session.role, "drone")) {
       return <Unauthorized />;
    }
 

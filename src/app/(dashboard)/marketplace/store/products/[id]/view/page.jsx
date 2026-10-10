@@ -1,6 +1,7 @@
 import { ViewItem } from "@/app/(dashboard)/marketplace/store/components/DashboardViewItem";
 import { apiUrl } from "@/_lib/api";
 import { cookieStoreFnc, verifyVendorSession } from "@/actions/session";
+import { isAllowedMarketplaceRole } from "@/utils/roleHelper";
 
 import Breadcrumbs from "@/components/dashboard/BreadCrumbs";
 import { Unauthorized } from "@/components/dashboard/Unauthorized";
@@ -8,7 +9,7 @@ import { Unauthorized } from "@/components/dashboard/Unauthorized";
 export default async function ViewPage({ params }) {
    const session = await verifyVendorSession();
 
-   if (!session.authenticated || (session.role !== "farmer" && session.role !== "seller")) {
+   if (!session?.authenticated || !isAllowedMarketplaceRole(session.role, "store")) {
       return <Unauthorized />;
    }
    const { id } = await params;

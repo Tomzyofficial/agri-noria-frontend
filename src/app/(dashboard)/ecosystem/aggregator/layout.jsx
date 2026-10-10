@@ -126,6 +126,14 @@ export default function AggregatorLayout({ children }) {
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
       <aside>
+        {/* Backdrop overlay on mobile */}
+        {menuOpen && (
+          <div
+            onClick={() => setMenuOpen(false)}
+            className="lg:hidden fixed inset-0 z-30 bg-black/60 backdrop-blur-xs transition-opacity duration-300"
+          />
+        )}
+
         <div
           aria-label="Open menu"
           onClick={handleMenuClick}
@@ -139,13 +147,15 @@ export default function AggregatorLayout({ children }) {
         </div>
 
         <div
-          className={`${menuOpen ? "left-0 w-64 h-full bg-(--gray-color) shadow-md" : "-left-64"} transition-all duration-300 fixed z-40 top-0 lg:left-0 lg:w-64 lg:h-screen dark:bg-(--card-dark) dark:text-(--foreground) lg:bg-(--gray-color) lg:shadow-md p-4`}
+          className={`${
+            menuOpen ? "left-0 w-64 h-full shadow-2xl" : "-left-64"
+          } transition-all duration-300 fixed z-40 top-0 lg:left-0 lg:w-64 lg:h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 border-r border-gray-200 dark:border-gray-800 p-4 flex flex-col`}
         >
           <div className="mb-8 px-2">
-            <h2 className="text-xl font-bold text-(--greenish-color) uppercase">
+            <h2 className="text-xl font-black text-green-600 uppercase tracking-tight">
               Agri-Noria
             </h2>
-            <p className="text-xs text-gray-500 uppercase tracking-widest mt-1">
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">
               Aggregator Portal
             </p>
           </div>
