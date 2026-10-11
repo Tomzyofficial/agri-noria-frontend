@@ -57,7 +57,6 @@ export const ecosystemRoleRoutes = {
    "off-taker": "buyer-partner",
    "warehouse buyer": "buyer-partner",
    processor: "buyer-partner",
-   "logistics partner": "logistics",
    logistics: "logistics",
    aggregator: "aggregator",
    "sales manager": "sales-&-distribution",
@@ -75,8 +74,7 @@ export const marketplaceRoleRoutes = {
    logistics: "logistics",
    "logistics partner": "logistics",
    "farm development": "farm-development",
-   "storage facility": "storage-facility",
-   storage_facility: "storage-facility",
+   storage: "storage",
    trainer: "trainer",
 };
 
@@ -89,7 +87,7 @@ export const toRouteSegment = (value) =>
 
 export const getDefaultWorkspace = (role) => {
    const normalizedRole = role?.toLowerCase().trim();
-   const marketplaceRoles = ["seller", "logistics", "storage facility", "trainer", "farmer", "drone", "farm development"];
+   const marketplaceRoles = ["seller", "logistics", "storage", "trainer", "farmer", "drone", "farm development"];
    return marketplaceRoles.includes(normalizedRole) ? "marketplace" : "ecosystem";
 };
 

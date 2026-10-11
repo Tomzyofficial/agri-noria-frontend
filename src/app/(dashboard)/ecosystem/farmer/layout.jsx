@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
 import { verifyVendorSession } from "@/actions/session";
 import { FarmerDataProvider } from "./useFarmerData";
+import { FaGlobe } from "react-icons/fa6";
 
 export default function FarmerLayout({ children }) {
    const [menuOpen, setMenuOpen] = useState(false);
@@ -153,6 +154,11 @@ export default function FarmerLayout({ children }) {
          label: "Settings",
          href: "/ecosystem/farmer/settings",
          icon: <Settings className="w-4 h-4" />,
+      },
+      {
+         label: "Marketplace",
+         href: "/marketplace/store",
+         icon: <FaGlobe className="w-4 h-4" />,
       },
    ];
 

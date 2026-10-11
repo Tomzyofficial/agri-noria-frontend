@@ -51,8 +51,8 @@ const workspaceRoleCategories = {
          roles: ["Farmer"],
       },
       {
-         name: "Buyer / Partner",
-         roles: ["Exporter", "Off-taker", "Warehouse Buyer", "Processor", "Logistics Partner"],
+         name: "Buyer",
+         roles: ["Exporter", "Off-taker", "Warehouse Buyer", "Processor"],
       },
       {
          name: "Aggregator",
@@ -85,7 +85,7 @@ const workspaceRoleCategories = {
 
       {
          name: "Storage & Warehousing",
-         roles: ["Storage Facility"],
+         roles: ["Storage"],
       },
 
       {

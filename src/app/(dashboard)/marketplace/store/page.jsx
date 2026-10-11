@@ -9,7 +9,7 @@ export const metadata = {
 
 export default async function Dashboard() {
    const session = await verifyVendorSession();
-   if (!session?.authenticated || session.workspace !== "marketplace" || (session.role !== "farmer" && session.role !== "seller")) {
+   if (!session?.authenticated || (session.role !== "farmer" && session.role !== "seller")) {
       return <Unauthorized />;
    }
 
