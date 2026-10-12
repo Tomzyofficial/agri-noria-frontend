@@ -52,32 +52,34 @@ export async function verifyVendorSession() {
       return { authenticated: false };
    }
 
-   let activeWorkspace = "ecosystem";
-   try {
-      const headerList = await headers();
-      const directWorkspace = headerList.get("x-active-workspace");
-      const currentPath = headerList.get("x-pathname") || "";
-      const referer = headerList.get("referer") || "";
+   // let activeWorkspace = "ecosystem";
+   // try {
+   //    const headerList = await headers();
+   //    const directWorkspace = headerList.get("x-active-workspace");
+   //    const currentPath = headerList.get("x-pathname") || "";
+   //    const referer = headerList.get("referer") || "";
 
-      if (directWorkspace) {
-         activeWorkspace = directWorkspace;
-      } else if (currentPath.includes("/marketplace")) {
-         activeWorkspace = "marketplace";
-      } else if (currentPath.includes("/ecosystem")) {
-         activeWorkspace = "ecosystem";
-      } else if (referer.includes("/marketplace")) {
-         activeWorkspace = "marketplace";
-      } else if (referer.includes("/ecosystem")) {
-         activeWorkspace = "ecosystem";
-      }
-   } catch {}
+   //    if (directWorkspace) {
+   //       activeWorkspace = directWorkspace;
+   //    } else if (currentPath.includes("/marketplace")) {
+   //       activeWorkspace = "marketplace";
+   //    } else if (currentPath.includes("/ecosystem")) {
+   //       activeWorkspace = "ecosystem";
+   //    } else if (referer.includes("/marketplace")) {
+   //       activeWorkspace = "marketplace";
+   //    } else if (referer.includes("/ecosystem")) {
+   //       activeWorkspace = "ecosystem";
+   //    }
+
+   //    console.log("Active workspace determined:", activeWorkspace);
+   // } catch {}
 
    try {
       const res = await fetch(apiUrl("/api/auth/verify-vendor"), {
          method: "GET",
          headers: {
             Cookie: cookieHeader,
-            "x-active-workspace": activeWorkspace,
+            // "x-active-workspace": activeWorkspace,
          },
       });
 

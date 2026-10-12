@@ -7,7 +7,7 @@ export function ImageGalleryDisplay({ image, listingName }) {
    const gallery = image;
    const active = gallery[activeIndex];
    return (
-      <>
+      <section>
          <div className="w-full">
             <Image src={active} alt={`${listingName} Image`} width={400} height={400} className="object-cover w-full h-[400px] rounded-t-md" />
          </div>
@@ -27,6 +27,6 @@ export function ImageGalleryDisplay({ image, listingName }) {
                ))}
             </div>
          )}
-      </>
+      </section>
    );
 }
