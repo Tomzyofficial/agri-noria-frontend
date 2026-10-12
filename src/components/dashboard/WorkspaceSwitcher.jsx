@@ -5,12 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeftRight, Sprout, Store, ShieldCheck, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 import { verifyVendorSession } from "@/actions/session";
-import {
-   isSharedRole,
-   getSharedRoleConfig,
-   isEcosystemVerified,
-   normalizeRole,
-} from "@/utils/roleHelper";
+import { isSharedRole, getSharedRoleConfig, isEcosystemVerified, normalizeRole } from "@/utils/roleHelper";
 
 export function WorkspaceSwitcher({ currentWorkspace = "marketplace", role: initialRole = null, session: initialSession = null }) {
    const router = useRouter();
@@ -77,9 +72,7 @@ export function WorkspaceSwitcher({ currentWorkspace = "marketplace", role: init
    return (
       <div className="w-full my-3 p-3 rounded-2xl bg-gradient-to-br from-green-50/80 via-white to-emerald-50/50 dark:from-gray-900 dark:via-gray-900/90 dark:to-green-950/20 border border-green-200/60 dark:border-green-900/30 shadow-xs">
          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] uppercase tracking-wider font-extrabold text-gray-400 dark:text-gray-500">
-               Workspace
-            </span>
+            <span className="text-[10px] uppercase tracking-wider font-extrabold text-gray-400 dark:text-gray-500">Workspace</span>
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-green-100 text-green-800 dark:bg-green-950/60 dark:text-green-300 border border-green-300/40">
                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                {isMarketplace ? "Marketplace" : "Ecosystem"}
@@ -102,15 +95,10 @@ export function WorkspaceSwitcher({ currentWorkspace = "marketplace", role: init
                <>
                   <ArrowLeftRight className="w-3.5 h-3.5 text-green-600 group-hover:rotate-180 transition-transform duration-300" />
                   <span>Switch to {targetTitle}</span>
-                  {isMarketplace ? (
-                     <Sprout className="w-3.5 h-3.5 text-green-600 ml-auto" />
-                  ) : (
-                     <Store className="w-3.5 h-3.5 text-emerald-600 ml-auto" />
-                  )}
+                  {isMarketplace ? <Sprout className="w-3.5 h-3.5 text-green-600 ml-auto" /> : <Store className="w-3.5 h-3.5 text-emerald-600 ml-auto" />}
                </>
             )}
          </button>
       </div>
    );
 }
-export default WorkspaceSwitcher;

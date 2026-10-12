@@ -67,8 +67,8 @@ export default function StorageDetail({ storage, error }) {
          {/* Hero Section */}
          <div className="py-16">
             <div className="px-4 sm:px-6 lg:px-8">
-               <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                  <div className="w-full md:w-1/2 mb-8 md:mb-0">
+               <div className="flex flex-col md:flex-row justify-between gap-8">
+                  <div className="mb-8 md:mb-0">
                      <h1 className="text-4xl font-bold mb-4">{formatLabel(storage.listing_name)}</h1>
                      <p className="text-xl text-neutral-700 mb-6">{storage.description}</p>
                      <div className="flex items-center text-2xl font-bold mb-6">
@@ -118,7 +118,9 @@ export default function StorageDetail({ storage, error }) {
                      </Modal>
                   </div>
 
-                  <ImageGalleryDisplay image={storage?.image} listingName={storage?.listing_name} />
+                  <div className="w-full md:w-1/2">
+                     <ImageGalleryDisplay image={storage?.image} listingName={storage?.listing_name} />
+                  </div>
                </div>
             </div>
          </div>

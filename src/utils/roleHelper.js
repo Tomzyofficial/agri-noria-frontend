@@ -116,10 +116,5 @@ export const isAllowedMarketplaceRole = (userRole, targetRole) => {
  */
 export const isEcosystemVerified = (session) => {
    if (!session) return false;
-   return (
-      session.is_verified === true ||
-      session.onboarding_status === "verified" ||
-      session.onboarding_status === "completed" ||
-      (typeof session.onboarding_level === "number" && session.onboarding_level >= 2)
-   );
+   return session.is_verified === true || session.onboarding_status === "verified" || session.onboarding_status === "completed" || (typeof session.onboarding_level === "number" && session.onboarding_level >= 2);
 };

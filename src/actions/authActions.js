@@ -26,6 +26,7 @@ export async function signinBridge(credentials) {
          secure: true,
          sameSite: "none",
          path: "/",
+         maxAge: data.user.token.rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000,
       };
       cookieStore.set("vendor-session", data.user.token, cookieOptions);
       cookieStore.set("marketplace-session", data.user.token, cookieOptions);

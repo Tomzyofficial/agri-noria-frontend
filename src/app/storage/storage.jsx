@@ -86,7 +86,7 @@ export default function StoragePage({ result, error }) {
    ];
 
    return (
-      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white dark:from-[#1b1a19] dark:to-[#1b1a19]">
+      <div className="min-h-screen">
          {/* Hero Section */}
          <header
             className="bg-gradient-to-r from-green-600 to-green-700 text-white"
@@ -116,7 +116,7 @@ export default function StoragePage({ result, error }) {
                   const Icon = type.icon;
                   const isActive = activeTab === type.id;
                   return (
-                     <div key={type.id} onClick={() => setActiveTab(type.id)} className={`p-6 rounded-xl cursor-pointer transition-all ${isActive ? "bg-green-600 text-white shadow-xl scale-105" : "bg-white text-gray-800 shadow-md hover:shadow-lg"}`}>
+                     <div key={type.id} onClick={() => setActiveTab(type.id)} className={`p-6 rounded-xl cursor-pointer transition-all ${isActive ? "bg-green-600 text-white shadow-xl scale-105" : "bg-white dark:bg-(--card-dark) shadow-md hover:shadow-lg"}`}>
                         <Icon size={48} className={`mb-4 ${isActive ? "text-white" : "text-green-600"}`} />
                         <h3 className="text-2xl font-bold mb-2">{type.name}</h3>
                         <div className="space-y-2 text-sm">
@@ -145,7 +145,7 @@ export default function StoragePage({ result, error }) {
          </section>
 
          {/* Core Features Section */}
-         <section className="bg-gray-50 dark:bg-[#1b1a19] py-16">
+         <section className="py-16">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                <div className="text-center mb-12">
                   <h2 className="text-4xl font-bold text-gray-800 dark:text-foreground mb-4">Why Choose Our Facilities</h2>
@@ -156,61 +156,16 @@ export default function StoragePage({ result, error }) {
                   {coreFeatures.map((feature, idx) => {
                      const Icon = feature.icon;
                      return (
-                        <div key={idx} className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition">
-                           <div className="bg-green-100 w-16 h-16 rounded-lg flex items-center justify-center mb-4">
+                        <div key={idx} className="bg-white dark:bg-(--card-dark) p-6 rounded-xl shadow-md hover:shadow-xl transition">
+                           <span className="bg-green-100 w-16 h-16 rounded-lg flex items-center justify-center mb-4">
                               <Icon size={32} className="text-green-600" />
-                           </div>
-                           <h3 className="text-xl font-bold text-gray-800 mb-2">{feature.title}</h3>
-                           <p className="text-gray-600">{feature.description}</p>
+                           </span>
+                           <h3 className="text-xl font-bold text-gray-800 dark:text-foreground mb-2">{feature.title}</h3>
+                           <p className="text-gray-600 dark:text-gray-50">{feature.description}</p>
                         </div>
                      );
                   })}
                </div>
-            </div>
-         </section>
-
-         {/* Location Availability Section */}
-         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <div className="text-center mb-12">
-               <h2 className="text-4xl font-bold text-gray-800 mb-4">Available Locations</h2>
-               <p className="text-gray-600 text-lg">Find storage facilities near you with real-time availability</p>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-               {locations.map((location) => {
-                  const utilization = ((location.total - location.available) / location.total) * 100;
-                  return (
-                     <div key={location.id} onClick={() => setSelectedLocation(location.id)} className={`p-6 rounded-xl cursor-pointer transition-all ${selectedLocation === location.id ? "bg-green-600 text-white shadow-xl" : "bg-white text-gray-800 shadow-md hover:shadow-lg"}`}>
-                        <div className="flex items-center gap-2 mb-4">
-                           <MapPin size={24} />
-                           <div>
-                              <h3 className="text-xl font-bold">{location.city}</h3>
-                              <p className="text-sm opacity-80">{location.state} State</p>
-                           </div>
-                        </div>
-                        <div className="space-y-3">
-                           <div>
-                              {/* <div className="flex justify-between text-sm mb-1">
-                                 <span>Capacity</span>
-                                 <span className="font-semibold">{utilization.toFixed(0)}% Used</span>
-                              </div> */}
-                              {/* <div className="w-full bg-opacity-20 bg-current rounded-full h-2">
-                                 <div
-                                    className="bg-current h-2 rounded-full transition-all"
-                                    style={{ width: `${utilization}%`, opacity: 1 }}
-                                 />
-                              </div> */}
-                           </div>
-                           {/* <div className="pt-3 border-t border-opacity-20 border-current">
-                              <p className="text-sm">
-                                 <strong>{location.available} MT</strong> available
-                              </p>
-                              <p className="text-sm">{location.facilities} facilities</p>
-                           </div> */}
-                        </div>
-                     </div>
-                  );
-               })}
             </div>
          </section>
 
