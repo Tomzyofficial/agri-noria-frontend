@@ -16,6 +16,7 @@ import {
   Briefcase,
   Wallet,
   Package,
+  Layers,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
@@ -80,6 +81,11 @@ export default function ProgramManagementLayout({ children }) {
       label: "Ecosystem Programs",
       href: "/ecosystem/program-management/programs",
       icon: <Briefcase className="w-4 h-4" />,
+    },
+    {
+      label: "Programme Monitoring",
+      href: "/ecosystem/program-management/monitoring",
+      icon: <Layers className="w-4 h-4" />,
     },
     {
       label: "Pending Approvals",

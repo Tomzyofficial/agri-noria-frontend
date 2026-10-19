@@ -1,13 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Network, CheckCircle2, Clock, User, UserCheck, XCircle } from "lucide-react";
+import { Network, CheckCircle2, Clock, User, UserCheck, XCircle, ShieldCheck, Users, Check, X, Loader2, Layers } from "lucide-react";
 import { useProgramData } from "../useProgramData";
 import { toast } from "react-toastify";
 
 export default function PendingApprovalsPage() {
    const { loading, pendingInputs, currentUserId, fetchData } = useProgramData();
-   const [activeTab, setActiveTab] = useState("my_approvals");
+   const [activeTab, setActiveTab] = useState("program_enrollments"); // Default to Program Enrolments!
    const [fieldOpsApprovals, setFieldOpsApprovals] = useState([]);
    const [activeOfficers, setActiveOfficers] = useState([]);
    const [distributors, setDistributors] = useState([]);
@@ -16,11 +16,54 @@ export default function PendingApprovalsPage() {
    const [loadingActiveOfficers, setLoadingActiveOfficers] = useState(true);
    const [processingId, setProcessingId] = useState(null);
 
+   // Program Enrolments state (transferred from Institution to Program Director!)
+   const [enrollments, setEnrollments] = useState({ farmers: [], clusters: [] });
+   const [loadingEnrollments, setLoadingEnrollments] = useState(true);
+   const [verifyingEnrollmentId, setVerifyingEnrollmentId] = useState(null);
+
    useEffect(() => {
       fetchFieldOpsApprovals();
       fetchAllOfficers();
       fetchDistributors();
+      fetchProgramEnrollments();
    }, []);
+
+   const fetchProgramEnrollments = async () => {
+      setLoadingEnrollments(true);
+      try {
+         const res = await fetch("/api/proxy/programs/director/enrollments");
+         const json = await res.json();
+         if (json.success) {
+            setEnrollments(json.data || { farmers: [], clusters: [] });
+         }
+      } catch (e) {
+         console.error("Failed to fetch program enrollments", e);
+      } finally {
+         setLoadingEnrollments(false);
+      }
+   };
+
+   const handleVerifyEnrollment = async (type, id, status) => {
+      setVerifyingEnrollmentId(id);
+      try {
+         const res = await fetch("/api/proxy/programs/enrollments/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type, id, status }),
+         });
+         const json = await res.json();
+         if (res.ok && json.success) {
+            toast.success(json.message || `Candidate marked as ${status}`);
+            await fetchProgramEnrollments();
+         } else {
+            toast.error(json.error || "Failed to update enrollment verification");
+         }
+      } catch (err) {
+         toast.error("Network error while updating enrollment");
+      } finally {
+         setVerifyingEnrollmentId(null);
+      }
+   };
 
    const fetchDistributors = async () => {
       try {
@@ -124,6 +167,10 @@ export default function PendingApprovalsPage() {
       }
    };
 
+   const pendingFarmers = (enrollments.farmers || []).filter(f => f.enrollment_status === 'pending_verification');
+   const pendingClusters = (enrollments.clusters || []).filter(c => c.enrollment_status === 'pending_verification');
+   const totalPendingEnrollments = pendingFarmers.length + pendingClusters.length;
+
    const displayedInputs = activeTab === "my_approvals"
       ? pendingInputs.filter(input => input.supervisor_id === currentUserId)
       : pendingInputs;
@@ -133,8 +180,10 @@ export default function PendingApprovalsPage() {
    return (
       <div className="space-y-6">
          <div>
-            <h1 className="text-3xl font-black text-(--foreground) tracking-tight">Pending Approvals</h1>
-            <p className="text-sm text-gray-500 font-bold uppercase tracking-widest mt-1">Track input requests awaiting finance authorization</p>
+            <h1 className="text-3xl font-black text-(--foreground) tracking-tight">Program Approvals & Governance</h1>
+            <p className="text-sm text-gray-500 font-bold uppercase tracking-widest mt-1">
+               Review farmer program enrollments, agronomic requests & field personnel
+            </p>
          </div>
 
          <Card className="border-none shadow-xl bg-white dark:bg-gray-950 overflow-hidden">
@@ -143,34 +192,47 @@ export default function PendingApprovalsPage() {
                   <div className="flex items-center gap-4">
                      <CardTitle className="flex items-center gap-2">
                         <Network className="w-5 h-5 text-amber-600" />
-                        Approval Pipeline
+                        Approvals Pipeline
                      </CardTitle>
-                     <span className="px-3 py-1 bg-amber-100 text-amber-700 text-[10px] font-black uppercase rounded-full border border-amber-200">
-                        {displayedInputs.length} Awaiting
-                     </span>
+                     {totalPendingEnrollments > 0 && (
+                        <span className="px-3 py-1 bg-amber-100 text-amber-700 text-[10px] font-black uppercase rounded-full border border-amber-200 animate-pulse">
+                           {totalPendingEnrollments} Candidates Awaiting
+                        </span>
+                     )}
                   </div>
-                  <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+                  <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg overflow-x-auto">
+                     <button
+                        onClick={() => setActiveTab("program_enrollments")}
+                        className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-md transition-colors flex items-center gap-1.5 shrink-0 ${
+                           activeTab === "program_enrollments" ? "bg-white dark:bg-gray-700 shadow-sm text-amber-600 dark:text-amber-400 font-black" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                        }`}
+                     >
+                        <ShieldCheck size={14} /> Program Enrolments
+                        {totalPendingEnrollments > 0 && (
+                           <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                        )}
+                     </button>
                      <button
                         onClick={() => setActiveTab("my_approvals")}
-                        className={`px-4 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === "my_approvals" ? "bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors shrink-0 ${activeTab === "my_approvals" ? "bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}
                      >
-                        My Approvals
+                        Inputs Review
                      </button>
                      <button
                         onClick={() => setActiveTab("all_approvals")}
-                        className={`px-4 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === "all_approvals" ? "bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors shrink-0 ${activeTab === "all_approvals" ? "bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}
                      >
-                        All Approvals
+                        All Pipeline
                      </button>
                      <button
                         onClick={() => setActiveTab("field_ops")}
-                        className={`px-4 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === "field_ops" ? "bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors shrink-0 ${activeTab === "field_ops" ? "bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}
                      >
                         Pending Officers
                      </button>
                      <button
                         onClick={() => setActiveTab("active_officers")}
-                        className={`px-4 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === "active_officers" ? "bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors shrink-0 ${activeTab === "active_officers" ? "bg-white dark:bg-gray-700 shadow-sm text-gray-900 dark:text-white" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}
                      >
                         Active Officers
                      </button>
@@ -178,7 +240,182 @@ export default function PendingApprovalsPage() {
                </div>
             </CardHeader>
             <CardContent className="p-0">
-               {activeTab === "active_officers" ? (
+               {/* 1. Program Enrolments Tab (Transferred from Institution to Program Director!) */}
+               {activeTab === "program_enrollments" ? (
+                  loadingEnrollments ? (
+                     <div className="p-8 text-center animate-pulse font-bold text-gray-400">Loading Program Candidate Applications...</div>
+                  ) : (
+                     <div className="space-y-6 p-6">
+                        {/* Farmers Table */}
+                        <div>
+                           <div className="flex items-center justify-between mb-3">
+                              <h3 className="text-sm font-black text-(--foreground) flex items-center gap-2">
+                                 <User className="w-4 h-4 text-amber-600" /> Farmers Awaiting Enrollment Approval ({enrollments.farmers?.length || 0})
+                              </h3>
+                              {pendingFarmers.length > 0 && (
+                                 <span className="text-xs bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">
+                                    {pendingFarmers.length} Pending
+                                 </span>
+                              )}
+                           </div>
+
+                           {enrollments.farmers?.length === 0 ? (
+                              <div className="text-center py-12 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
+                                 <User className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">No farmers currently applied to this program</p>
+                              </div>
+                           ) : (
+                              <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
+                                 <table className="w-full text-left text-xs">
+                                    <thead className="bg-gray-50 dark:bg-gray-900 text-gray-500 font-bold uppercase tracking-wider text-[10px]">
+                                       <tr>
+                                          <th className="p-3">Farmer</th>
+                                          <th className="p-3">Program</th>
+                                          <th className="p-3">Farm Size</th>
+                                          <th className="p-3">Status</th>
+                                          <th className="p-3 text-right">Actions</th>
+                                       </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                       {enrollments.farmers.map((f) => {
+                                          const isVerified = f.enrollment_status === 'verified';
+                                          const isRejected = f.enrollment_status === 'rejected';
+
+                                          return (
+                                             <tr key={f.farmer_profile_id} className="hover:bg-gray-50/50 dark:hover:bg-gray-900/50">
+                                                <td className="p-3">
+                                                   <p className="font-bold text-gray-900 dark:text-gray-100">{f.fname} {f.lname}</p>
+                                                   <p className="text-[10px] text-gray-500">{f.email || f.phone || "—"}</p>
+                                                </td>
+                                                <td className="p-3">
+                                                   <p className="font-bold text-amber-600">{f.program_name}</p>
+                                                   <span className="text-[10px] text-gray-400 capitalize">{f.program_commodity || f.commodity}</span>
+                                                </td>
+                                                <td className="p-3 font-bold">
+                                                   {f.farm_size_hectares ? `${f.farm_size_hectares} Ha` : "—"}
+                                                </td>
+                                                <td className="p-3">
+                                                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                                      isVerified ? "bg-emerald-100 text-emerald-700" : isRejected ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-800"
+                                                   }`}>
+                                                      {isVerified ? "Approved" : isRejected ? "Rejected" : "Pending Review"}
+                                                   </span>
+                                                </td>
+                                                <td className="p-3 text-right">
+                                                   <div className="flex items-center justify-end gap-1.5">
+                                                      {!isVerified && (
+                                                         <button
+                                                            disabled={verifyingEnrollmentId === f.farmer_profile_id}
+                                                            onClick={() => handleVerifyEnrollment('farmer', f.farmer_profile_id, 'verified')}
+                                                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 shadow-xs transition"
+                                                         >
+                                                            {verifyingEnrollmentId === f.farmer_profile_id ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                                                            Approve
+                                                         </button>
+                                                      )}
+                                                      {!isRejected && (
+                                                         <button
+                                                            disabled={verifyingEnrollmentId === f.farmer_profile_id}
+                                                            onClick={() => handleVerifyEnrollment('farmer', f.farmer_profile_id, 'rejected')}
+                                                            className="text-red-600 hover:bg-red-50 border border-red-200 text-[11px] px-2.5 py-1 rounded-lg font-bold transition"
+                                                         >
+                                                            Reject
+                                                         </button>
+                                                      )}
+                                                   </div>
+                                                </td>
+                                             </tr>
+                                          );
+                                       })}
+                                    </tbody>
+                                 </table>
+                              </div>
+                           )}
+                        </div>
+
+                        {/* Clusters Table */}
+                        <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
+                           <div className="flex items-center justify-between mb-3">
+                              <h3 className="text-sm font-black text-(--foreground) flex items-center gap-2">
+                                 <Users className="w-4 h-4 text-purple-600" /> Clusters & Aggregators Applied ({enrollments.clusters?.length || 0})
+                              </h3>
+                              {pendingClusters.length > 0 && (
+                                 <span className="text-xs bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full">
+                                    {pendingClusters.length} Pending
+                                 </span>
+                              )}
+                           </div>
+
+                           {enrollments.clusters?.length === 0 ? (
+                              <div className="text-center py-10 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
+                                 <Users className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">No clusters currently applied to this program</p>
+                              </div>
+                           ) : (
+                              <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
+                                 <table className="w-full text-left text-xs">
+                                    <thead className="bg-gray-50 dark:bg-gray-900 text-gray-500 font-bold uppercase tracking-wider text-[10px]">
+                                       <tr>
+                                          <th className="p-3">Cluster</th>
+                                          <th className="p-3">Program</th>
+                                          <th className="p-3">Supervisor</th>
+                                          <th className="p-3">Members</th>
+                                          <th className="p-3">Status</th>
+                                          <th className="p-3 text-right">Actions</th>
+                                       </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                       {enrollments.clusters.map((c) => {
+                                          const isVerified = c.enrollment_status === 'verified';
+                                          const isRejected = c.enrollment_status === 'rejected';
+
+                                          return (
+                                             <tr key={c.cluster_id} className="hover:bg-gray-50/50 dark:hover:bg-gray-900/50">
+                                                <td className="p-3 font-bold">{c.cluster_name}</td>
+                                                <td className="p-3 font-bold text-purple-600">{c.program_name}</td>
+                                                <td className="p-3">{c.supervisor_fname ? `${c.supervisor_fname} ${c.supervisor_lname || ''}` : "Assigned"}</td>
+                                                <td className="p-3 font-bold">{c.farmer_count || 0} Farmers</td>
+                                                <td className="p-3">
+                                                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                                      isVerified ? "bg-emerald-100 text-emerald-700" : isRejected ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-800"
+                                                   }`}>
+                                                      {isVerified ? "Approved" : isRejected ? "Rejected" : "Pending Review"}
+                                                   </span>
+                                                </td>
+                                                <td className="p-3 text-right">
+                                                   <div className="flex items-center justify-end gap-1.5">
+                                                      {!isVerified && (
+                                                         <button
+                                                            disabled={verifyingEnrollmentId === c.cluster_id}
+                                                            onClick={() => handleVerifyEnrollment('cluster', c.cluster_id, 'verified')}
+                                                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 shadow-xs transition"
+                                                         >
+                                                            {verifyingEnrollmentId === c.cluster_id ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                                                            Approve
+                                                         </button>
+                                                      )}
+                                                      {!isRejected && (
+                                                         <button
+                                                            disabled={verifyingEnrollmentId === c.cluster_id}
+                                                            onClick={() => handleVerifyEnrollment('cluster', c.cluster_id, 'rejected')}
+                                                            className="text-red-600 hover:bg-red-50 border border-red-200 text-[11px] px-2.5 py-1 rounded-lg font-bold transition"
+                                                         >
+                                                            Reject
+                                                         </button>
+                                                      )}
+                                                   </div>
+                                                </td>
+                                             </tr>
+                                          );
+                                       })}
+                                    </tbody>
+                                 </table>
+                              </div>
+                           )}
+                        </div>
+                     </div>
+                  )
+               ) : activeTab === "active_officers" ? (
                   loadingActiveOfficers ? (
                      <div className="p-8 text-center animate-pulse font-bold text-gray-400">Loading...</div>
                   ) : activeOfficers.length === 0 ? (
@@ -341,7 +578,7 @@ export default function PendingApprovalsPage() {
                                        <CheckCircle2 size={14} /> Approve
                                     </button>
                                  </div>
-                               )}
+                              )}
                            </div>
                         </div>
                      ))}

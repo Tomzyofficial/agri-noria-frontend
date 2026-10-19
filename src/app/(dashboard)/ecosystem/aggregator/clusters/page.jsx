@@ -404,7 +404,7 @@ export default function ClusterManagementPage() {
                     className="w-full border border-gray-200 dark:border-gray-700 rounded-xl p-3 bg-white dark:bg-gray-800 font-bold text-sm"
                   >
                     <option value="">No Program (Independent)</option>
-                    {programs.map((program) => (
+                    {programs.filter((p) => p.status === 'active').map((program) => (
                       <option key={program.id} value={program.id}>
                         {program.name}
                       </option>
