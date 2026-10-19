@@ -6,7 +6,7 @@ import {
    Landmark, Plus, Calendar, User, MapPin, 
    Search, Filter, ChevronRight, Edit3, Loader2,
    CheckCircle2, Clock, AlertCircle, Coins, Wallet, ArrowUpRight,
-   Users, Check, X, ShieldCheck
+   Users, Check, X, ShieldCheck, UserCheck, Key, Copy, Mail
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -27,6 +27,19 @@ export default function ProgramsPage() {
    const [fundingProgram, setFundingProgram] = useState(null);
    const [fundAmount, setFundAmount] = useState("");
    const [isFunding, setIsFunding] = useState(false);
+
+   // Program Director appointment modal state
+   const [appointingProgram, setAppointingProgram] = useState(null);
+   const [isAppointing, setIsAppointing] = useState(false);
+   const [directorForm, setDirectorForm] = useState({
+      fname: "",
+      lname: "",
+      email: "",
+      phone: "",
+      password: "",
+      sendEmail: true
+   });
+   const [credentialModalData, setCredentialModalData] = useState(null);
 
    const { data: progData, isLoading: loading, mutate: mutatePrograms } = useSWR("/api/proxy/programs/mine", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
    const { data: userData } = useSWR("/api/proxy/auth/verify-vendor", fetcher, { revalidateOnFocus: false });
@@ -135,6 +148,45 @@ export default function ProgramsPage() {
       } finally {
          setIsFunding(false);
       }
+   };
+
+   const handleAppointDirector = async (e) => {
+      e.preventDefault();
+      if (!directorForm.fname || !directorForm.lname || !directorForm.email) {
+         toast.error("First name, last name, and email are required");
+         return;
+      }
+      setIsAppointing(true);
+      try {
+         const res = await fetch(`/api/proxy/programs/${appointingProgram.id}/program-director`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(directorForm),
+         });
+         const json = await res.json();
+         if (res.ok && json.success) {
+            toast.success(json.message || "Program Director appointed successfully!");
+            setCredentialModalData({
+               director: json.data?.director,
+               programName: appointingProgram.name,
+               emailSent: json.data?.emailSent
+            });
+            setAppointingProgram(null);
+            setDirectorForm({ fname: "", lname: "", email: "", phone: "", password: "", sendEmail: true });
+            await loadPrograms();
+         } else {
+            toast.error(json.error || "Failed to appoint Program Director");
+         }
+      } catch (err) {
+         toast.error("Network error while appointing Program Director");
+      } finally {
+         setIsAppointing(false);
+      }
+   };
+
+   const handleCopyCredentials = (text) => {
+      navigator.clipboard.writeText(text);
+      toast.success("Credentials copied to clipboard!");
    };
 
    const handleSubmit = async (e) => {
@@ -299,6 +351,7 @@ export default function ProgramsPage() {
                         <th className="px-6 py-4">Commodity & Region</th>
                         <th className="px-6 py-4">Targets</th>
                         <th className="px-6 py-4">Fund Balance</th>
+                        <th className="px-6 py-4">Program Director</th>
                         <th className="px-6 py-4">Status</th>
                         <th className="px-6 py-4 text-right">Actions</th>
                      </tr>
@@ -349,11 +402,55 @@ export default function ProgramsPage() {
                               </div>
                            </td>
                            <td className="px-6 py-5">
-                              <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                 program.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
-                              }`}>
-                                 {program.status}
-                              </span>
+                              {program.director_name ? (
+                                 <div className="space-y-1">
+                                    <div className="flex items-center gap-1.5 font-bold text-sm text-gray-900 dark:text-gray-100">
+                                       <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                                       {program.director_name}
+                                    </div>
+                                    <p className="text-xs text-gray-500">{program.director_email}</p>
+                                    {program.director_phone && <p className="text-[10px] text-gray-400 font-mono">{program.director_phone}</p>}
+                                    <button 
+                                       onClick={() => {
+                                          setDirectorForm({ fname: "", lname: "", email: "", phone: "", password: "", sendEmail: true });
+                                          setAppointingProgram(program);
+                                       }} 
+                                       className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-bold mt-1 inline-flex items-center gap-1 cursor-pointer"
+                                    >
+                                       Reassign Director &rarr;
+                                    </button>
+                                 </div>
+                              ) : (
+                                 <div>
+                                    <button 
+                                       onClick={() => {
+                                          setDirectorForm({ fname: "", lname: "", email: "", phone: "", password: "", sendEmail: true });
+                                          setAppointingProgram(program);
+                                       }} 
+                                       className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 text-xs font-black uppercase tracking-wider border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                                    >
+                                       <UserCheck className="w-3.5 h-3.5" /> Appoint Director
+                                    </button>
+                                    <p className="text-[10px] text-gray-400 mt-1">Pending appointment</p>
+                                 </div>
+                              )}
+                           </td>
+                           <td className="px-6 py-5">
+                              {program.status === 'active' ? (
+                                 <div>
+                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                       Active
+                                    </span>
+                                    <p className="text-[10px] text-emerald-600 font-bold mt-1">Live & Enrolling</p>
+                                 </div>
+                              ) : (
+                                 <div>
+                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                                       In Configuration
+                                    </span>
+                                    <p className="text-[10px] text-amber-600 font-bold mt-1">Hidden from farmers</p>
+                                 </div>
+                              )}
                            </td>
                            <td className="px-6 py-5 text-right">
                               {program.created_by === currentUser?.id ? (
@@ -378,6 +475,16 @@ export default function ProgramsPage() {
       </>
    ) : (
       <div className="space-y-6">
+         <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex items-start gap-3">
+            <ShieldCheck className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+            <div>
+               <h4 className="text-sm font-black text-amber-900 dark:text-amber-200">Enrolment Approvals Transferred to Program Director</h4>
+               <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                  Candidate farmer and cluster enrollments are now operationalized and approved directly by the appointed Program Director in their workspace. You retain institutional oversight below.
+               </p>
+            </div>
+         </div>
+
          {/* Farmers Verifications */}
          <Card className="border-none shadow-sm overflow-hidden bg-white dark:bg-gray-950">
             <CardHeader className="p-6 border-b border-gray-100 dark:border-gray-800 flex flex-row items-center justify-between">
@@ -683,6 +790,11 @@ export default function ProgramsPage() {
                   </div>
                   
                   <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                     {!isEditing && (
+                        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 font-medium leading-relaxed">
+                           <strong>Operational Workflow:</strong> Newly created programs start in <strong>In Configuration</strong> status and stay hidden from farmers and clusters. After creation, appoint a <strong>Program Director</strong> who will configure operational rules, targets, and input packages before making the program active for enrollment.
+                        </div>
+                     )}
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2 md:col-span-2">
                            <label className="text-xs font-black uppercase text-gray-400 tracking-widest ml-1">Program Name</label>
@@ -776,6 +888,213 @@ export default function ProgramsPage() {
                         </Button>
                      </div>
                   </form>
+               </div>
+            </div>
+         )}
+
+         {/* Appoint Program Director Modal */}
+         {appointingProgram && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+               <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800">
+                  <div className="p-6 bg-gradient-to-r from-amber-600 to-orange-600 text-white flex justify-between items-center">
+                     <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-2xl bg-white/20 text-white">
+                           <UserCheck className="w-6 h-6" />
+                        </div>
+                        <div>
+                           <h3 className="text-xl font-black">Appoint Program Director</h3>
+                           <p className="text-xs text-amber-100 font-medium mt-0.5">{appointingProgram.name}</p>
+                        </div>
+                     </div>
+                     <Button 
+                        onClick={() => setAppointingProgram(null)}
+                        variant="ghost" 
+                        className="text-white hover:bg-white/20 h-9 w-9 p-0 rounded-full"
+                     >
+                        <Plus className="w-5 h-5 rotate-45" />
+                     </Button>
+                  </div>
+
+                  <form onSubmit={handleAppointDirector} className="p-6 space-y-4">
+                     <p className="text-xs text-gray-500 font-medium">
+                        The Program Director will manage this program in their <strong>Program Management workspace</strong>, configuring rules, setting targets, assigning field officers, and approving candidates.
+                     </p>
+
+                     <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                           <label className="text-[10px] font-black uppercase tracking-wider text-gray-500">First Name *</label>
+                           <Input 
+                              required
+                              placeholder="e.g. Samuel"
+                              value={directorForm.fname}
+                              onChange={(e) => setDirectorForm({ ...directorForm, fname: e.target.value })}
+                              className="h-10 rounded-xl"
+                           />
+                        </div>
+                        <div className="space-y-1">
+                           <label className="text-[10px] font-black uppercase tracking-wider text-gray-500">Last Name *</label>
+                           <Input 
+                              required
+                              placeholder="e.g. Adeyemi"
+                              value={directorForm.lname}
+                              onChange={(e) => setDirectorForm({ ...directorForm, lname: e.target.value })}
+                              className="h-10 rounded-xl"
+                           />
+                        </div>
+                     </div>
+
+                     <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-gray-500">Official Email *</label>
+                        <Input 
+                           type="email"
+                           required
+                           placeholder="director@agency.gov.ng"
+                           value={directorForm.email}
+                           onChange={(e) => setDirectorForm({ ...directorForm, email: e.target.value })}
+                           className="h-10 rounded-xl"
+                        />
+                     </div>
+
+                     <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-wider text-gray-500">Phone Number (Optional)</label>
+                        <Input 
+                           type="tel"
+                           placeholder="+234 800 000 0000"
+                           value={directorForm.phone}
+                           onChange={(e) => setDirectorForm({ ...directorForm, phone: e.target.value })}
+                           className="h-10 rounded-xl"
+                        />
+                     </div>
+
+                     <div className="space-y-1">
+                        <div className="flex justify-between items-center">
+                           <label className="text-[10px] font-black uppercase tracking-wider text-gray-500">Temporary Password</label>
+                           <span className="text-[10px] text-amber-600 font-bold">Leave blank to auto-generate</span>
+                        </div>
+                        <Input 
+                           type="text"
+                           placeholder="Optional custom password"
+                           value={directorForm.password}
+                           onChange={(e) => setDirectorForm({ ...directorForm, password: e.target.value })}
+                           className="h-10 rounded-xl font-mono text-sm"
+                        />
+                     </div>
+
+                     <div className="flex items-center gap-2 pt-1">
+                        <input 
+                           type="checkbox"
+                           id="sendEmailToggle"
+                           checked={directorForm.sendEmail}
+                           onChange={(e) => setDirectorForm({ ...directorForm, sendEmail: e.target.checked })}
+                           className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer"
+                        />
+                        <label htmlFor="sendEmailToggle" className="text-xs text-gray-700 dark:text-gray-300 font-bold cursor-pointer">
+                           Send login credentials directly to director via email
+                        </label>
+                     </div>
+
+                     <div className="flex gap-3 pt-3">
+                        <Button
+                           type="button"
+                           onClick={() => setAppointingProgram(null)}
+                           variant="outline"
+                           disabled={isAppointing}
+                           className="flex-1 h-11 rounded-xl font-bold"
+                        >
+                           Cancel
+                        </Button>
+                        <Button
+                           type="submit"
+                           disabled={isAppointing}
+                           className="flex-1 h-11 rounded-xl font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-lg shadow-amber-200 dark:shadow-none"
+                        >
+                           {isAppointing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Appoint Director"}
+                        </Button>
+                     </div>
+                  </form>
+               </div>
+            </div>
+         )}
+
+         {/* Credential Handover / Display Modal */}
+         {credentialModalData && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+               <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800">
+                  <div className="p-6 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex justify-between items-center">
+                     <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-2xl bg-white/20 text-white">
+                           <Key className="w-6 h-6" />
+                        </div>
+                        <div>
+                           <h3 className="text-xl font-black">Credentials Issued</h3>
+                           <p className="text-xs text-emerald-100 font-medium mt-0.5">Ready for Manual Handover</p>
+                        </div>
+                     </div>
+                     <Button 
+                        onClick={() => setCredentialModalData(null)}
+                        variant="ghost" 
+                        className="text-white hover:bg-white/20 h-9 w-9 p-0 rounded-full"
+                     >
+                        <Plus className="w-5 h-5 rotate-45" />
+                     </Button>
+                  </div>
+
+                  <div className="p-6 space-y-5">
+                     <p className="text-xs text-gray-600 dark:text-gray-400">
+                        {credentialModalData.emailSent ? (
+                           <span className="text-emerald-600 font-bold flex items-center gap-1.5">
+                              <CheckCircle2 className="w-4 h-4" /> An onboarding email has been sent to the director.
+                           </span>
+                        ) : (
+                           <span>Please give these login credentials directly to the appointed Program Director:</span>
+                        )}
+                     </p>
+
+                     <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 space-y-2.5 text-xs font-mono">
+                        <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-1.5">
+                           <span className="text-gray-500 font-sans font-bold">Appointee:</span>
+                           <span className="font-bold text-gray-900 dark:text-gray-100">{credentialModalData.director.fname} {credentialModalData.director.lname}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-1.5">
+                           <span className="text-gray-500 font-sans font-bold">Role:</span>
+                           <span className="font-bold text-amber-600">Program Director</span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-1.5">
+                           <span className="text-gray-500 font-sans font-bold">Programme:</span>
+                           <span className="font-bold text-gray-900 dark:text-gray-100">{credentialModalData.programName}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-1.5">
+                           <span className="text-gray-500 font-sans font-bold">Login Email:</span>
+                           <span className="font-bold text-gray-900 dark:text-gray-100">{credentialModalData.director.email}</span>
+                        </div>
+                        <div className="flex justify-between items-center pt-1">
+                           <span className="text-gray-500 font-sans font-bold">Password:</span>
+                           <span className="font-black text-amber-600 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded text-sm tracking-wider">
+                              {credentialModalData.director.tempPassword || "Existing Password"}
+                           </span>
+                        </div>
+                     </div>
+
+                     <div className="flex flex-col gap-2">
+                        <Button
+                           onClick={() => {
+                              const text = `AGRI-NORIA PROGRAM DIRECTOR CREDENTIALS\nName: ${credentialModalData.director.fname} ${credentialModalData.director.lname}\nProgram: ${credentialModalData.programName}\nRole: Program Director\nLogin Email: ${credentialModalData.director.email}\nPassword: ${credentialModalData.director.tempPassword}\nLogin Portal: https://agri-noria-frontend.vercel.app/auth/signin?redirect=/ecosystem/program-management`;
+                              handleCopyCredentials(text);
+                           }}
+                           className="w-full h-11 rounded-xl font-bold bg-black hover:bg-gray-800 text-white flex items-center justify-center gap-2"
+                        >
+                           <Copy className="w-4 h-4" /> Copy Credentials for Handover
+                        </Button>
+
+                        <Button
+                           onClick={() => setCredentialModalData(null)}
+                           variant="outline"
+                           className="w-full h-11 rounded-xl font-bold"
+                        >
+                           Done
+                        </Button>
+                     </div>
+                  </div>
                </div>
             </div>
          )}

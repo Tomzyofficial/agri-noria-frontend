@@ -1,6 +1,11 @@
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { FaMapMarkerAlt, FaClipboardCheck, FaSatelliteDish, FaThermometerHalf, FaLeaf, FaCalendarDay, FaCheckCircle, FaSpinner, FaClock, FaHistory, FaEdit, FaSave, FaUserAlt, FaTools, FaWater, FaSeedling, FaLayerGroup, FaSun } from "react-icons/fa";
+import { 
+   FaMapMarkerAlt, FaClipboardCheck, FaSatelliteDish, FaThermometerHalf, 
+   FaLeaf, FaCalendarDay, FaCheckCircle, FaSpinner, FaClock, FaHistory, 
+   FaEdit, FaSave, FaUserAlt, FaTools, FaWater, FaSeedling, FaLayerGroup, 
+   FaSun, FaBriefcase, FaArrowRight, FaDrawPolygon, FaBuilding 
+} from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import MapboxFarmCapture from "@/components/MapboxFarmCapture";
@@ -13,6 +18,8 @@ export default function FieldOperationsDashboard() {
    const [selectedCluster, setSelectedCluster] = useState(null);
    const [clusterFarmers, setClusterFarmers] = useState([]);
    const [officerFarmers, setOfficerFarmers] = useState([]);
+   const [assignedPrograms, setAssignedPrograms] = useState([]);
+   const [selectedAssignedProgram, setSelectedAssignedProgram] = useState(null);
    const [selectedFarmer, setSelectedFarmer] = useState(null);
    const [supervision, setSupervision] = useState(null);
    const [isSaving, setIsSaving] = useState(false);
@@ -70,17 +77,27 @@ export default function FieldOperationsDashboard() {
    const fetchInitialData = async () => {
       try {
          setLoading(true);
-         const [statsRes, clustersRes, assignmentsRes, sessionRes, farmersRes] = await Promise.all([
+         const [statsRes, clustersRes, assignmentsRes, sessionRes, farmersRes, assignedProgRes] = await Promise.all([
             fetch("/api/proxy/pipeline/stats"),
             fetch("/api/proxy/pipeline/clusters"),
             fetch("/api/proxy/field-operations/work-assignments"),
             fetch("/api/proxy/auth/verify-vendor"),
-            fetch("/api/proxy/field-operations/farmers")
+            fetch("/api/proxy/field-operations/farmers"),
+            fetch("/api/proxy/field-operations/assigned-programs")
          ]);
          if (statsRes.ok) { const d = await statsRes.json(); setStats(d.data || {}); }
          if (assignmentsRes.ok) { const d = await assignmentsRes.json(); setAssignments(d.data || []); }
          if (sessionRes.ok) { const d = await sessionRes.json(); setUserRole(d.role?.toLowerCase() || ""); }
          
+         if (assignedProgRes.ok) {
+            const ap = await assignedProgRes.json();
+            const progs = ap.data || [];
+            setAssignedPrograms(progs);
+            if (progs.length > 0 && !selectedAssignedProgram) {
+               setSelectedAssignedProgram(progs[0]);
+            }
+         }
+
          let globalFarmers = [];
          if (farmersRes.ok) { 
             const d = await farmersRes.json(); 
@@ -292,6 +309,7 @@ export default function FieldOperationsDashboard() {
          <div className="flex flex-wrap gap-2 p-1 bg-gray-100 dark:bg-gray-800/50 rounded-2xl w-fit">
             {[
                { key: "overview", label: "Overview", roles: ["all"] },
+               { key: "assigned_programs", label: "Assigned Programs & Farms", roles: ["all"] },
                { key: "register_farmer", label: "Register Farmer", roles: ["enumerator", "field officer", "agronomist", "field operations supervisor", "program director"] },
                { key: "capture_boundary", label: "Capture Boundary", roles: ["field officer", "agronomist", "field operations supervisor", "program director"] },
                { key: "supervision", label: "Farm Supervision (Agronomy)", roles: ["agronomist", "field operations supervisor", "program director"] },
@@ -344,16 +362,59 @@ export default function FieldOperationsDashboard() {
                               </div>
                            </CardContent>
                         </Card>
-                        {/* <Card className="bg-white dark:bg-gray-800 border-none shadow-xl shadow-cyan-500/5 group hover:scale-[1.02] transition-transform">
+                        <Card className="bg-white dark:bg-gray-800 border-none shadow-xl shadow-amber-500/5 group hover:scale-[1.02] transition-transform">
                            <CardContent className="p-6 flex items-center gap-4">
-                              <div className="p-4 bg-cyan-500 text-white rounded-2xl shadow-lg shadow-cyan-500/20"><FaCalendarDay size={24} /></div>
+                              <div className="p-4 bg-amber-500 text-white rounded-2xl shadow-lg shadow-amber-500/20"><FaBriefcase size={24} /></div>
                               <div>
-                                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Yield Potential</p>
-                                 <p className="text-2xl font-black text-gray-900 dark:text-white leading-tight">{stats.totalSalesValue ? "₦" + (stats.totalSalesValue / 1000000).toFixed(1) + "M" : "Calculating..."}</p>
+                                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Assigned Programs</p>
+                                 <p className="text-2xl font-black text-gray-900 dark:text-white leading-tight">{assignedPrograms.length}</p>
                               </div>
                            </CardContent>
-                        </Card> */}
+                        </Card>
                      </div>
+
+                     {/* Assigned Programs Preview Banner */}
+                     {assignedPrograms.length > 0 && (
+                        <Card className="border-none shadow-2xl shadow-gray-200 dark:shadow-none overflow-hidden rounded-3xl bg-gradient-to-r from-teal-900/10 via-amber-900/10 to-transparent border border-teal-500/20 p-6">
+                           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                              <div>
+                                 <div className="flex items-center gap-2">
+                                    <span className="p-2 bg-teal-500 text-white rounded-xl shadow-md"><FaBriefcase size={16} /></span>
+                                    <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">Assigned Ecosystem Programs</h3>
+                                 </div>
+                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    Program Directors have assigned you to {assignedPrograms.length} active program{assignedPrograms.length > 1 ? 's' : ''}. Enrolled farmers and their farm plots are ready for verification.
+                                 </p>
+                              </div>
+                              <button
+                                 onClick={() => setActiveSection("assigned_programs")}
+                                 className="cursor-pointer px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-teal-600/20 transition-all shrink-0"
+                              >
+                                 View Programs & Farms <FaArrowRight size={12} />
+                              </button>
+                           </div>
+
+                           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+                              {assignedPrograms.slice(0, 3).map((prog) => (
+                                 <div 
+                                    key={prog.id}
+                                    onClick={() => { setSelectedAssignedProgram(prog); setActiveSection("assigned_programs"); }}
+                                    className="p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm cursor-pointer hover:border-teal-500 hover:shadow-md transition-all text-left"
+                                 >
+                                    <div className="flex items-center justify-between">
+                                       <span className="font-bold text-sm text-gray-900 dark:text-white truncate">{prog.name}</span>
+                                       <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded uppercase">Active</span>
+                                    </div>
+                                    <p className="text-[11px] text-gray-400 mt-0.5">Director: <strong className="text-gray-600 dark:text-gray-300">{prog.director_name || "Assigned"}</strong></p>
+                                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100 dark:border-gray-700 text-[11px] font-medium text-gray-500">
+                                       <span>{prog.commodity || "Crop"} • {prog.region || "Region"}</span>
+                                       <span className="font-bold text-teal-600">{prog.enrolled_farmer_count || 0} Farmers</span>
+                                    </div>
+                                 </div>
+                              ))}
+                           </div>
+                        </Card>
+                     )}
 
                      <Card className="border-none shadow-2xl shadow-gray-200 dark:shadow-none overflow-hidden rounded-3xl">
                         <CardHeader className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-700 p-6">
@@ -387,6 +448,200 @@ export default function FieldOperationsDashboard() {
                            )}
                         </CardContent>
                      </Card>
+                  </div>
+               )}
+
+               {/* Dedicated Section: Assigned Programs & Enrolled Farmers */}
+               {activeSection === "assigned_programs" && (
+                  <div className="space-y-6">
+                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                           <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight flex items-center gap-3">
+                              <span className="p-2.5 bg-teal-500 text-white rounded-2xl shadow-lg shadow-teal-500/20"><FaBriefcase size={20} /></span>
+                              Assigned Programs & Participating Farms
+                           </h2>
+                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">
+                              Monitor programs assigned to you by Program Directors, view enrolled farmers as they join, and capture farm boundary polygons.
+                           </p>
+                        </div>
+                     </div>
+
+                     {assignedPrograms.length === 0 ? (
+                        <Card className="border-none shadow-xl rounded-3xl p-12 text-center bg-white dark:bg-gray-800">
+                           <div className="w-16 h-16 bg-teal-50 dark:bg-teal-900/20 text-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                              <FaBriefcase size={28} />
+                           </div>
+                           <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">No Assigned Programs Yet</h3>
+                           <p className="text-xs text-gray-500 max-w-md mx-auto mt-2">
+                              When a Program Director assigns you to an ecosystem program, the program along with its enrolled farmers and their farm plots will automatically display here for boundary verification.
+                           </p>
+                        </Card>
+                     ) : (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                           {/* Left Column: Programs List */}
+                           <div className="lg:col-span-1 space-y-3">
+                              <p className="text-xs font-black uppercase tracking-wider text-gray-400 px-1">
+                                 Your Assigned Programs ({assignedPrograms.length})
+                              </p>
+                              {assignedPrograms.map((prog) => {
+                                 const isSelected = selectedAssignedProgram?.id === prog.id;
+                                 return (
+                                    <div
+                                       key={prog.id}
+                                       onClick={() => setSelectedAssignedProgram(prog)}
+                                       className={`p-5 rounded-2xl border transition-all cursor-pointer text-left ${
+                                          isSelected
+                                             ? "bg-teal-50 dark:bg-teal-900/20 border-teal-500 shadow-md ring-1 ring-teal-500"
+                                             : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:border-teal-300"
+                                       }`}
+                                    >
+                                       <div className="flex items-center justify-between mb-2">
+                                          <h4 className="font-bold text-sm text-gray-900 dark:text-white truncate">
+                                             {prog.name}
+                                          </h4>
+                                          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase rounded-full">
+                                             Active
+                                          </span>
+                                       </div>
+
+                                       <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                                          <p className="flex items-center gap-1.5">
+                                             <FaBuilding className="text-teal-500" size={11} />
+                                             Director: <span className="font-semibold text-gray-700 dark:text-gray-200">{prog.director_name || "N/A"}</span>
+                                          </p>
+                                          <p className="flex items-center gap-1.5">
+                                             <FaMapMarkerAlt className="text-teal-500" size={11} />
+                                             {prog.region || "All Regions"} • {prog.commodity || "General"}
+                                          </p>
+                                       </div>
+
+                                       <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 dark:border-gray-700/60 text-xs">
+                                          <span className="text-[11px] text-gray-400">Enrolled Farmers:</span>
+                                          <span className="font-black text-teal-600 dark:text-teal-400">
+                                             {officerFarmers.filter(f => f.program_id === prog.id).length} farmers
+                                          </span>
+                                       </div>
+                                    </div>
+                                 );
+                              })}
+                           </div>
+
+                           {/* Right Column: Selected Program Overview & Enrolled Farmers */}
+                           <div className="lg:col-span-2 space-y-4">
+                              {selectedAssignedProgram && (
+                                 <>
+                                    {/* Program Header Card */}
+                                    <Card className="border-none shadow-xl rounded-3xl p-6 bg-white dark:bg-gray-800 text-left">
+                                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 dark:border-gray-700 pb-4">
+                                          <div>
+                                             <div className="flex items-center gap-2">
+                                                <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
+                                                   {selectedAssignedProgram.name}
+                                                </h3>
+                                             </div>
+                                             <p className="text-xs text-gray-400 mt-0.5 font-medium">
+                                                Director: <strong>{selectedAssignedProgram.director_name || "Assigned"}</strong> {selectedAssignedProgram.director_phone ? `(${selectedAssignedProgram.director_phone})` : ""}
+                                             </p>
+                                          </div>
+                                          <div className="flex gap-2">
+                                             <span className="px-3 py-1 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 font-bold text-xs rounded-xl uppercase">
+                                                {selectedAssignedProgram.commodity || "Crop"}
+                                             </span>
+                                             <span className="px-3 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 font-bold text-xs rounded-xl uppercase">
+                                                {selectedAssignedProgram.region || "Region"}
+                                             </span>
+                                          </div>
+                                       </div>
+
+                                       <div className="grid grid-cols-3 gap-4 mt-4 pt-1">
+                                          <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/40 rounded-xl">
+                                             <p className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Enrolled Farmers</p>
+                                             <p className="text-xl font-black text-gray-900 dark:text-white mt-0.5">
+                                                {officerFarmers.filter(f => f.program_id === selectedAssignedProgram.id).length}
+                                             </p>
+                                          </div>
+                                          <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/40 rounded-xl">
+                                             <p className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Mapped Farms</p>
+                                             <p className="text-xl font-black text-emerald-600 mt-0.5">
+                                                {officerFarmers.filter(f => f.program_id === selectedAssignedProgram.id && f.boundary_polygon).length}
+                                             </p>
+                                          </div>
+                                          <div className="text-center p-3 bg-gray-50 dark:bg-gray-700/40 rounded-xl">
+                                             <p className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Pending Boundary</p>
+                                             <p className="text-xl font-black text-amber-600 mt-0.5">
+                                                {officerFarmers.filter(f => f.program_id === selectedAssignedProgram.id && !f.boundary_polygon).length}
+                                             </p>
+                                          </div>
+                                       </div>
+                                    </Card>
+
+                                    {/* Farmers in this program */}
+                                    <Card className="border-none shadow-xl rounded-3xl overflow-hidden bg-white dark:bg-gray-800 text-left">
+                                       <div className="p-5 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                                          <h4 className="font-bold text-sm text-gray-900 dark:text-white uppercase tracking-wider">
+                                             Enrolled Farmers & Farm Plots
+                                          </h4>
+                                          <span className="text-xs text-gray-400">
+                                             {officerFarmers.filter(f => f.program_id === selectedAssignedProgram.id).length} Participating
+                                          </span>
+                                       </div>
+
+                                       {officerFarmers.filter(f => f.program_id === selectedAssignedProgram.id).length === 0 ? (
+                                          <div className="p-8 text-center text-gray-400 space-y-2">
+                                             <FaUserAlt size={24} className="mx-auto opacity-40 text-teal-600" />
+                                             <p className="text-xs font-bold uppercase tracking-wider">No farmers have joined this program yet</p>
+                                             <p className="text-[11px] text-gray-500">
+                                                As farmers join this program and are verified by the Program Director, they will appear here for GIS boundary mapping.
+                                             </p>
+                                          </div>
+                                       ) : (
+                                          <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                                             {officerFarmers
+                                                .filter(f => f.program_id === selectedAssignedProgram.id)
+                                                .map((farmer) => (
+                                                   <div key={farmer.farmer_id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                                      <div>
+                                                         <div className="flex items-center gap-2">
+                                                            <p className="font-bold text-sm text-gray-900 dark:text-white">
+                                                               {farmer.fname} {farmer.lname}
+                                                            </p>
+                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                                               farmer.boundary_polygon 
+                                                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400" 
+                                                                  : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400"
+                                                            }`}>
+                                                               {farmer.boundary_polygon ? "Boundary Mapped" : "Pending GIS Mapping"}
+                                                            </span>
+                                                         </div>
+                                                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-xs text-gray-500">
+                                                            <span>AIN: <strong className="font-mono text-gray-700 dark:text-gray-300">{farmer.ain || "Pending"}</strong></span>
+                                                            <span>Phone: {farmer.phone || "N/A"}</span>
+                                                            <span>Farm Size: <strong className="text-gray-700 dark:text-gray-300">{farmer.farm_size_hectares ? `${farmer.farm_size_hectares} Ha` : "Unset"}</strong></span>
+                                                         </div>
+                                                      </div>
+
+                                                      <div className="flex items-center gap-2 shrink-0">
+                                                         <button
+                                                            onClick={() => {
+                                                               setSelectedFarmer(farmer);
+                                                               setActiveSection("capture_boundary");
+                                                            }}
+                                                            className="cursor-pointer px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-teal-600/10 transition-all"
+                                                         >
+                                                            <FaDrawPolygon size={12} />
+                                                            {farmer.boundary_polygon ? "Edit Boundary" : "Map Boundary"}
+                                                         </button>
+                                                      </div>
+                                                   </div>
+                                                ))}
+                                          </div>
+                                       )}
+                                    </Card>
+                                 </>
+                              )}
+                           </div>
+                        </div>
+                     )}
                   </div>
                )}
 
@@ -733,15 +988,15 @@ export default function FieldOperationsDashboard() {
                            <FaMapMarkerAlt className="text-teal-500" /> Search & Select Farmer for Boundary Capture
                         </CardTitle>
                         <p className="text-xs text-teal-600 dark:text-teal-400 font-bold uppercase tracking-wider mb-4">
-                           Listing farmers registered by you ({officerFarmers.length} registered)
+                           Listing farmers registered by you & enrolled in your assigned programs ({officerFarmers.length} available)
                         </p>
                         {officerFarmers.length === 0 ? (
                            <div className="p-6 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-200 dark:border-amber-800 text-center">
                               <p className="text-sm font-bold text-amber-800 dark:text-amber-200">
-                                 You have not added any farmers yet.
+                                 No farmers currently available for boundary mapping.
                               </p>
                               <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                                 Field officers can only map farms for farmers they themselves registered. Click the "Register Farmer" tab above to add a farmer first.
+                                 You can register a farmer directly via the "Register Farmer" tab, or wait for farmers to join programs assigned to you by Program Directors.
                               </p>
                            </div>
                         ) : (
@@ -750,10 +1005,10 @@ export default function FieldOperationsDashboard() {
                               onChange={(e) => setSelectedFarmer(officerFarmers.find(f => f.farmer_id === e.target.value))} 
                               value={selectedFarmer?.farmer_id || ""}
                            >
-                              <option value="">-- Select Farmer You Registered --</option>
+                              <option value="">-- Select Farmer for Farm Boundary Capture --</option>
                               {officerFarmers.map(f => (
                                  <option key={f.farmer_id} value={f.farmer_id}>
-                                    {f.fname} {f.lname} | AIN: {f.ain || 'Pending'} | Phone: {f.phone || 'N/A'}
+                                    {f.fname} {f.lname} {f.program_name ? `• [Program: ${f.program_name}]` : '• [Direct Registration]'} | AIN: {f.ain || 'Pending'} | {f.farm_size_hectares ? `${f.farm_size_hectares} Ha` : 'No size'} {f.boundary_polygon ? '✓ (Boundary Mapped)' : '○ (Pending Mapping)'}
                                  </option>
                               ))}
                            </select>
