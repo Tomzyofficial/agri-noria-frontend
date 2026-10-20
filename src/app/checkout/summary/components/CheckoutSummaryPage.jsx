@@ -63,10 +63,18 @@ export function CheckoutSummaryPage({ buyer, cart, vendors }) {
          setIsProcessing(true);
          try {
             const verifyResponse = await fetch(`/api/proxy/buyer/payment/verify?ref=${encodeURIComponent(reference)}`, { method: "GET" });
-            const verifyData = await verifyResponse.json();
+            const responseText = await verifyResponse.text();
+            let verifyData;
+            try {
+               verifyData = responseText ? JSON.parse(responseText) : {};
+            } catch {
+               // Production proxies can return plain-text/HTML timeout pages.
+               // Preserve a useful error instead of masking it with JSON.parse's SyntaxError.
+               verifyData = { error: responseText.slice(0, 200) || "Payment verification returned an invalid response" };
+            }
 
             if (!verifyResponse.ok || !verifyData.success) {
-               throw new Error(verifyData.error || "Payment verification failed");
+               throw new Error(verifyData.error || `Payment verification failed (${verifyResponse.status})`);
             }
 
             await deleteCartCookie();
