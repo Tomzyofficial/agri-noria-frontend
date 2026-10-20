@@ -1,4 +1,7 @@
 export const roleConfig = {
+   // Admin
+   "super admin": { category: "Admin" },
+   admin: { category: "Admin" },
    // Institution
    government: { category: "Institution" },
    bank: { category: "Institution" },
@@ -44,6 +47,8 @@ export const roleConfig = {
 };
 
 export const ecosystemRoleRoutes = {
+   admin: "../dashboard/super-admin",
+   "super admin": "../dashboard/super-admin",
    distributor: "distributor",
    "program director": "program-management",
    "regional manager": "program-management",
@@ -105,6 +110,12 @@ export const getDefaultWorkspace = (role) => {
 
 export const resolveRedirectPath = (role, workspace) => {
    const normalizedRole = role?.toLowerCase().trim();
+
+   // Super Admin and Admin always route to the Super Admin Dashboard
+   if (normalizedRole === "super admin" || normalizedRole === "admin") {
+      return "/dashboard/super-admin";
+   }
+
    const normalizedWorkspace = workspace?.toLowerCase().trim() || getDefaultWorkspace(normalizedRole);
 
    if (normalizedWorkspace === "ecosystem") {

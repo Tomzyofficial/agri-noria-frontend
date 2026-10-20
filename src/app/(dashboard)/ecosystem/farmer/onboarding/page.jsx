@@ -66,8 +66,13 @@ export default function FarmerOnboarding() {
                         if (!targetStep) {
                             const level = p.vendor_onboarding_level || p.onboarding_level || 0;
                             const status = p.vendor_onboarding_status || p.onboarding_status;
-                            if (level >= 2 || status === 'verified' || status === 'completed') {
-                                setStep(14); // Step 14 is start of Level 3
+                            const isApprovedOrVerified = p.is_verified || p.vendor_is_verified || p.approval_status === 'approved' || status === 'verified' || status === 'completed';
+
+                            if (isApprovedOrVerified) {
+                                router.push("/ecosystem/farmer");
+                                return;
+                            } else if (level >= 2 || status === 'completed') {
+                                setStep(20);
                             } else if (level >= 1 || (status && status !== 'pending')) {
                                 setStep(8); // Step 8 is start of Level 2 (Farm Verification)
                             }

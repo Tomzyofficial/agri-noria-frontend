@@ -177,6 +177,15 @@ export default async function middleware(request) {
                };
 
                const userRole = payload.role?.toLowerCase();
+
+               // Redirect admin / super admin accessing ecosystem to super admin dashboard
+               if (userRole === "super admin" || userRole === "admin") {
+                  if (pathname === "/ecosystem" || pathname === "/ecosystem/" || pathname.startsWith("/ecosystem/admin") || pathname.startsWith("/ecosystem/super-admin")) {
+                     return NextResponse.redirect(new URL("/dashboard/super-admin", request.url));
+                  }
+                  return response;
+               }
+
                const allowedBaseRoute = ecosystemRoleRoutes[userRole];
 
                if (allowedBaseRoute) {

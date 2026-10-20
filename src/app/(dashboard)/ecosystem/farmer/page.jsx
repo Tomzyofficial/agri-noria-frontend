@@ -11,7 +11,9 @@ import {
    FaExclamationTriangle,
    FaLock,
    FaTimes,
-   FaBuilding
+   FaBuilding,
+   FaIdCard,
+   FaCopy
 } from "react-icons/fa";
 import { useFarmerData } from "./useFarmerData";
 import { useState, useEffect } from "react";
@@ -103,6 +105,37 @@ export default function FarmerOverview() {
                <p className="text-sm text-gray-500 font-bold uppercase tracking-widest mt-1">Monitor your farm, training, wallet, and marketplace activity.</p>
             </div>
 
+            {isVerified && profile?.farm_id && (
+               <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 border border-emerald-200 dark:border-emerald-800/60 shadow-sm">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-600/20">
+                     <FaIdCard className="text-base" />
+                  </div>
+                  <div>
+                     <div className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                        <span>Official Farm ID</span>
+                        <span className="px-1.5 py-0.5 rounded bg-emerald-200 dark:bg-emerald-900/60 text-[9px] font-black uppercase text-emerald-800 dark:text-emerald-200">
+                           Verified
+                        </span>
+                     </div>
+                     <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-sm font-black font-mono text-gray-900 dark:text-white leading-tight">
+                           {profile.farm_id}
+                        </p>
+                        <button
+                           onClick={() => {
+                              navigator.clipboard.writeText(profile.farm_id);
+                              toast.success(`Copied Farm ID: ${profile.farm_id}`);
+                           }}
+                           className="p-1 rounded text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition cursor-pointer"
+                           title="Copy Farm ID"
+                        >
+                           <FaCopy className="text-xs" />
+                        </button>
+                     </div>
+                  </div>
+               </div>
+            )}
+
             {profile?.organization && (
                <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-200 dark:border-blue-800/60 shadow-sm">
                   <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-600/20">
@@ -165,7 +198,13 @@ export default function FarmerOverview() {
          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <StatCard label="Commodity" value={profile?.commodity || "—"} icon={<FaCloudSun size={24} />} color="sky" />
             <StatCard label="Wallet Balance" value={`₦${(walletBalance + lockedBalance).toLocaleString()}`} icon={<FaWallet size={24} />} color="amber" subValue={lockedBalance > 0 ? `₦${lockedBalance.toLocaleString()} locked` : null} />
-            <StatCard label="Verification Status" value={isVerified ? "Verified" : "Unverified"} icon={isVerified ? <FaCheckCircle size={24} /> : <FaExclamationTriangle size={24} />} color={isVerified ? "emerald" : "amber"} />
+            <StatCard 
+               label="Verification Status" 
+               value={isVerified ? "Verified" : "Unverified"} 
+               subValue={isVerified && profile?.farm_id ? `Farm ID: ${profile.farm_id}` : null}
+               icon={isVerified ? <FaCheckCircle size={24} /> : <FaExclamationTriangle size={24} />} 
+               color={isVerified ? "emerald" : "amber"} 
+            />
          </div>
 
          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -177,6 +216,28 @@ export default function FarmerOverview() {
                   </CardHeader>
                   <CardContent className="p-8 pt-0">
                      <div className="space-y-4">
+                        {isVerified && profile?.farm_id && (
+                           <div className="flex justify-between items-center py-3 px-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 border border-emerald-200 dark:border-emerald-800 shadow-xs">
+                              <span className="text-[10px] font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-widest flex items-center gap-1.5 shrink-0">
+                                 <FaIdCard className="text-emerald-600" /> Farm ID
+                              </span>
+                              <div className="flex items-center gap-2">
+                                 <span className="font-mono text-xs font-black text-emerald-800 dark:text-emerald-200 bg-white dark:bg-gray-900 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 shadow-xs">
+                                    {profile.farm_id}
+                                 </span>
+                                 <button
+                                    onClick={() => {
+                                       navigator.clipboard.writeText(profile.farm_id);
+                                       toast.success(`Copied Farm ID: ${profile.farm_id}`);
+                                    }}
+                                    className="p-1 rounded text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition cursor-pointer"
+                                    title="Copy Farm ID"
+                                 >
+                                    <FaCopy className="text-xs" />
+                                 </button>
+                              </div>
+                           </div>
+                        )}
                         <ProfileItem label="Program" value={profile?.program_name || "Not assigned"} />
                         <ProfileItem label="Commodity" value={profile?.commodity || "—"} />
                         <ProfileItem label="Farm Size" value={`${parseFloat(farmSize).toLocaleString()} Hectares`} />

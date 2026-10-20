@@ -6,7 +6,7 @@ import {
    Landmark, Plus, Calendar, User, MapPin, 
    Search, Filter, ChevronRight, Edit3, Loader2,
    CheckCircle2, Clock, AlertCircle, Coins, Wallet, ArrowUpRight,
-   Users, Check, X, ShieldCheck, UserCheck, Key, Copy, Mail
+   Users, Check, X, ShieldCheck, UserCheck, Key, Copy, Mail, Eye, EyeOff
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -40,6 +40,44 @@ export default function ProgramsPage() {
       sendEmail: true
    });
    const [credentialModalData, setCredentialModalData] = useState(null);
+   const [selectedProgramDetails, setSelectedProgramDetails] = useState(null);
+   const [showPassword, setShowPassword] = useState(false);
+   const [isResettingPassword, setIsResettingPassword] = useState(false);
+   const [newPasswordInput, setNewPasswordInput] = useState("");
+   const [showResetForm, setShowResetForm] = useState(false);
+
+   const handleResetDirectorPassword = async (programId, customPassword = "") => {
+      setIsResettingPassword(true);
+      try {
+         const res = await fetch(`/api/proxy/programs/${programId}/program-director/reset-password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password: customPassword.trim() || undefined }),
+         });
+         const json = await res.json();
+         if (res.ok && json.success) {
+            toast.success("Director password updated successfully!");
+            if (selectedProgramDetails?.id === programId) {
+               setSelectedProgramDetails(prev => ({
+                  ...prev,
+                  director_credentials: {
+                     ...prev?.director_credentials,
+                     password: json.data?.password
+                  }
+               }));
+            }
+            setShowResetForm(false);
+            setNewPasswordInput("");
+            await loadPrograms();
+         } else {
+            toast.error(json.error || "Failed to reset password");
+         }
+      } catch (err) {
+         toast.error("Network error while resetting password");
+      } finally {
+         setIsResettingPassword(false);
+      }
+   };
 
    const { data: progData, isLoading: loading, mutate: mutatePrograms } = useSWR("/api/proxy/programs/mine", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
    const { data: userData } = useSWR("/api/proxy/auth/verify-vendor", fetcher, { revalidateOnFocus: false });
@@ -402,70 +440,92 @@ export default function ProgramsPage() {
                               </div>
                            </td>
                            <td className="px-6 py-5">
-                              {program.director_name ? (
-                                 <div className="space-y-1">
-                                    <div className="flex items-center gap-1.5 font-bold text-sm text-gray-900 dark:text-gray-100">
-                                       <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
-                                       {program.director_name}
-                                    </div>
-                                    <p className="text-xs text-gray-500">{program.director_email}</p>
-                                    {program.director_phone && <p className="text-[10px] text-gray-400 font-mono">{program.director_phone}</p>}
-                                    <button 
-                                       onClick={() => {
-                                          setDirectorForm({ fname: "", lname: "", email: "", phone: "", password: "", sendEmail: true });
-                                          setAppointingProgram(program);
-                                       }} 
-                                       className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-bold mt-1 inline-flex items-center gap-1 cursor-pointer"
-                                    >
-                                       Reassign Director &rarr;
-                                    </button>
-                                 </div>
-                              ) : (
-                                 <div>
-                                    <button 
-                                       onClick={() => {
-                                          setDirectorForm({ fname: "", lname: "", email: "", phone: "", password: "", sendEmail: true });
-                                          setAppointingProgram(program);
-                                       }} 
-                                       className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 text-xs font-black uppercase tracking-wider border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                                    >
-                                       <UserCheck className="w-3.5 h-3.5" /> Appoint Director
-                                    </button>
-                                    <p className="text-[10px] text-gray-400 mt-1">Pending appointment</p>
-                                 </div>
-                              )}
-                           </td>
-                           <td className="px-6 py-5">
-                              {program.status === 'active' ? (
-                                 <div>
-                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                       Active
-                                    </span>
-                                    <p className="text-[10px] text-emerald-600 font-bold mt-1">Live & Enrolling</p>
-                                 </div>
-                              ) : (
-                                 <div>
-                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
-                                       In Configuration
-                                    </span>
-                                    <p className="text-[10px] text-amber-600 font-bold mt-1">Hidden from farmers</p>
-                                 </div>
-                              )}
-                           </td>
-                           <td className="px-6 py-5 text-right">
-                              {program.created_by === currentUser?.id ? (
-                                 <Button 
-                                    onClick={() => handleOpenEdit(program)}
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="h-9 w-9 p-0 rounded-lg hover:bg-blue-50 text-blue-600"
-                                 >
-                                    <Edit3 className="w-4 h-4" />
-                                 </Button>
-                              ) : (
-                                 <AlertCircle className="w-4 h-4 text-gray-300 ml-auto" />
-                              )}
-                           </td>
+                               {program.director_name ? (
+                                  <div className="space-y-1.5">
+                                     <div className="flex items-center gap-1.5 font-bold text-sm text-gray-900 dark:text-gray-100">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                                        {program.director_name}
+                                     </div>
+                                     <p className="text-xs text-gray-500">{program.director_email}</p>
+                                     {program.director_phone && <p className="text-[10px] text-gray-400 font-mono">{program.director_phone}</p>}
+                                     <div className="flex items-center gap-2 pt-1 flex-wrap">
+                                        <button 
+                                           type="button"
+                                           onClick={() => setSelectedProgramDetails(program)}
+                                           className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 text-[11px] font-bold border border-emerald-300 dark:border-emerald-800 flex items-center gap-1 transition-all shadow-xs cursor-pointer"
+                                           title="Click to view Director login credentials and password"
+                                        >
+                                           <Key className="w-3 h-3 text-emerald-600" />
+                                           Credentials & Password
+                                        </button>
+                                        <button 
+                                           type="button"
+                                           onClick={() => {
+                                              setDirectorForm({ fname: "", lname: "", email: "", phone: "", password: "", sendEmail: true });
+                                              setAppointingProgram(program);
+                                           }} 
+                                           className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-bold cursor-pointer"
+                                        >
+                                           Reassign &rarr;
+                                        </button>
+                                     </div>
+                                  </div>
+                               ) : (
+                                  <div>
+                                     <button 
+                                        type="button"
+                                        onClick={() => {
+                                           setDirectorForm({ fname: "", lname: "", email: "", phone: "", password: "", sendEmail: true });
+                                           setAppointingProgram(program);
+                                        }} 
+                                        className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 text-xs font-black uppercase tracking-wider border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                                     >
+                                        <UserCheck className="w-3.5 h-3.5" /> Appoint Director
+                                     </button>
+                                     <p className="text-[10px] text-gray-400 mt-1">Pending appointment</p>
+                                  </div>
+                               )}
+                            </td>
+                            <td className="px-6 py-5">
+                               {program.status === 'active' ? (
+                                  <div>
+                                     <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                        Active
+                                     </span>
+                                     <p className="text-[10px] text-emerald-600 font-bold mt-1">Live & Enrolling</p>
+                                  </div>
+                               ) : (
+                                  <div>
+                                     <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                                        In Configuration
+                                     </span>
+                                     <p className="text-[10px] text-amber-600 font-bold mt-1">Hidden from farmers</p>
+                                  </div>
+                               )}
+                            </td>
+                            <td className="px-6 py-5 text-right">
+                               <div className="flex items-center justify-end gap-2">
+                                  <Button 
+                                     type="button"
+                                     onClick={() => setSelectedProgramDetails(program)}
+                                     size="sm" 
+                                     className="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                                     title="View Program Details & Director Credentials"
+                                  >
+                                     <Eye className="w-3.5 h-3.5" /> Details
+                                  </Button>
+                                  <Button 
+                                     type="button"
+                                     onClick={() => handleOpenEdit(program)}
+                                     variant="outline" 
+                                     size="sm" 
+                                     className="h-8 px-2.5 rounded-lg border-gray-200 hover:bg-gray-100 text-gray-700 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 text-xs font-bold transition-all cursor-pointer"
+                                     title="Edit Program"
+                                  >
+                                     <Edit3 className="w-3.5 h-3.5" />
+                                  </Button>
+                               </div>
+                            </td>
                         </tr>
                      ))}
                   </tbody>
@@ -1017,6 +1077,303 @@ export default function ProgramsPage() {
          )}
 
          {/* Credential Handover / Display Modal */}
+         
+         {/* PROGRAM & DIRECTOR DETAILS MODAL */}
+         {selectedProgramDetails && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200 overflow-y-auto">
+               <div className="bg-white dark:bg-gray-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800 my-8">
+                  {/* Top Banner */}
+                  <div className="p-6 bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 text-white flex justify-between items-center">
+                     <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-2xl bg-white/20 text-white shadow-xs">
+                           <Landmark className="w-6 h-6" />
+                        </div>
+                        <div>
+                           <div className="flex items-center gap-2">
+                              <h3 className="text-xl font-black">{selectedProgramDetails.name}</h3>
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                 selectedProgramDetails.status === 'active' 
+                                    ? "bg-emerald-400 text-emerald-950" 
+                                    : "bg-amber-300 text-amber-950"
+                              }`}>
+                                 {selectedProgramDetails.status === 'active' ? "Active" : "In Configuration"}
+                              </span>
+                           </div>
+                           <p className="text-xs text-blue-100 font-medium mt-0.5">Program & Institutional Governance Details</p>
+                        </div>
+                     </div>
+                     <Button 
+                        onClick={() => {
+                           setSelectedProgramDetails(null);
+                           setShowPassword(false);
+                           setShowResetForm(false);
+                        }}
+                        variant="ghost" 
+                        className="text-white hover:bg-white/20 h-9 w-9 p-0 rounded-full"
+                     >
+                        <X className="w-5 h-5" />
+                     </Button>
+                  </div>
+
+                  <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+                     {/* 1. PROGRAM DIRECTOR CREDENTIALS (KEY FOCUS) */}
+                     <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/20 border-2 border-amber-200 dark:border-amber-800/60 space-y-4">
+                        <div className="flex items-center justify-between">
+                           <div className="flex items-center gap-2.5">
+                              <div className="p-2 bg-amber-500 text-white rounded-xl shadow-xs">
+                                 <Key className="w-4 h-4" />
+                              </div>
+                              <div>
+                                 <h4 className="text-sm font-black text-amber-950 dark:text-amber-200 uppercase tracking-wider">
+                                    Program Director Credentials
+                                 </h4>
+                                 <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                                    Login access for field operations, farmer approvals, and cluster execution
+                                 </p>
+                              </div>
+                           </div>
+                           {selectedProgramDetails.director_name && (
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300 flex items-center gap-1">
+                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active Director
+                              </span>
+                           )}
+                        </div>
+
+                        {selectedProgramDetails.director_name || selectedProgramDetails.program_director_id ? (
+                           <div className="space-y-3">
+                              <div className="p-4 rounded-xl bg-white dark:bg-gray-800/90 border border-amber-200 dark:border-amber-800/40 space-y-2.5 text-xs font-mono">
+                                 <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-700/60 pb-2">
+                                    <span className="text-gray-500 font-sans font-bold">Appointed Director:</span>
+                                    <span className="font-black text-gray-900 dark:text-gray-100 font-sans text-sm">
+                                       {selectedProgramDetails.director_name || selectedProgramDetails.director_credentials?.name || "Program Director"}
+                                    </span>
+                                 </div>
+                                 <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-700/60 pb-2">
+                                    <span className="text-gray-500 font-sans font-bold">Director Role:</span>
+                                    <span className="font-bold text-amber-600 bg-amber-100/60 dark:bg-amber-950/60 px-2 py-0.5 rounded text-[11px]">
+                                       Program Director (Ecosystem)
+                                    </span>
+                                 </div>
+                                 <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-700/60 pb-2">
+                                    <span className="text-gray-500 font-sans font-bold">Login Email:</span>
+                                    <div className="flex items-center gap-1.5">
+                                       <span className="font-bold text-gray-900 dark:text-gray-100">
+                                          {selectedProgramDetails.director_email || selectedProgramDetails.director_credentials?.email}
+                                       </span>
+                                       <button
+                                          onClick={() => handleCopyCredentials(selectedProgramDetails.director_email || selectedProgramDetails.director_credentials?.email)}
+                                          className="p-1 rounded text-gray-400 hover:text-blue-600 transition"
+                                          title="Copy Email"
+                                       >
+                                          <Copy className="w-3.5 h-3.5" />
+                                       </button>
+                                    </div>
+                                 </div>
+                                 {selectedProgramDetails.director_phone && (
+                                    <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-700/60 pb-2">
+                                       <span className="text-gray-500 font-sans font-bold">Phone Number:</span>
+                                       <div className="flex items-center gap-1.5">
+                                          <span className="font-bold text-gray-900 dark:text-gray-100">
+                                             {selectedProgramDetails.director_phone}
+                                          </span>
+                                          <button
+                                             onClick={() => handleCopyCredentials(selectedProgramDetails.director_phone)}
+                                             className="p-1 rounded text-gray-400 hover:text-blue-600 transition"
+                                             title="Copy Phone"
+                                          >
+                                             <Copy className="w-3.5 h-3.5" />
+                                          </button>
+                                       </div>
+                                    </div>
+                                 )}
+                                 <div className="flex justify-between items-center pt-1">
+                                    <span className="text-gray-500 font-sans font-bold">Password:</span>
+                                    <div className="flex items-center gap-2">
+                                       <span className="font-black text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950 px-2.5 py-1 rounded-lg text-sm tracking-wider">
+                                          {showPassword 
+                                             ? (selectedProgramDetails.director_credentials?.password || "PD-20262026!") 
+                                             : "••••••••••••"}
+                                       </span>
+                                       <button
+                                          onClick={() => setShowPassword(p => !p)}
+                                          className="p-1.5 rounded-lg text-gray-500 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-700 transition"
+                                          title={showPassword ? "Hide password" : "Show password"}
+                                       >
+                                          {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                       </button>
+                                       <button
+                                          onClick={() => handleCopyCredentials(selectedProgramDetails.director_credentials?.password || "PD-20262026!")}
+                                          className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition"
+                                          title="Copy Password"
+                                       >
+                                          <Copy className="w-3.5 h-3.5" />
+                                       </button>
+                                    </div>
+                                 </div>
+                              </div>
+
+                              {/* Action buttons for credentials */}
+                              <div className="flex items-center gap-2 flex-wrap pt-1">
+                                 <Button
+                                    onClick={() => {
+                                       const pass = selectedProgramDetails.director_credentials?.password || "PD-20262026!";
+                                       const text = `AGRI-NORIA PROGRAM DIRECTOR CREDENTIALS\nName: ${selectedProgramDetails.director_name || selectedProgramDetails.director_credentials?.name}\nProgram: ${selectedProgramDetails.name}\nRole: Program Director\nLogin Email: ${selectedProgramDetails.director_email || selectedProgramDetails.director_credentials?.email}\nPassword: ${pass}\nLogin Portal: https://agri-noria-frontend.vercel.app/auth/signin?redirect=/ecosystem/program-management`;
+                                       handleCopyCredentials(text);
+                                    }}
+                                    className="h-9 px-4 rounded-xl font-bold bg-gray-900 hover:bg-gray-800 text-white flex items-center gap-1.5 text-xs shadow-xs"
+                                 >
+                                    <Copy className="w-3.5 h-3.5" /> Copy Complete Handover Packet
+                                 </Button>
+
+                                 <Button
+                                    onClick={() => setShowResetForm(prev => !prev)}
+                                    variant="outline"
+                                    className="h-9 px-3 rounded-xl font-bold border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 hover:bg-amber-100/50 text-xs flex items-center gap-1.5"
+                                 >
+                                    <Key className="w-3.5 h-3.5" /> {showResetForm ? "Cancel Reset" : "Reset / Change Password"}
+                                 </Button>
+                              </div>
+
+                              {/* Inline Password Reset Form */}
+                              {showResetForm && (
+                                 <div className="p-3.5 rounded-xl bg-white dark:bg-gray-800 border border-amber-300 dark:border-amber-700 space-y-3 mt-2 animate-in fade-in duration-200">
+                                    <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Set New Password for Director:</p>
+                                    <div className="flex items-center gap-2">
+                                       <Input
+                                          type="text"
+                                          placeholder="Enter new password (or leave blank to auto-generate)"
+                                          value={newPasswordInput}
+                                          onChange={(e) => setNewPasswordInput(e.target.value)}
+                                          className="h-9 text-xs font-mono"
+                                       />
+                                       <Button
+                                          onClick={() => handleResetDirectorPassword(selectedProgramDetails.id, newPasswordInput)}
+                                          disabled={isResettingPassword}
+                                          className="h-9 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0"
+                                       >
+                                          {isResettingPassword ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Save Password"}
+                                       </Button>
+                                    </div>
+                                 </div>
+                              )}
+                           </div>
+                        ) : (
+                           <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-dashed border-amber-300 dark:border-amber-700 text-center space-y-2">
+                              <p className="text-xs text-gray-500 font-medium">No Program Director has been appointed to this program yet.</p>
+                              <Button
+                                 onClick={() => {
+                                    setAppointingProgram(selectedProgramDetails);
+                                    setSelectedProgramDetails(null);
+                                 }}
+                                 className="h-8 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs"
+                              >
+                                 <UserCheck className="w-3.5 h-3.5" /> Appoint Program Director Now
+                              </Button>
+                           </div>
+                        )}
+                     </div>
+
+                     {/* 2. INSTITUTION DETAILS */}
+                     <div className="p-5 rounded-2xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 space-y-3">
+                        <div className="flex items-center gap-2">
+                           <Landmark className="w-4 h-4 text-blue-600" />
+                           <h4 className="text-sm font-black text-blue-950 dark:text-blue-200 uppercase tracking-wider">
+                              Institution & Sponsorship Overview
+                           </h4>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                           <div className="p-3 rounded-xl bg-white dark:bg-gray-800 border border-blue-100 dark:border-blue-900/40">
+                              <span className="text-gray-400 font-bold block text-[10px] uppercase">Institution Sponsor</span>
+                              <span className="font-black text-gray-900 dark:text-gray-100 text-sm">
+                                 {selectedProgramDetails.institution_name || currentUser?.company_name || (currentUser?.fname ? currentUser?.fname + " " + currentUser?.lname : "Institutional Partner")}
+                              </span>
+                           </div>
+                           <div className="p-3 rounded-xl bg-white dark:bg-gray-800 border border-blue-100 dark:border-blue-900/40">
+                              <span className="text-gray-400 font-bold block text-[10px] uppercase">Contact Email</span>
+                              <span className="font-bold text-gray-900 dark:text-gray-100">
+                                 {selectedProgramDetails.institution_email || currentUser?.email || "—"}
+                              </span>
+                           </div>
+                           <div className="p-3 rounded-xl bg-white dark:bg-gray-800 border border-blue-100 dark:border-blue-900/40">
+                              <span className="text-gray-400 font-bold block text-[10px] uppercase">Contact Phone</span>
+                              <span className="font-bold text-gray-900 dark:text-gray-100">
+                                 {selectedProgramDetails.institution_phone || currentUser?.phone || "—"}
+                              </span>
+                           </div>
+                           <div className="p-3 rounded-xl bg-white dark:bg-gray-800 border border-blue-100 dark:border-blue-900/40">
+                              <span className="text-gray-400 font-bold block text-[10px] uppercase">Program ID</span>
+                              <span className="font-mono text-gray-600 dark:text-gray-300 text-[11px] truncate block" title={selectedProgramDetails.id}>
+                                 {selectedProgramDetails.id}
+                              </span>
+                           </div>
+                        </div>
+                     </div>
+
+                     {/* 3. PROGRAM OPERATIONAL TARGETS & FINANCIALS */}
+                     <div className="p-5 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 space-y-3">
+                        <h4 className="text-sm font-black text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                           Program Targets & Financial Allocations
+                        </h4>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                           <div className="p-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                              <span className="text-gray-400 font-bold block text-[10px] uppercase">Commodity</span>
+                              <span className="font-black text-gray-900 dark:text-gray-100 text-sm">{selectedProgramDetails.commodity}</span>
+                           </div>
+                           <div className="p-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                              <span className="text-gray-400 font-bold block text-[10px] uppercase">Region</span>
+                              <span className="font-black text-gray-900 dark:text-gray-100 text-sm">{selectedProgramDetails.region}</span>
+                           </div>
+                           <div className="p-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                              <span className="text-gray-400 font-bold block text-[10px] uppercase">Hectares Target</span>
+                              <span className="font-black text-emerald-600 dark:text-emerald-400 text-sm">{parseFloat(selectedProgramDetails.target_hectares || 0).toLocaleString()} Ha</span>
+                           </div>
+                           <div className="p-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                              <span className="text-gray-400 font-bold block text-[10px] uppercase">Fund Balance</span>
+                              <span className="font-black text-blue-600 dark:text-blue-400 text-sm">₦{parseFloat(selectedProgramDetails.wallet_balance || 0).toLocaleString()}</span>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800/80 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                     <Button
+                        onClick={() => {
+                           setFundingProgram(selectedProgramDetails);
+                           setSelectedProgramDetails(null);
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-9 px-4 rounded-xl flex items-center gap-1.5 shadow-xs cursor-pointer"
+                     >
+                        <Coins className="w-3.5 h-3.5" /> Fund Program
+                     </Button>
+                     <div className="flex items-center gap-2">
+                        <Button
+                           onClick={() => {
+                              handleOpenEdit(selectedProgramDetails);
+                              setSelectedProgramDetails(null);
+                           }}
+                           variant="outline"
+                           className="h-9 px-3 rounded-xl font-bold text-xs cursor-pointer"
+                        >
+                           <Edit3 className="w-3.5 h-3.5" /> Edit Program
+                        </Button>
+                        <Button
+                           onClick={() => {
+                              setSelectedProgramDetails(null);
+                              setShowPassword(false);
+                              setShowResetForm(false);
+                           }}
+                           variant="outline"
+                           className="h-9 px-4 rounded-xl font-bold text-xs cursor-pointer"
+                        >
+                           Close
+                        </Button>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         )}
+
          {credentialModalData && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
                <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800">

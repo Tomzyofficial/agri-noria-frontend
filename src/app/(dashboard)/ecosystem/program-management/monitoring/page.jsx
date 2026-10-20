@@ -21,18 +21,31 @@ export default function ProgrammeMonitoringPage() {
    const [isRemovingId, setIsRemovingId] = useState(null);
    const [activeViewTab, setActiveViewTab] = useState("officers"); // "officers" | "farmers"
 
-   // 1. Fetch programs
+   // 0. Fetch user session to identify Program Director
+   const { data: sessionRes } = useSWR("/api/proxy/auth/verify-vendor", fetcher, { revalidateOnFocus: false });
+   const currentUserId = sessionRes?.userId || sessionRes?.id || null;
+   const userRole = (sessionRes?.role || "").toLowerCase();
+   const isDirector = userRole === 'program director' || userRole === 'director' || userRole.includes('director');
+
+   // 1. Fetch programs (strictly filter for program director)
    const { data: programsRes, isLoading: loadingPrograms, mutate: mutatePrograms } = useSWR(
       "/api/proxy/programs", 
       fetcher, 
       { revalidateOnFocus: true }
    );
-   const programs = programsRes?.data || [];
+   const rawPrograms = programsRes?.data || [];
+   const programs = (isDirector && currentUserId)
+      ? rawPrograms.filter(p => p.program_director_id === currentUserId)
+      : rawPrograms;
 
-   // Auto-select first program if none selected
+   // Auto-select first program if none selected or if selected is not among assigned programs
    useEffect(() => {
-      if (programs.length > 0 && !selectedProgramId) {
-         setSelectedProgramId(programs[0].id);
+      if (programs.length > 0) {
+         if (!selectedProgramId || !programs.some(p => p.id === selectedProgramId)) {
+            setSelectedProgramId(programs[0].id);
+         }
+      } else {
+         setSelectedProgramId(null);
       }
    }, [programs, selectedProgramId]);
 
@@ -169,7 +182,10 @@ export default function ProgrammeMonitoringPage() {
             </div>
          ) : programs.length === 0 ? (
             <div className="p-8 text-center bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
-               <p className="text-gray-500 font-medium">No programs found under your management.</p>
+               <div className="space-y-1">
+                  <p className="text-sm font-bold text-gray-700 dark:text-gray-300">No Programs Assigned</p>
+                  <p className="text-xs text-gray-500">You are currently not assigned as a Program Director to any active program. Contact your institution sponsor to assign you to a program.</p>
+               </div>
             </div>
          ) : (
             <div className="space-y-4">
@@ -294,17 +310,28 @@ export default function ProgrammeMonitoringPage() {
                   </div>
 
                   {activeViewTab === "officers" && (
-                     <div className="relative w-64">
-                        <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
-                        <input
-                           type="text"
-                           placeholder="Search officers..."
-                           value={searchOfficer}
-                           onChange={(e) => setSearchOfficer(e.target.value)}
-                           className="w-full pl-9 pr-3 py-1.5 text-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl outline-none focus:border-amber-500"
-                        />
-                     </div>
-                  )}
+                      <div className="flex items-center gap-3">
+                         <div className="relative w-64">
+                            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+                            <input
+                               type="text"
+                               placeholder="Search officers..."
+                               value={searchOfficer}
+                               onChange={(e) => setSearchOfficer(e.target.value)}
+                               className="w-full pl-9 pr-3 py-1.5 text-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl outline-none focus:border-amber-500"
+                            />
+                         </div>
+                         <button
+                            onClick={() => setIsAssignModalOpen(true)}
+                            disabled={!currentProgram}
+                            className="cursor-pointer flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs transition-all disabled:opacity-50 shrink-0"
+                            title="Assign a field officer to this program"
+                         >
+                            <UserPlus className="w-3.5 h-3.5" />
+                            Assign Officer
+                         </button>
+                      </div>
+                   )}
                </div>
 
                {/* SECTION 1: Assigned Officers */}
