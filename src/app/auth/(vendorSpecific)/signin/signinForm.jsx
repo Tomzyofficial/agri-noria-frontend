@@ -125,7 +125,15 @@ export function SigninForm() {
 
             if (redirectTarget && redirectTarget.startsWith("/")) {
                router.push(redirectTarget);
-            } else if (workspace?.toLowerCase() === "ecosystem" && role?.toLowerCase() === "farmer" && session.onboarding_status !== "completed" && session.onboarding_status !== "verified" && !(session.onboarding_level >= 3)) {
+            } else if (
+               workspace?.toLowerCase() === "ecosystem" && 
+               role?.toLowerCase() === "farmer" && 
+               !session.is_verified &&
+               session.approval_status !== "approved" &&
+               session.onboarding_status !== "completed" && 
+               session.onboarding_status !== "verified" && 
+               !(session.onboarding_level >= 2)
+            ) {
                router.push("/ecosystem/farmer/onboarding");
             } else {
                router.push(resolveRedirectPath(role, workspace));

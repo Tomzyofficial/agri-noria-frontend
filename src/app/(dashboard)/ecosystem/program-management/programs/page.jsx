@@ -1,11 +1,12 @@
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { 
-   Briefcase, Globe, CheckCircle2, DollarSign, Package, X, Plus, Check, Loader2,
+   Briefcase, Globe, Users, CheckCircle2, DollarSign, Package, X, Plus, Check, Loader2,
    Sliders, Settings, MapPin, Target, ShieldCheck, FileText, AlertTriangle, Layers,
    Rocket, PauseCircle, Eye, EyeOff
 } from "lucide-react";
 import { useProgramData } from "../useProgramData";
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "react-toastify";
 
@@ -410,6 +411,14 @@ export default function EcosystemProgramsPage() {
                               >
                                  <Package size={14} /> Manage Input Packages
                               </button>
+
+                              {/* Field Monitoring & Officers */}
+                              <Link
+                                 href={`/ecosystem/program-management/monitoring?programId=${prog.id}`}
+                                 className="w-full py-2.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer"
+                              >
+                                 <Users size={14} /> Assign & Monitor Field Officers
+                              </Link>
 
                               {isEnrolled ? (
                                  <button disabled className="w-full py-3 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-2xl font-black text-xs uppercase tracking-widest cursor-default flex items-center justify-center gap-2 shadow-inner">

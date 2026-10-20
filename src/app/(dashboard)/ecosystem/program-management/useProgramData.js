@@ -18,7 +18,7 @@ export function useProgramData() {
    const clusters = clustersRes?.data || [];
    const stats = statsRes?.data || {};
    const pendingInputs = pendingRes?.data || [];
-   const programs = programsRes?.data || [];
+   const rawPrograms = programsRes?.data || [];
 
    const firstClusterId = clusters.length > 0 ? clusters[0].id : null;
    const { data: walletRes, mutate: mutateWallet } = useSWR(
@@ -30,9 +30,15 @@ export function useProgramData() {
    const clusterWallet = walletRes?.data?.wallet || null;
    const clusterTransactions = walletRes?.data?.transactions || [];
 
-   const currentUserId = sessionRes?.userId || null;
+   const currentUserId = sessionRes?.userId || sessionRes?.id || null;
    const userRole = sessionRes?.role?.toLowerCase() || null;
    const currentUser = sessionRes || null;
+   const isDirector = userRole === 'program director' || userRole === 'director' || userRole?.includes('director');
+
+   // A Program Director should ONLY see programs they are assigned to
+   const programs = (isDirector && currentUserId)
+      ? rawPrograms.filter(p => p.program_director_id === currentUserId)
+      : rawPrograms;
 
    const loading = l1 || l4 || l5;
 

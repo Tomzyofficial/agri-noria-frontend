@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { FaTractor, FaSeedling, FaCalendarCheck, FaCamera, FaMapMarkedAlt, FaFileAlt, FaCheckCircle, FaExclamationTriangle, FaExternalLinkAlt } from "react-icons/fa";
+import { FaTractor, FaSeedling, FaCalendarCheck, FaCamera, FaMapMarkedAlt, FaFileAlt, FaCheckCircle, FaExclamationTriangle, FaExternalLinkAlt, FaIdCard, FaCopy } from "react-icons/fa";
 import { useFarmerData } from "../useFarmerData";
 import { Button } from "@/components/ui/Button";
 
@@ -191,7 +192,7 @@ function MediaCard({ title, category, icon, url, isFile = false, onPreview }) {
    );
 }
 
-function ActivityStat({ label, value, icon, color }) {
+function ActivityStat({ label, value, subValue, icon, color }) {
    const colors = {
       emerald: "bg-emerald-500 shadow-emerald-500/20",
       blue: "bg-blue-500 shadow-blue-500/20",
