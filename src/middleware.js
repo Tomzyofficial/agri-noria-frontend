@@ -19,8 +19,8 @@ function getClientIp(request) {
 const setLocationCookie = (response, location) => {
    response.cookies.set(LOCATION_COOKIE_NAME, JSON.stringify(location), {
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7, // 7 days
    });
@@ -40,36 +40,51 @@ const getLocationCookie = (request) => {
 async function getLocation(request) {
    const ip = getClientIp(request);
    if (!process.env.IPINFO_TOKEN) {
-      return null;
+      return { country_code: "NG" };
    }
 
    try {
-      const response = await fetch(`https://api.ipinfo.io/lite/${ip || "me"}?token=${process.env.IPINFO_TOKEN}`);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 1200);
+      const response = await fetch(`https://api.ipinfo.io/lite/${ip || "me"}?token=${process.env.IPINFO_TOKEN}`, {
+         signal: controller.signal,
+      });
+      clearTimeout(timeout);
 
       if (!response.ok) {
-         console.log("Failed to fetch location data");
-         return null;
+         return { country_code: "NG" };
       }
 
       const data = await response.json();
-      if (!data?.country_code) return null;
+      if (!data?.country_code) return { country_code: "NG" };
 
       return data;
-   } catch (error) {
-      console.error("Location lookup failed", error);
-      return null;
+   } catch {
+      return { country_code: "NG" };
    }
 }
 
 export default async function middleware(request) {
    const pathname = request.nextUrl.pathname;
    const requestHeaders = new Headers(request.headers);
+
+   // Never block internal dashboard/ecosystem/marketplace RSC navigations or prefetches on external IP lookup
+   const isDashboardOrPortal =
+      pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/ecosystem") ||
+      pathname.startsWith("/marketplace") ||
+      request.headers.get("rsc") === "1" ||
+      Boolean(request.headers.get("next-router-prefetch"));
+
    const existingLocation = getLocationCookie(request);
-   const shouldDetectLocation = !existingLocation;
-   const countryData = existingLocation || (shouldDetectLocation ? await getLocation(request) : null);
+   const countryData =
+      existingLocation ||
+      (isDashboardOrPortal ? { country_code: "NG" } : await getLocation(request));
 
    requestHeaders.set("x-pathname", pathname);
-   if (pathname.startsWith("/marketplace")) {
+   if (pathname.startsWith("/dashboard/super-admin")) {
+      requestHeaders.set("x-active-workspace", "super-admin");
+   } else if (pathname.startsWith("/marketplace")) {
       requestHeaders.set("x-active-workspace", "marketplace");
    } else if (pathname.startsWith("/ecosystem")) {
       requestHeaders.set("x-active-workspace", "ecosystem");
@@ -210,7 +225,6 @@ export default async function middleware(request) {
          const token = request.cookies.get("buyer-session")?.value;
 
          if (!token) {
-            console.log("Middleware: No buyer session token found");
             return NextResponse.redirect(new URL("/", request.url));
          }
 

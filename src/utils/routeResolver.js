@@ -108,7 +108,22 @@ export const getDefaultWorkspace = (role) => {
    return marketplaceRoles.includes(normalizedRole) ? "marketplace" : "ecosystem";
 };
 
-export const resolveRedirectPath = (role, workspace) => {
+export const resolveRedirectPath = (arg1, arg2) => {
+   let role = arg1;
+   let workspace = arg2;
+
+   const knownWorkspaces = ["ecosystem", "marketplace", "dashboard"];
+   // Defensive guard: if caller accidentally passes (workspace, role)
+   if (
+      typeof role === "string" &&
+      knownWorkspaces.includes(role.toLowerCase().trim()) &&
+      typeof workspace === "string" &&
+      !knownWorkspaces.includes(workspace.toLowerCase().trim())
+   ) {
+      role = arg2;
+      workspace = arg1;
+   }
+
    const normalizedRole = role?.toLowerCase().trim();
 
    // Super Admin and Admin always route to the Super Admin Dashboard

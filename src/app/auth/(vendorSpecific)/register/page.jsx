@@ -1,18 +1,11 @@
 import { RegisterForm } from "./registerForm";
-import { verifyVendorSession } from "@/actions/session";
-import { redirect } from "next/navigation";
 
 export const metadata = {
-  title: "Register",
-  description: "Register to create an account",
+  title: "Register | Agri-Noria Ecosystem",
+  description: "Register to join the Agri-Noria agricultural ecosystem",
 };
 
-export default async function RegisterPage() {
-  //   const session = await verifyVendorSession();
-  //   const { workspace } = session;
-  //   if (session.authenticated) {
-  //      redirect(`/${workspace}/dashboard`);
-  //   }
+export default function RegisterPage() {
   return (
     <div>
       <RegisterForm />

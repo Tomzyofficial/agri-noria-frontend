@@ -8,8 +8,12 @@ function LoginRedirectContent() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const redirectParam = searchParams.get("redirect") || "/ecosystem/farmer";
-    router.replace(`/auth/signin?redirect=${encodeURIComponent(redirectParam)}`);
+    const redirectParam = searchParams.get("redirect");
+    if (redirectParam) {
+      router.replace(`/auth/signin?redirect=${encodeURIComponent(redirectParam)}`);
+    } else {
+      router.replace("/auth/signin");
+    }
   }, [router, searchParams]);
 
   return (

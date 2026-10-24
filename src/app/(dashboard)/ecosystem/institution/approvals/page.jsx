@@ -125,13 +125,13 @@ export default function FinanceApprovalsPage() {
     }
   }, [authData, router]);
 
-  const { data: statsJson, isLoading: l1, mutate: m1 } = useSWR("/api/proxy/admin/institution/analytics", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
-  const { data: pendingJson, isLoading: l2, mutate: m2 } = useSWR("/api/proxy/admin/institution/pending-requests", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+  const { data: statsJson, isLoading: l1, mutate: m1 } = useSWR("/api/proxy/admin/institution/analytics", fetcher, { refreshInterval: 30000, revalidateOnFocus: true });
+  const { data: pendingJson, isLoading: l2, mutate: m2 } = useSWR("/api/proxy/admin/institution/pending-requests", fetcher, { refreshInterval: 30000, revalidateOnFocus: true });
   const { data: distJson, isLoading: l3, mutate: m3 } = useSWR("/api/proxy/admin/institution/distributors", fetcher, { refreshInterval: 10000 });
-  const { data: allJson, isLoading: l4, mutate: m4 } = useSWR("/api/proxy/pipeline/inputs/all", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
-  const { data: ordersJson, isLoading: l5, mutate: m5 } = useSWR("/api/proxy/pipeline/buyer-orders/all", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
-  const { data: treasuryJson, isLoading: l6, mutate: m6 } = useSWR("/api/proxy/pipeline/stats/platform-wallet", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
-  const { data: programsJson, isLoading: l7, mutate: m7 } = useSWR("/api/proxy/programs", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+  const { data: allJson, isLoading: l4, mutate: m4 } = useSWR("/api/proxy/pipeline/inputs/all", fetcher, { refreshInterval: 30000, revalidateOnFocus: true });
+  const { data: ordersJson, isLoading: l5, mutate: m5 } = useSWR("/api/proxy/pipeline/buyer-orders/all", fetcher, { refreshInterval: 30000, revalidateOnFocus: true });
+  const { data: treasuryJson, isLoading: l6, mutate: m6 } = useSWR("/api/proxy/pipeline/stats/platform-wallet", fetcher, { refreshInterval: 30000, revalidateOnFocus: true });
+  const { data: programsJson, isLoading: l7, mutate: m7 } = useSWR("/api/proxy/programs", fetcher, { refreshInterval: 30000, revalidateOnFocus: true });
 
   const stats = statsJson?.success ? statsJson.data.disbursements : {
     pendingCount: 0,

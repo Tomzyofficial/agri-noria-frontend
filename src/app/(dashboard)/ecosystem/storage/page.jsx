@@ -1,12 +1,18 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Box, Package, FileText, CheckCircle, MapPin, Camera, Navigation, AlertCircle, Eye, X, UploadCloud } from "lucide-react";
+import { Box, Boxes, Package, FileText, CheckCircle, MapPin, Camera, Navigation, AlertCircle, Eye, X, UploadCloud, Lock, Warehouse, RefreshCw, Search, ArrowUpRight, ShieldCheck, Calendar, Layers, SlidersHorizontal, Sparkles, TrendingUp, Settings } from "lucide-react";
 import { FaSpinner } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { verifyVendorSession } from "@/actions/session";
 
 export default function StorageDashboard() {
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
+  const [ticketFilter, setTicketFilter] = useState("all");
+  const [ticketSearch, setTicketSearch] = useState("");
   const [stats, setStats] = useState({
     total_capacity: 0,
     active_tickets: 0,
@@ -32,12 +38,14 @@ export default function StorageDashboard() {
   // Lightbox State
   const [viewingMedia, setViewingMedia] = useState(null);
 
-  const fetchData = async () => {
+  const fetchData = async (showToast = false) => {
     try {
-      const [statsRes, ticketsRes, preHarvestRes] = await Promise.all([
+      if (showToast) setIsRefreshing(true);
+      const [statsRes, ticketsRes, preHarvestRes, sessRes] = await Promise.all([
         fetch("/api/proxy/vendor/commodity-operations/storage/dashboard"),
         fetch("/api/proxy/vendor/commodity-operations/storage/tickets"),
-        fetch("/api/proxy/pipeline/preharvest/opportunities")
+        fetch("/api/proxy/pipeline/preharvest/opportunities"),
+        fetch("/api/auth/session").catch(() => null)
       ]);
       const statsData = await statsRes.json();
       const ticketsData = await ticketsRes.json();
@@ -46,10 +54,25 @@ export default function StorageDashboard() {
       if (statsData.success) setStats(statsData.data);
       if (ticketsData.success) setTickets(ticketsData.data);
       if (preHarvestData.success) setPreHarvestListings(preHarvestData.data);
+
+      if (sessRes && sessRes.ok) {
+        const sessData = await sessRes.json().catch(() => null);
+        if (sessData?.authenticated) {
+          setIsApproved(sessData.approval_status === "approved");
+        }
+      } else {
+        const fallbackSess = await verifyVendorSession().catch(() => null);
+        if (fallbackSess?.authenticated) {
+          setIsApproved(fallbackSess.approval_status === "approved");
+        }
+      }
+
+      if (showToast) toast.success("Storage metrics synced");
     } catch (error) {
       console.error("Error fetching storage data:", error);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -86,6 +109,10 @@ export default function StorageDashboard() {
   };
 
   const openIntakeModal = (ticket) => {
+    if (!isApproved) {
+      toast.warning("⏳ Account Pending SuperAdmin Approval: Warehouse intake processing is locked until approved.");
+      return;
+    }
     setIntakeTicket(ticket);
     setIntakeFile(null);
     setIntakePreview(null);
@@ -175,6 +202,10 @@ export default function StorageDashboard() {
   };
 
   const handleIssueNwr = async (ticketId) => {
+    if (!isApproved) {
+      toast.warning("🔒 Account Pending SuperAdmin Approval: e-NWR issuance is locked until verified.");
+      return;
+    }
     try {
       const res = await fetch(`/api/proxy/vendor/commodity-operations/storage/tickets/${ticketId}/issue-nwr`, {
         method: "POST",
@@ -204,231 +235,485 @@ export default function StorageDashboard() {
 
   const utilization = stats.total_capacity > 0 ? ((stats.stored_inventory / stats.total_capacity) * 100).toFixed(1) : 0;
 
+  const filteredTickets = tickets.filter((ticket) => {
+    const matchesSearch = !ticketSearch || 
+      ticket.ticket_number?.toLowerCase().includes(ticketSearch.toLowerCase()) ||
+      ticket.crop?.toLowerCase().includes(ticketSearch.toLowerCase()) ||
+      ticket.entity_name?.toLowerCase().includes(ticketSearch.toLowerCase());
+    const matchesFilter = ticketFilter === "all" || ticket.status === ticketFilter;
+    return matchesSearch && matchesFilter;
+  });
+
+  const reservedCount = tickets.filter(t => t.status === "reserved").length;
+  const activeCount = tickets.filter(t => t.status === "active").length;
+
   return (
-    <div className="p-6 max-w-7xl mx-auto w-full space-y-8">
-      <div>
-        <h1 className="text-3xl font-black text-(--foreground) tracking-tight">
-          Storage Dashboard
-        </h1>
-        <p className="text-gray-500 mt-1 font-medium">
-          Manage warehouse capacity, active storage tickets, and incoming batches with verified intake geolocation.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-bold text-gray-500 uppercase tracking-wider">
-              Total Capacity
-            </CardTitle>
-            <Box className="w-5 h-5 text-(--greenish-color)" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-black text-(--foreground)">{Number(stats.total_capacity).toLocaleString()} MT</div>
-            <p className="text-xs font-medium text-green-600 mt-1">{utilization}% Utilization</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-bold text-gray-500 uppercase tracking-wider">
-              Active Tickets
-            </CardTitle>
-            <FileText className="w-5 h-5 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-black text-(--foreground)">{stats.active_tickets}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-bold text-gray-500 uppercase tracking-wider">
-              Expected Arrivals
-            </CardTitle>
-            <Package className="w-5 h-5 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-black text-(--foreground)">{stats.expected_arrivals}</div>
-            <p className="text-xs font-medium text-orange-600 mt-1">Pending Check-in</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-bold text-gray-500 uppercase tracking-wider">
-              Stored Inventory
-            </CardTitle>
-            <CheckCircle className="w-5 h-5 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-black text-(--foreground)">{Number(stats.stored_inventory).toLocaleString()} MT</div>
-            <p className="text-xs font-medium text-gray-500 mt-1">Currently verified</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="bg-white dark:bg-(--background) border rounded-xl overflow-hidden shadow-sm">
-        <div className="px-6 py-4 border-b">
-          <h2 className="text-lg font-bold text-(--foreground)">Storage Requests & Active Tickets</h2>
+    <div className="p-6 md:p-8 max-w-7xl mx-auto w-full space-y-8 animate-in fade-in duration-300">
+      {/* Modern Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-2 border-b border-gray-200/80 dark:border-gray-800">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            {isApproved ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/60 shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                Verified Storage Hub • Node Active
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/60 shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                Pending Verification • Operations Locked
+              </span>
+            )}
+            <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 hidden sm:inline">•</span>
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Electronic Warehouse Receipts (e-NWR)</span>
+          </div>
+          <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-3">
+            <Warehouse className="w-8 h-8 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            Storage & Warehouse Portal
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 max-w-2xl leading-relaxed">
+            Real-time warehouse capacity management, incoming cluster harvest intakes, moisture testing, and electronic warehouse receipt (e-NWR) generation.
+          </p>
         </div>
-        
-        {tickets.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500">No storage tickets currently assigned to your facility.</p>
+
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => fetchData(true)}
+            disabled={isRefreshing}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/80 shadow-xs transition-all cursor-pointer"
+            title="Refresh metrics from backend"
+          >
+            <RefreshCw size={13} className={isRefreshing ? "animate-spin text-emerald-600" : "text-gray-500"} />
+            <span>Sync</span>
+          </button>
+
+          <Link
+            href="/ecosystem/storage/calendar"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/80 shadow-xs transition-all cursor-pointer"
+          >
+            <Calendar size={13} className="text-emerald-600" />
+            <span>Availability Windows</span>
+          </Link>
+
+          <Link
+            href="/ecosystem/storage/settings"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/20 transition-all cursor-pointer"
+          >
+            <Settings size={13} />
+            <span>Facility Config</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* KPI Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Total Capacity Card */}
+        <div className="p-6 rounded-3xl bg-white/95 dark:bg-gray-900/95 border border-gray-200/80 dark:border-gray-800 shadow-sm hover:shadow-md transition-all space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total Capacity</span>
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <Warehouse size={20} />
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+              {Number(stats.total_capacity).toLocaleString()} <span className="text-base font-bold text-gray-400">MT</span>
+            </div>
+            <div className="mt-2.5 space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500 font-semibold">{utilization}% Utilized</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">{Number(stats.stored_inventory).toLocaleString()} MT Filled</span>
+              </div>
+              <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, Math.max(0, utilization))}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Active Tickets Card */}
+        <div className="p-6 rounded-3xl bg-white/95 dark:bg-gray-900/95 border border-gray-200/80 dark:border-gray-800 shadow-sm hover:shadow-md transition-all space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Active Tickets</span>
+            <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <FileText size={20} />
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+              {stats.active_tickets}
+            </div>
+            <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 mt-2 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
+              {reservedCount > 0 ? `${reservedCount} awaiting verification` : "All current batches verified"}
+            </p>
+          </div>
+        </div>
+
+        {/* Expected Arrivals Card */}
+        <div className="p-6 rounded-3xl bg-white/95 dark:bg-gray-900/95 border border-gray-200/80 dark:border-gray-800 shadow-sm hover:shadow-md transition-all space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Expected Arrivals</span>
+            <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <Package size={20} />
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+              {stats.expected_arrivals}
+            </div>
+            <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
+              Pending Intake Inspection
+            </p>
+          </div>
+        </div>
+
+        {/* Stored Inventory Card */}
+        <div className="p-6 rounded-3xl bg-white/95 dark:bg-gray-900/95 border border-gray-200/80 dark:border-gray-800 shadow-sm hover:shadow-md transition-all space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stored Inventory</span>
+            <div className="w-10 h-10 rounded-2xl bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+              <CheckCircle size={20} />
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+              {Number(stats.stored_inventory).toLocaleString()} <span className="text-base font-bold text-gray-400">MT</span>
+            </div>
+            <p className="text-xs font-semibold text-teal-600 dark:text-teal-400 mt-2 flex items-center gap-1.5">
+              <ShieldCheck size={13} />
+              Quality & Moisture Audited
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area: Tickets & Intake Queue */}
+      <div className="bg-white/90 dark:bg-gray-900/90 rounded-3xl border border-gray-200/80 dark:border-gray-800 shadow-sm overflow-hidden backdrop-blur-sm">
+        {/* Header with Search and Filter Tabs */}
+        <div className="p-6 md:p-8 border-b border-gray-100 dark:border-gray-800 space-y-5">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <h2 className="text-xl font-black text-gray-900 dark:text-white tracking-tight">
+                  Active Storage Tickets & Intake Queue
+                </h2>
+              </div>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1">
+                Real-time inventory receipting, quality grading verification, and cryptographic e-NWR issuance
+              </p>
+            </div>
+
+            {/* Status Filter Pills */}
+            <div className="flex items-center gap-1.5 p-1 bg-gray-100/80 dark:bg-gray-800/80 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 self-start md:self-auto">
+              <button
+                type="button"
+                onClick={() => setTicketFilter("all")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  ticketFilter === "all"
+                    ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-xs"
+                    : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                All ({tickets.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setTicketFilter("reserved")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  ticketFilter === "reserved"
+                    ? "bg-amber-500 text-white shadow-xs"
+                    : "text-gray-500 hover:text-amber-600 dark:hover:text-amber-400"
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${ticketFilter === "reserved" ? "bg-white" : "bg-amber-500"}`} />
+                Pending Intake ({reservedCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setTicketFilter("active")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  ticketFilter === "active"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400"
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${ticketFilter === "active" ? "bg-white" : "bg-emerald-500"}`} />
+                In Storage ({activeCount})
+              </button>
+            </div>
+          </div>
+
+          {/* Search bar */}
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={ticketSearch}
+              onChange={(e) => setTicketSearch(e.target.value)}
+              placeholder="Search by ticket #, farmer/depositor name, crop commodity..."
+              className="w-full pl-11 pr-4 py-2.5 rounded-2xl bg-gray-50/80 dark:bg-gray-800/50 border border-gray-200/80 dark:border-gray-700/80 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+            />
+            {ticketSearch && (
+              <button
+                type="button"
+                onClick={() => setTicketSearch("")}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 px-1.5 py-0.5 rounded-md"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Tickets List */}
+        {filteredTickets.length === 0 ? (
+          <div className="text-center py-16 px-4">
+            <div className="w-16 h-16 rounded-3xl bg-gray-100 dark:bg-gray-800/80 text-gray-400 flex items-center justify-center mx-auto mb-4">
+              <Warehouse size={28} />
+            </div>
+            <h3 className="text-base font-bold text-gray-900 dark:text-white">
+              {ticketSearch || ticketFilter !== "all" ? "No matching tickets found" : "No storage tickets yet"}
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm mx-auto mt-1">
+              {ticketSearch || ticketFilter !== "all"
+                ? "Try adjusting your search criteria or resetting the status filter above."
+                : "Active commodity intake requests and reservations assigned to this storage hub will appear here."}
+            </p>
+            {(ticketSearch || ticketFilter !== "all") && (
+              <button
+                type="button"
+                onClick={() => {
+                  setTicketSearch("");
+                  setTicketFilter("all");
+                }}
+                className="mt-4 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+              >
+                Reset Filters
+              </button>
+            )}
           </div>
         ) : (
-          <div className="divide-y">
-            {tickets.map((ticket) => (
-              <div key={ticket.ticket_id} className="p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 hover:bg-gray-50 dark:hover:bg-gray-900 transition">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-lg">{ticket.ticket_number}</span>
-                    <span className={`text-xs px-2 py-1 rounded-full font-bold uppercase ${ticket.status === 'reserved' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
-                      {ticket.status}
-                    </span>
-                    {ticket.nwr_number && (
-                      <span className="text-xs px-2.5 py-0.5 rounded-full font-mono font-bold bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
-                        e-NWR: {ticket.nwr_number}
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+            {filteredTickets.map((ticket) => {
+              const isReserved = ticket.status === "reserved";
+              return (
+                <div
+                  key={ticket.ticket_id}
+                  className="p-6 md:p-7 flex flex-col xl:flex-row xl:items-center justify-between gap-6 hover:bg-gray-50/60 dark:hover:bg-gray-800/40 transition-colors group"
+                >
+                  {/* Left: Identification & Depositor */}
+                  <div className="space-y-2 min-w-[260px]">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <span className="font-mono font-black text-base text-gray-900 dark:text-white">
+                        {ticket.ticket_number}
                       </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-500 font-medium">
-                    {ticket.entity_name} ({ticket.entity_role})
-                  </p>
-                </div>
-                
-                <div className="flex flex-wrap items-center gap-6 text-sm">
-                  <div>
-                    <p className="text-gray-500 uppercase text-xs font-bold mb-1">Produce</p>
-                    <p className="font-semibold">{ticket.crop}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 uppercase text-xs font-bold mb-1">Volume</p>
-                    <p className="font-semibold">{ticket.reserved_volume_mt} MT</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 uppercase text-xs font-bold mb-1">Duration</p>
-                    <p className="font-semibold">{ticket.storage_duration_days} Days</p>
-                  </div>
-                  {ticket.grade && (
-                    <div>
-                      <p className="text-gray-500 uppercase text-xs font-bold mb-1">Grade</p>
-                      <p className="font-semibold text-emerald-600">{ticket.grade}</p>
+                      <span
+                        className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                          isReserved
+                            ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60"
+                            : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60"
+                        }`}
+                      >
+                        {ticket.status}
+                      </span>
+                      {ticket.nwr_number && (
+                        <span className="text-[11px] px-2.5 py-0.5 rounded-full font-mono font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex items-center gap-1">
+                          <CheckCircle size={11} className="text-blue-500" />
+                          e-NWR: {ticket.nwr_number}
+                        </span>
+                      )}
                     </div>
-                  )}
-                  {ticket.moisture_pct && (
-                    <div>
-                      <p className="text-gray-500 uppercase text-xs font-bold mb-1">Moisture</p>
-                      <p className="font-semibold">{ticket.moisture_pct}%</p>
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                      <span className="font-semibold text-gray-700 dark:text-gray-300">
+                        {ticket.entity_name}
+                      </span>
+                      <span>•</span>
+                      <span className="capitalize">{ticket.entity_role}</span>
                     </div>
-                  )}
+                  </div>
+
+                  {/* Middle: Crop Specs & Parameters */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6 flex-1 text-xs">
+                    <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800">
+                      <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Crop Commodity</p>
+                      <p className="font-black text-gray-900 dark:text-white text-sm mt-0.5">{ticket.crop}</p>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800">
+                      <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Volume</p>
+                      <p className="font-black text-gray-900 dark:text-white text-sm mt-0.5">
+                        {ticket.reserved_volume_mt} <span className="text-[11px] font-bold text-gray-400">MT</span>
+                      </p>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800">
+                      <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Holding Period</p>
+                      <p className="font-black text-gray-900 dark:text-white text-sm mt-0.5">
+                        {ticket.storage_duration_days} <span className="text-[11px] font-bold text-gray-400">Days</span>
+                      </p>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800">
+                      <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Quality Specs</p>
+                      <p className="font-bold text-emerald-600 dark:text-emerald-400 text-sm mt-0.5">
+                        {ticket.grade || "Ungraded"} {ticket.moisture_pct ? `(${ticket.moisture_pct}% M)` : ""}
+                      </p>
+                    </div>
+                  </div>
 
                   {/* Geotagged Intake Evidence */}
                   {ticket.intake_proof_url && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5 shrink-0">
                       <button
                         type="button"
-                        onClick={() => setViewingMedia({
-                          url: ticket.intake_proof_url,
-                          lat: ticket.intake_latitude,
-                          lng: ticket.intake_longitude,
-                          verified_at: ticket.intake_verified_at
-                        })}
-                        className="relative group w-10 h-10 rounded-lg overflow-hidden border border-emerald-300 shadow-sm shrink-0"
+                        onClick={() =>
+                          setViewingMedia({
+                            url: ticket.intake_proof_url,
+                            lat: ticket.intake_latitude,
+                            lng: ticket.intake_longitude,
+                            verified_at: ticket.intake_verified_at
+                          })
+                        }
+                        className="relative group/thumb w-12 h-12 rounded-2xl overflow-hidden border border-emerald-300 dark:border-emerald-800 shadow-xs shrink-0"
                       >
-                        <img src={ticket.intake_proof_url} alt="Intake Proof" className="w-full h-full object-cover group-hover:scale-110 transition" />
-                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
-                          <Eye className="w-3.5 h-3.5 text-white" />
+                        <img
+                          src={ticket.intake_proof_url}
+                          alt="Intake Proof"
+                          className="w-full h-full object-cover group-hover/thumb:scale-110 transition duration-300"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center transition">
+                          <Eye className="w-4 h-4 text-white" />
                         </div>
                       </button>
-                      <div>
+                      <div className="space-y-0.5 text-left">
                         {ticket.intake_latitude && ticket.intake_longitude ? (
                           <a
                             href={`https://www.google.com/maps?q=${ticket.intake_latitude},${ticket.intake_longitude}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-xs text-emerald-600 dark:text-emerald-400 font-mono hover:underline flex items-center gap-1 font-semibold"
+                            className="text-xs text-emerald-600 dark:text-emerald-400 font-mono hover:underline flex items-center gap-1 font-bold"
                           >
                             <MapPin className="w-3 h-3 text-emerald-500" />
-                            {Number(ticket.intake_latitude).toFixed(4)}, {Number(ticket.intake_longitude).toFixed(4)}
+                            {Number(ticket.intake_latitude).toFixed(3)}, {Number(ticket.intake_longitude).toFixed(3)}
                           </a>
                         ) : (
-                          <span className="text-xs text-gray-400">Intake Photo</span>
+                          <span className="text-xs text-gray-400 font-medium">Intake Photo</span>
                         )}
-                        <span className="text-[10px] text-gray-400 block">Warehouse Geotagged</span>
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 block font-medium">
+                          Geotagged & Audited
+                        </span>
                       </div>
                     </div>
                   )}
-                </div>
 
-                <div>
-                  {ticket.status === 'reserved' && (
-                    <button 
-                      onClick={() => openIntakeModal(ticket)}
-                      className="px-4 py-2 bg-(--greenish-color) text-white font-bold rounded-lg hover:opacity-90 transition text-sm shadow flex items-center gap-1.5"
-                    >
-                      <Camera className="w-4 h-4" />
-                      Verify & Issue e-NWR
-                    </button>
-                  )}
-                  {ticket.status === 'active' && !ticket.nwr_number && (
-                    <button 
-                      onClick={() => handleIssueNwr(ticket.ticket_id)}
-                      className="px-3 py-1.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition text-xs shadow"
-                    >
-                      Issue e-NWR
-                    </button>
-                  )}
-                  {ticket.status === 'active' && ticket.nwr_number && (
-                    <span className="text-xs text-emerald-600 font-bold bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1.5 rounded-lg border border-emerald-200">
-                      Receipt Verified ✓
-                    </span>
-                  )}
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2.5 shrink-0 self-end xl:self-auto">
+                    {ticket.status === "reserved" && (
+                      <button
+                        type="button"
+                        onClick={() => openIntakeModal(ticket)}
+                        className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-xs shadow-md shadow-emerald-500/20 hover:from-emerald-500 hover:to-teal-500 active:scale-95 transition-all flex items-center gap-2"
+                      >
+                        <Camera size={14} />
+                        Verify & Issue e-NWR
+                      </button>
+                    )}
+                    {ticket.status === "active" && !ticket.nwr_number && (
+                      <button
+                        type="button"
+                        onClick={() => handleIssueNwr(ticket.ticket_id)}
+                        className="px-4 py-2.5 rounded-2xl bg-blue-600 text-white font-bold text-xs shadow-md shadow-blue-500/20 hover:bg-blue-500 active:scale-95 transition-all flex items-center gap-1.5"
+                      >
+                        <FileText size={14} />
+                        Issue e-NWR
+                      </button>
+                    )}
+                    {ticket.status === "active" && ticket.nwr_number && (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 px-3.5 py-2 rounded-2xl shadow-xs">
+                        <CheckCircle size={14} className="text-emerald-600 dark:text-emerald-400" />
+                        e-NWR Active
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
-      <div className="bg-white dark:bg-(--background) border rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b bg-amber-50 dark:bg-amber-900/10">
-          <h2 className="text-lg font-bold text-amber-800 dark:text-amber-400 flex items-center gap-2">
-            Expected Inflow Forecast (Pre-Harvest)
-          </h2>
-          <p className="text-xs text-amber-600 mt-1 uppercase tracking-widest font-black">Upcoming harvests tracked by clusters</p>
-        </div>
+      {/* Pre-Harvest Inflow Forecast Radar */}
+      <div className="bg-gradient-to-br from-emerald-950 via-teal-950 to-slate-950 rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden border border-emerald-800/40">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-radial from-emerald-500/10 to-transparent blur-3xl pointer-events-none" />
         
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                Predictive Intelligence
+              </span>
+              <span className="text-xs text-emerald-400/80 font-semibold">• Cluster Harvest Radar</span>
+            </div>
+            <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-emerald-400" />
+              Expected Inflow Forecast (Pre-Harvest)
+            </h2>
+            <p className="text-xs text-emerald-200/70">
+              Upcoming field harvests tracked across registered farmer clusters to pre-allocate bay capacity
+            </p>
+          </div>
+          <div className="text-xs font-bold px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/10 text-emerald-200 self-start md:self-auto">
+            {preHarvestListings.length} Pipeline Batches Detected
+          </div>
+        </div>
+
         {preHarvestListings.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500">No expected inflow forecasts available.</p>
+          <div className="relative z-10 text-center py-12 px-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+            <Boxes className="w-10 h-10 text-emerald-400/50 mx-auto mb-3" />
+            <p className="text-sm font-bold text-white">No pending harvest inflows detected</p>
+            <p className="text-xs text-emerald-200/60 max-w-sm mx-auto mt-1">
+              When cluster supervisors log seasonal harvest forecasts in your radius, intake estimates will sync here automatically.
+            </p>
           </div>
         ) : (
-          <div className="divide-y">
+          <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4">
             {preHarvestListings.map((listing) => (
-              <div key={listing.id} className="p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 hover:bg-gray-50 dark:hover:bg-gray-900 transition">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-lg">{listing.commodity}</span>
-                    <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-bold uppercase">
-                      Forecast
+              <div
+                key={listing.id}
+                className="p-5 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/10 backdrop-blur-md transition-all flex flex-col justify-between gap-4 group"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-base text-white tracking-tight">{listing.commodity}</span>
+                      <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                        Forecasted
+                      </span>
+                    </div>
+                    <p className="text-xs text-emerald-200/70 font-medium mt-1">
+                      Lead Supervisor: <span className="text-white font-semibold">{listing.supervisor_name}</span>
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-lg font-black text-emerald-300">
+                      {listing.estimated_yield_tons} <span className="text-xs font-bold text-emerald-400/80">MT</span>
                     </span>
+                    <p className="text-[10px] uppercase font-bold text-emerald-400/70 tracking-wider">Est. Yield</p>
                   </div>
-                  <p className="text-sm text-gray-500 font-medium">
-                    Supervisor: {listing.supervisor_name}
-                  </p>
                 </div>
-                
-                <div className="flex items-center gap-8 text-sm">
-                  <div>
-                    <p className="text-gray-500 uppercase text-xs font-bold mb-1">Expected Vol</p>
-                    <p className="font-semibold text-amber-600">{listing.estimated_yield_tons} MT</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 uppercase text-xs font-bold mb-1">Est. Harvest</p>
-                    <p className="font-semibold">{new Date(listing.expected_harvest_date).toLocaleDateString()}</p>
-                  </div>
+
+                <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs text-emerald-200/80">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <Calendar size={13} className="text-emerald-400" />
+                    Target Harvest: {new Date(listing.expected_harvest_date).toLocaleDateString()}
+                  </span>
+                  <span className="text-[11px] font-bold text-emerald-300 bg-emerald-500/20 px-2.5 py-1 rounded-lg">
+                    Reserve Bay Available
+                  </span>
                 </div>
               </div>
             ))}

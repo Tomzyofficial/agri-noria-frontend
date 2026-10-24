@@ -5,21 +5,21 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   LogOut,
-  X,
-  Menu,
   LayoutDashboard,
   Users,
   CreditCard,
   BarChart3,
   Settings,
-  Globe,
   Wallet,
   Package,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
+import { NotificationProvider } from "@/hooks/useNotificationContext";
+import NotificationDrawer from "@/components/notifications/NotificationDrawer";
+import EcosystemHeader from "@/components/dashboard/EcosystemHeader";
 
-export default function AggregatorLayout({ children }) {
+function AggregatorLayoutInner({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -35,7 +35,7 @@ export default function AggregatorLayout({ children }) {
   const handleSignout = async () => {
     try {
       toast.info("Signing out...", { autoClose: 2000, toastId: "signout" });
-        const res = await signoutBridge();
+      const res = await signoutBridge();
       if (!res) {
         toast.error("Signout failed. Try again.");
         return;
@@ -87,20 +87,15 @@ export default function AggregatorLayout({ children }) {
       href: "/ecosystem/aggregator/financing",
       icon: <CreditCard className="w-4 h-4" />,
     },
-    // {
-    //   label: "Intervention Requests",
-    //   href: "/ecosystem/aggregator/inputs",
-    //   icon: <Package className="w-4 h-4" />,
-    // },
     {
-      label: "Marketplace Data",
-      href: "/ecosystem/aggregator/marketplace",
-      icon: <BarChart3 className="w-4 h-4" />,
+      label: "Produce Aggregation",
+      href: "/ecosystem/aggregator/produce",
+      icon: <Package className="w-4 h-4" />,
     },
     {
-      label: "Harvest & Operations",
-      href: "/ecosystem/aggregator/harvest",
-      icon: <Package className="w-4 h-4" />,
+      label: "Marketplace & Demand",
+      href: "/ecosystem/aggregator/marketplace",
+      icon: <BarChart3 className="w-4 h-4" />,
     },
     {
       label: "My Wallet",
@@ -135,18 +130,6 @@ export default function AggregatorLayout({ children }) {
         )}
 
         <div
-          aria-label="Open menu"
-          onClick={handleMenuClick}
-          className="lg:hidden fixed z-50 bg-black dark:bg-white right-4 top-4 cursor-pointer shadow-md p-2 rounded"
-        >
-          {menuOpen ? (
-            <X className="text-white dark:text-black" />
-          ) : (
-            <Menu className="text-white dark:text-black" />
-          )}
-        </div>
-
-        <div
           className={`${
             menuOpen ? "left-0 w-64 h-full shadow-2xl" : "-left-64"
           } transition-all duration-300 fixed z-40 top-0 lg:left-0 lg:w-64 lg:h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 border-r border-gray-200 dark:border-gray-800 p-4 flex flex-col`}
@@ -171,10 +154,6 @@ export default function AggregatorLayout({ children }) {
               </Link>
             ))}
 
-            {/* <div className="my-4 border-t border-gray-200 dark:border-gray-700 pt-4">
-                     
-                  </div> */}
-
             <Button
               onClick={handleSignout}
               className="mt-auto cursor-pointer flex items-center text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 p-2 rounded transition"
@@ -188,7 +167,24 @@ export default function AggregatorLayout({ children }) {
       </aside>
 
       {/* Main content */}
-      <main className="lg:ml-64 w-full lg:p-8 p-4">{children}</main>
+      <div className="lg:ml-64 flex-1 flex flex-col min-h-screen min-w-0">
+        <EcosystemHeader
+          title="Aggregator Operations"
+          portalName="Aggregator"
+          role="aggregator"
+          onMenuToggle={handleMenuClick}
+        />
+        <main className="w-full flex-1 lg:p-8 p-4">{children}</main>
+        <NotificationDrawer />
+      </div>
     </div>
+  );
+}
+
+export default function AggregatorLayout({ children }) {
+  return (
+    <NotificationProvider role="aggregator">
+      <AggregatorLayoutInner>{children}</AggregatorLayoutInner>
+    </NotificationProvider>
   );
 }

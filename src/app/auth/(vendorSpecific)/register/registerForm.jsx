@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
@@ -9,12 +9,11 @@ import { Input } from "@/components/ui/Input";
 import { toast } from "react-toastify";
 import { Eye, EyeOff, ChevronDown, ChevronRight } from "lucide-react";
 import { registerFormSchema } from "@/_lib/validations/validateSignupSignin";
-import { FaSpinner } from "react-icons/fa6";
+import { FaSeedling, FaSpinner, FaChevronLeft } from "react-icons/fa6";
 import { registerBridge } from "@/actions/authActions";
 import { Country, State } from "country-state-city";
 import { verifyVendorSession } from "@/actions/session";
 import { resolveRedirectPath } from "@/utils/routeResolver";
-// import { EmailVerification } from "@/components/auth/EmailVerification";
 
 const workspaceRoleCategories = {
    ecosystem: [
@@ -73,7 +72,6 @@ const workspaceRoleCategories = {
          name: "Marketplace Sellers",
          roles: ["Seller"],
       },
-
       {
          name: "Logistics & Fulfillment",
          roles: ["Logistics"],
@@ -82,12 +80,10 @@ const workspaceRoleCategories = {
          name: "Drone Marketplace & Services",
          roles: ["Drone"],
       },
-
       {
          name: "Storage & Warehousing",
          roles: ["Storage Facility"],
       },
-
       {
          name: "Farmers",
          roles: ["Farmer"],
@@ -107,11 +103,12 @@ const workspaceOptions = [
    {
       id: "ecosystem",
       title: "Ecosystem Program",
+      description: "Join national and regional agricultural programs, institutions, and cooperative networks.",
    },
-
    {
       id: "marketplace",
-      title: "Marketplace",
+      title: "Marketplace & Services",
+      description: "Buy, sell produce, agro-inputs, logistics, drone services, and warehousing.",
    },
 ];
 
@@ -122,10 +119,6 @@ export function RegisterForm() {
    const [isLoading, setIsLoading] = useState(false);
    const [errors, setErrors] = useState({});
 
-   // Email verification state
-   //   const [showEmailVerification, setShowEmailVerification] = useState(false);
-   //   const [emailVerified, setEmailVerified] = useState(false);
-
    const [formData, setFormData] = useState({
       workspace: "",
       role: "",
@@ -133,7 +126,6 @@ export function RegisterForm() {
       lname: "",
       email: "",
       phone: "",
-      //  role: "",
       pword: "",
       confirmPword: "",
       terms_of_service: false,
@@ -144,28 +136,53 @@ export function RegisterForm() {
       currency: "",
    });
 
-   // Handle email verification
-   //   const handleEmailVerified = (verified) => {
-   //     setEmailVerified(verified);
-   //     setShowEmailVerification(false);
-   //   };
-
-   // Multistep state
-   const [currentStep, setCurrentStep] = useState(0); // Step 0 is Role Selection
+   // Multistep state: 0 = Workspace, 1 = Role, 2 = Account & Security (Email + Password unified)
+   const [currentStep, setCurrentStep] = useState(0);
+   const availableStates = formData.country_code ? State.getStatesOfCountry(formData.country_code) : [];
    const [expandedCategory, setExpandedCategory] = useState(null);
+   const [ecosystemSettings, setEcosystemSettings] = useState({
+      platformName: "Agri-Noria",
+      platformEmail: "support@agrinoria.com",
+      supportPhone: "+234 800 2474 66742",
+      maintenanceMode: false,
+      allowNewRegistrations: true,
+   });
 
-   const totalSteps = 4;
+   useEffect(() => {
+      fetch("/api/proxy/ecosystem/settings", { cache: "no-store" })
+         .then((res) => (res.ok ? res.json() : null))
+         .then((json) => {
+            if (json?.data) {
+               setEcosystemSettings((prev) => ({ ...prev, ...json.data }));
+            }
+         })
+         .catch(() => {});
+   }, []);
+
+   const totalSteps = 2;
 
    const selectedWorkspaceTitle = workspaceOptions.find((workspace) => workspace.id === formData.workspace)?.title || "";
-
    const selectedRoleCategories = workspaceRoleCategories[formData.workspace] || [];
 
    const handleWorkspaceSelect = (workspaceId) => {
+      if (workspaceId === "ecosystem") {
+         if (ecosystemSettings.maintenanceMode) {
+            toast.error(
+               `${ecosystemSettings.platformName} Ecosystem is currently under Emergency Maintenance Mode. Please try again later or contact ${ecosystemSettings.platformEmail}.`
+            );
+            return;
+         }
+         if (ecosystemSettings.allowNewRegistrations === false) {
+            toast.error(
+               `Public registrations for the ${ecosystemSettings.platformName} Ecosystem are currently closed by Platform Governance. Contact ${ecosystemSettings.platformEmail} (${ecosystemSettings.supportPhone}) for institutional onboarding.`
+            );
+            return;
+         }
+      }
       setFormData((prev) => ({
          ...prev,
          workspace: workspaceId,
          role: "",
-         // role: "",
       }));
       setExpandedCategory(null);
       setCurrentStep(1);
@@ -175,53 +192,32 @@ export function RegisterForm() {
       setFormData((prev) => ({
          ...prev,
          role,
-         // role: role,
       }));
       setCurrentStep(2);
-   };
-
-   const validateWithSchemaForStep = (step) => {
-      let schemaForStep = registerFormSchema;
-
-      if (step === 2) {
-         schemaForStep = registerFormSchema.pick({
-            fname: true,
-            lname: true,
-            email: true,
-            phone: true,
-            //   role: true,
-            country_code: true,
-            state_code: true,
-         });
-      } else if (step === 3) {
-         schemaForStep = registerFormSchema.pick({ pword: true, confirmPword: true }).refine((data) => data.pword === data.confirmPword, {
-            path: ["confirmPword"],
-            message: "Passwords do not match",
-         });
-      } else if (step === 4) {
-         schemaForStep = registerFormSchema.pick({ terms_of_service: true });
-      }
-
-      const result = schemaForStep.safeParse(formData);
-
-      if (!result.success) {
-         const fieldErrors = result.error.flatten().fieldErrors;
-         setErrors({ err: fieldErrors });
-
-         const firstMsg = Object.values(fieldErrors).flat().filter(Boolean)[0];
-         if (firstMsg) toast.error(firstMsg);
-
-         return false;
-      }
-
-      setErrors({});
-      return true;
    };
 
    const validateStep = (step) => {
       if (step === 0) return !!formData.workspace;
       if (step === 1) return !!formData.role;
-      return validateWithSchemaForStep(step);
+      if (step === 2) {
+         const schemaWithMatch = registerFormSchema.refine((data) => data.pword === data.confirmPword, {
+            path: ["confirmPword"],
+            message: "Passwords do not match",
+         });
+
+         const result = schemaWithMatch.safeParse(formData);
+         if (!result.success) {
+            const fieldErrors = result.error.flatten().fieldErrors;
+            setErrors({ err: fieldErrors });
+
+            const firstMsg = Object.values(fieldErrors).flat().filter(Boolean)[0];
+            if (firstMsg) toast.error(firstMsg);
+            return false;
+         }
+         setErrors({});
+         return true;
+      }
+      return true;
    };
 
    // Handle input field change
@@ -235,68 +231,23 @@ export function RegisterForm() {
             const country = Country.getCountryByCode(value);
             newFormData.country_name = country?.name || "";
             newFormData.currency = country?.currency || "";
-            newFormData.state_code = ""; // Reset state when country changes
-            newFormData.state_name = ""; // Reset state name
+            const states = value ? State.getStatesOfCountry(value) : [];
+            if (value && states.length === 0) {
+               newFormData.state_code = value;
+               newFormData.state_name = country?.name || "National";
+            } else {
+               newFormData.state_code = "";
+               newFormData.state_name = "";
+            }
          } else if (name === "state_code") {
-            const state = State.getStatesOfCountry(newFormData.country_code).find((state) => state.isoCode === value);
-            newFormData.state_name = state?.name || "";
+            const states = newFormData.country_code ? State.getStatesOfCountry(newFormData.country_code) : [];
+            const state = states.find((s) => s.isoCode === value);
+            newFormData.state_name = state?.name || (states.length === 0 ? newFormData.country_name : "");
          }
 
          return newFormData;
       });
-      setErrors({}); // Clear error on change
-   };
-
-   // Schema-based validation per step and final submit
-   //   const validateWithSchemaForStep = (step) => {
-   //     let schemaForStep = registerFormSchema;
-   //     if (step === 1) {
-   //       schemaForStep = registerFormSchema.pick({
-   //         fname: true,
-   //         lname: true,
-   //         email: true,
-   //       });
-   //     } else if (step === 2) {
-   //       schemaForStep = registerFormSchema.pick({
-   //         phone: true,
-   //         role: true,
-   //         country_code: true,
-   //         state_code: true,
-   //       });
-   //     } else if (step === 3) {
-   //       schemaForStep = registerFormSchema
-   //         .pick({ pword: true, confirmPword: true })
-   //         .refine((data) => data.pword === data.confirmPword, {
-   //           path: ["confirmPword"],
-   //           message: "Passwords do not match",
-   //         });
-   //     } else if (step === 4) {
-   //       schemaForStep = registerFormSchema.pick({ terms_of_service: true });
-   //     }
-
-   //     const result = schemaForStep.safeParse(formData);
-   //     if (!result.success) {
-   //       const fieldErrors = result.error.flatten().fieldErrors;
-   //       setErrors({ err: fieldErrors });
-   //       // Show the first error message if available
-   //       const firstMsg = Object.values(fieldErrors).flat().filter(Boolean)[0];
-   //       if (firstMsg) toast.error(firstMsg);
-   //       return false;
-   //     }
-   //     setErrors({});
-   //     return true;
-   //   };
-
-   // Navigation handlers
-   const handleNext = () => {
-      //  if (currentStep === 2 && !emailVerified && formData.email) {
-      //    setShowEmailVerification(true);
-      //    return;
-      //  }
-
-      if (validateStep(currentStep)) {
-         setCurrentStep((s) => Math.min(totalSteps, s + 1));
-      }
+      setErrors({});
    };
 
    const handleBack = () => {
@@ -304,9 +255,16 @@ export function RegisterForm() {
       setCurrentStep((step) => Math.max(0, step - 1));
    };
 
-   // Handle form submission (final step)
+   // Handle form submission
    const handleSubmit = async (e) => {
       e.preventDefault();
+
+      if (currentStep < totalSteps) {
+         if (validateStep(currentStep)) {
+            setCurrentStep((s) => Math.min(totalSteps, s + 1));
+         }
+         return;
+      }
 
       const normalizedData = {
          ...formData,
@@ -318,26 +276,22 @@ export function RegisterForm() {
          pword: formData.pword.trim(),
       };
 
-      // If not last step, advance instead of submitting
-      if (currentStep < totalSteps) {
-         handleNext();
-         return;
-      }
-
-      // Clear prev errors
       setErrors({});
 
-      // Final full-schema validation before submit
-      const finalCheck = registerFormSchema.safeParse(normalizedData);
+      const schemaWithMatch = registerFormSchema.refine((data) => data.pword === data.confirmPword, {
+         path: ["confirmPword"],
+         message: "Passwords do not match",
+      });
+
+      const finalCheck = schemaWithMatch.safeParse(normalizedData);
       if (!finalCheck.success) {
          const fieldErrors = finalCheck.error.flatten().fieldErrors;
          setErrors({ err: fieldErrors });
-         const firstMsg = Object.values(fieldErrors).flat().filter(Boolean);
+         const firstMsg = Object.values(fieldErrors).flat().filter(Boolean)[0];
          if (firstMsg) toast.error(firstMsg);
          return;
       }
 
-      // Call register-auth endpoint to perform registration
       setIsLoading(true);
       try {
          const res = await registerBridge(normalizedData);
@@ -355,8 +309,6 @@ export function RegisterForm() {
          }
 
          setErrors({});
-
-         // clear form fields value on successful submission and registration
          setFormData({
             workspace: "",
             role: "",
@@ -382,8 +334,13 @@ export function RegisterForm() {
 
          if (session.authenticated) {
             const { workspace, role } = session;
-            if (workspace?.toLowerCase() === "ecosystem" && role?.toLowerCase() === "farmer") {
+            const normRole = role?.toLowerCase();
+            if (workspace?.toLowerCase() === "ecosystem" && normRole === "farmer") {
                router.push("/ecosystem/farmer/onboarding");
+            } else if (workspace?.toLowerCase() === "ecosystem" && ["storage", "storage facility", "storage_facility"].includes(normRole)) {
+               router.push("/ecosystem/storage/onboarding");
+            } else if (workspace?.toLowerCase() === "ecosystem" && ["logistics", "logistics partner", "logistic"].includes(normRole)) {
+               router.push("/ecosystem/logistics/onboarding");
             } else {
                router.push(resolveRedirectPath(role, workspace));
             }
@@ -394,73 +351,154 @@ export function RegisterForm() {
             ...prev,
             general: "Internal server error. Please try again.",
          }));
-         return;
       } finally {
          setIsLoading(false);
       }
    };
 
    return (
-      <div className="min-h-screen bg-white dark:bg-(--background) flex items-center justify-center p-4 pb-10">
+      <div className="min-h-screen bg-slate-50 dark:bg-(--background) flex items-center justify-center p-4 py-12">
          <div className="w-full max-w-2xl">
-            <div className="text-center mb-8 text-(--foreground)">
-               <h1 className="text-2xl font-semibold">Create your account</h1>
-               <p className="text-sm">Follow the steps to get started</p>
+            {/* Header with agricultural brand icon */}
+            <div className="text-center mb-6">
+               <div className="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center mx-auto mb-3 shadow-md shadow-emerald-500/10">
+                  <FaSeedling className="w-7 h-7" />
+               </div>
+               <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Create your account</h1>
+               <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold mt-1">
+                  Join the Agri-Noria ecosystem to empower agricultural trade and operations
+               </p>
             </div>
 
-            <Card className="px-4 py-5">
-               <CardHeader className="pb-4">
-                  <CardTitle className="font-semibold text-(--foreground)">Registration</CardTitle>
-               </CardHeader>
-               <CardContent>
+            <Card className="border border-emerald-100 dark:border-gray-800 shadow-xl bg-white dark:bg-gray-950 rounded-3xl overflow-hidden p-2 sm:p-4">
+               <CardHeader className="pb-3 border-b border-gray-100 dark:border-gray-900">
+                  <div className="flex items-center justify-between">
+                     <CardTitle className="text-base font-black text-gray-900 dark:text-white flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        {currentStep === 0 && "Step 1: Choose Workspace"}
+                        {currentStep === 1 && "Step 2: Choose Your Role"}
+                        {currentStep === 2 && "Step 3: Account & Security Details"}
+                     </CardTitle>
+                     <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+                        Step {currentStep + 1} of {totalSteps + 1}
+                     </span>
+                  </div>
                   {/* Progress bar */}
-                  <div className="w-full mb-6">
-                     <div className="h-2 bg-gray-200 rounded-full">
-                        <div className="h-2 bg-(--greenish-color) rounded-full transition-all" style={{ width: `${(currentStep / totalSteps) * 100}%` }} />
-                     </div>
-                     <div className="mt-2 text-sm text-muted-foreground text-center">
-                        Step {currentStep} of {totalSteps}
+                  <div className="w-full mt-3">
+                     <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                           className="h-full bg-gradient-to-r from-emerald-600 to-teal-500 rounded-full transition-all duration-300"
+                           style={{ width: `${((currentStep + 1) / (totalSteps + 1)) * 100}%` }}
+                        />
                      </div>
                   </div>
+               </CardHeader>
 
+               <CardContent className="pt-6">
                   <form onSubmit={handleSubmit} noValidate>
-                     {/* Step 0: Role Selection */}
                      {/* Step 0: Workspace Selection */}
                      {currentStep === 0 && (
                         <div className="space-y-4">
-                           <h3 className="text-lg font-medium text-center mb-4">Select Your Workspace Type</h3>
+                           <div className="text-center mb-4">
+                              <h3 className="text-base font-bold text-gray-900 dark:text-white">Select Your Workspace Type</h3>
+                              <p className="text-xs text-gray-500 mt-0.5">Pick how you interact with the Agri-Noria agricultural network</p>
+                           </div>
 
-                           <div className="space-y-2">
-                              {workspaceOptions.map((workspace) => (
-                                 <button key={workspace.id} type="button" className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" onClick={() => handleWorkspaceSelect(workspace.id)}>
-                                    <span className="font-medium">{workspace.title}</span>
-                                    <ChevronRight className="h-4 w-4" />
-                                 </button>
-                              ))}
+                           <div className="grid gap-3">
+                              {workspaceOptions.map((workspace) => {
+                                 const isEcosystemBlocked =
+                                    workspace.id === "ecosystem" &&
+                                    (ecosystemSettings.maintenanceMode || ecosystemSettings.allowNewRegistrations === false);
+                                 return (
+                                    <button
+                                       key={workspace.id}
+                                       type="button"
+                                       className={`w-full text-left p-4 rounded-2xl border-2 transition-all flex items-center justify-between group ${
+                                          isEcosystemBlocked
+                                             ? "border-rose-200 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20 opacity-80 cursor-not-allowed"
+                                             : "border-emerald-50 dark:border-gray-800 bg-emerald-50/30 dark:bg-gray-900/40 hover:border-emerald-500 dark:hover:border-emerald-500 hover:bg-emerald-50/60"
+                                       }`}
+                                       onClick={() => handleWorkspaceSelect(workspace.id)}
+                                    >
+                                       <div className="space-y-1">
+                                          <div className="flex items-center gap-2 flex-wrap">
+                                             <span className="font-bold text-gray-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-400 block text-sm sm:text-base">
+                                                {workspace.title}
+                                             </span>
+                                             {workspace.id === "ecosystem" && ecosystemSettings.maintenanceMode && (
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-rose-600 text-white">
+                                                   503 Maintenance
+                                                </span>
+                                             )}
+                                             {workspace.id === "ecosystem" && !ecosystemSettings.maintenanceMode && ecosystemSettings.allowNewRegistrations === false && (
+                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-600 text-white">
+                                                   Registrations Closed
+                                                </span>
+                                             )}
+                                          </div>
+                                          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                             {workspace.description}
+                                          </p>
+                                       </div>
+                                       <div className="w-8 h-8 rounded-full bg-white dark:bg-gray-800 border border-emerald-200 dark:border-gray-700 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all ml-3 shrink-0">
+                                          <ChevronRight className="h-4 w-4" />
+                                       </div>
+                                    </button>
+                                 );
+                              })}
                            </div>
                         </div>
                      )}
 
+                     {/* Step 1: Role Selection */}
                      {currentStep === 1 && (
                         <div className="space-y-4">
-                           <h3 className="text-lg font-medium text-center">Select Your Role</h3>
+                           <div className="flex items-center justify-between bg-emerald-50/60 dark:bg-emerald-950/30 p-3 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40">
+                              <div className="text-xs">
+                                 <span className="text-gray-500">Selected Workspace: </span>
+                                 <span className="font-bold text-emerald-800 dark:text-emerald-300">{selectedWorkspaceTitle}</span>
+                              </div>
+                              <button
+                                 type="button"
+                                 onClick={() => setCurrentStep(0)}
+                                 className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
+                              >
+                                 Change
+                              </button>
+                           </div>
 
-                           <p className="text-sm text-center text-muted-foreground">Workspace: {selectedWorkspaceTitle}</p>
+                           <div className="text-center">
+                              <h3 className="text-base font-bold text-gray-900 dark:text-white">Select Your Organization Role</h3>
+                              <p className="text-xs text-gray-500 mt-0.5">Click your category to select your exact operational title</p>
+                           </div>
 
-                           <div className="space-y-2">
+                           <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
                               {selectedRoleCategories.map((category) => (
-                                 <div key={category.name} className="border rounded-md overflow-hidden">
-                                    <button type="button" className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" onClick={() => setExpandedCategory(expandedCategory === category.name ? null : category.name)}>
-                                       <span className="font-medium text-(--foreground)">{category.name}</span>
-
-                                       {expandedCategory === category.name ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                                 <div key={category.name} className="border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden bg-white dark:bg-gray-900">
+                                    <button
+                                       type="button"
+                                       className="w-full flex items-center justify-between p-3.5 hover:bg-emerald-50/40 dark:hover:bg-gray-800/60 transition-colors"
+                                       onClick={() => setExpandedCategory(expandedCategory === category.name ? null : category.name)}
+                                    >
+                                       <span className="font-bold text-xs uppercase tracking-wider text-gray-800 dark:text-gray-200">{category.name}</span>
+                                       {expandedCategory === category.name ? (
+                                          <ChevronDown className="w-4 h-4 text-emerald-600" />
+                                       ) : (
+                                          <ChevronRight className="w-4 h-4 text-gray-400" />
+                                       )}
                                     </button>
 
                                     {expandedCategory === category.name && (
-                                       <div className="p-2 bg-white dark:bg-(--background) grid gap-2">
+                                       <div className="p-2.5 pt-0 grid gap-1.5 bg-gray-50/50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800">
                                           {category.roles.map((role) => (
-                                             <button key={role} type="button" className="w-full text-left p-2 pl-6 hover:bg-(--greenish-color) hover:text-white rounded transition-colors text-sm" onClick={() => handleRoleSelect(role)}>
-                                                {role}
+                                             <button
+                                                key={role}
+                                                type="button"
+                                                className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-emerald-600 hover:text-white transition-all flex items-center justify-between group"
+                                                onClick={() => handleRoleSelect(role)}
+                                             >
+                                                <span>{role}</span>
+                                                <FaSeedling className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                                              </button>
                                           ))}
                                        </div>
@@ -471,185 +509,351 @@ export function RegisterForm() {
                         </div>
                      )}
 
-                     {/* Step 1: Personal Info */}
+                     {/* Step 2: Account Details & Security (EMAIL & PASSWORD IN SAME PLACE) */}
                      {currentStep === 2 && (
-                        <>
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-md bg-gray-50 dark:bg-gray-800 p-2 mb-4">
-                              <div>
-                                 <p className="text-xs text-muted-foreground">Workspace</p>
-                                 <p className="font-medium">{selectedWorkspaceTitle}</p>
+                        <div className="space-y-5">
+                           {/* Workspace & Role Summary Chips */}
+                           <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-emerald-50/60 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200/60 dark:border-emerald-800/40 text-xs">
+                              <div className="flex items-center gap-2">
+                                 <span className="font-medium text-gray-600 dark:text-gray-400">Workspace:</span>
+                                 <span className="font-bold text-emerald-800 dark:text-emerald-300">{selectedWorkspaceTitle}</span>
+                                 <span className="text-gray-300 dark:text-gray-700">|</span>
+                                 <span className="font-medium text-gray-600 dark:text-gray-400">Role:</span>
+                                 <span className="font-bold text-emerald-800 dark:text-emerald-300">{formData.role}</span>
+                              </div>
+                              <button
+                                 type="button"
+                                 onClick={() => setCurrentStep(1)}
+                                 className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
+                              >
+                                 Change Role
+                              </button>
+                           </div>
+
+                           {/* Names */}
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                 <Label htmlFor="fname" className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                                    First Name
+                                 </Label>
+                                 <Input
+                                    autoFocus
+                                    id="fname"
+                                    type="text"
+                                    autoComplete="given-name"
+                                    className={`h-11 rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 ${isLoading ? "opacity-50" : ""}`}
+                                    disabled={isLoading}
+                                    placeholder="e.g. Samuel"
+                                    name="fname"
+                                    value={formData.fname}
+                                    onChange={handleInputChange}
+                                    required
+                                 />
+                                 {errors.err?.fname && <p className="text-rose-500 text-xs font-bold">{errors.err.fname[0] || errors.err.fname}</p>}
                               </div>
 
-                              <div>
-                                 <p className="text-xs text-muted-foreground">Role</p>
-                                 <p className="font-medium">{formData.role}</p>
+                              <div className="space-y-1.5">
+                                 <Label htmlFor="lname" className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                                    Last Name
+                                 </Label>
+                                 <Input
+                                    id="lname"
+                                    type="text"
+                                    autoComplete="family-name"
+                                    className={`h-11 rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 ${isLoading ? "opacity-50" : ""}`}
+                                    disabled={isLoading}
+                                    placeholder="e.g. Adeleke"
+                                    name="lname"
+                                    value={formData.lname}
+                                    onChange={handleInputChange}
+                                    required
+                                 />
+                                 {errors.err?.lname && <p className="text-rose-500 text-xs font-bold">{errors.err.lname[0] || errors.err.lname}</p>}
                               </div>
                            </div>
 
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                                 <Label htmlFor="fname">First Name</Label>
-                                 <Input autoFocus id="fname" type="text" autoComplete="on" className={isLoading ? "opacity-50" : ""} disabled={isLoading} placeholder="Enter your first name" name="fname" value={formData.fname} onChange={handleInputChange} required />
-                                 {errors.err?.fname && <p className="text-start text-red-400 dark:text-red-300 text-sm">{errors.err.fname[0] || errors.err.fname}</p>}
+                           {/* Contact Info (Email & Phone) */}
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                 <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                                    Email Address
+                                 </Label>
+                                 <Input
+                                    id="email"
+                                    type="email"
+                                    autoComplete="email"
+                                    placeholder="farmer@agrinoria.eco"
+                                    name="email"
+                                    className={`h-11 rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 ${isLoading ? "opacity-50" : ""}`}
+                                    disabled={isLoading}
+                                    value={formData.email}
+                                    onChange={handleInputChange}
+                                    required
+                                 />
+                                 {errors.err?.email && <p className="text-rose-500 text-xs font-bold">{errors.err.email[0] || errors.err.email}</p>}
                               </div>
 
-                              <div>
-                                 <Label htmlFor="lname">Last Name</Label>
-                                 <Input id="lname" type="text" autoComplete="on" className={isLoading ? "opacity-50" : ""} disabled={isLoading} placeholder="Enter your last name" name="lname" value={formData.lname} onChange={handleInputChange} required />
-                                 {errors.err?.lname && <p className="text-start text-red-400 dark:text-red-300 text-sm">{errors.err.lname[0] || errors.err.lname}</p>}
+                              <div className="space-y-1.5">
+                                 <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                                    Phone Number
+                                 </Label>
+                                 <Input
+                                    id="phone"
+                                    autoComplete="tel"
+                                    type="tel"
+                                    className={`h-11 rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 ${isLoading ? "opacity-50" : ""}`}
+                                    disabled={isLoading}
+                                    placeholder="08012345678"
+                                    name="phone"
+                                    value={formData.phone}
+                                    onChange={handleInputChange}
+                                    required
+                                 />
+                                 {errors.err?.phone && <p className="text-rose-500 text-xs font-bold">{errors.err.phone[0] || errors.err.phone}</p>}
                               </div>
+                           </div>
 
-                              <div>
-                                 <Label htmlFor="email">Email Address</Label>
-                                 <Input id="email" type="email" autoComplete="on" placeholder="john@example.com" name="email" className={isLoading ? "opacity-50" : ""} disabled={isLoading} value={formData.email} onChange={handleInputChange} required />
-                                 {errors.err?.email && <p className="text-start text-red-400 dark:text-red-300 text-sm">{errors.err.email[0] || errors.err.email}</p>}
-                              </div>
-
-                              {/* <EmailInputWithVerification
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      userType="vendor"
-                      disabled={isLoading}
-                      //  error={errors.err?.email}
-                      onEmailVerified={handleEmailVerified}
-                      error={errors.err?.email?.[0] || errors.err?.email}
-                    /> */}
-
-                              <div>
-                                 <Label htmlFor="phone">Phone Number</Label>
-                                 <Input autoFocus id="phone" autoComplete="on" type="tel" className={isLoading ? "opacity-50" : ""} disabled={isLoading} placeholder="Enter your phone number" name="phone" value={formData.phone} onChange={handleInputChange} required />
-                                 {errors.err?.phone && <p className="text-start text-red-400 dark:text-red-300 text-sm">{errors.err.phone[0] || errors.err.phone}</p>}
-                              </div>
-
-                              <div>
-                                 <Label htmlFor="country_code">Country</Label>
-                                 <select name="country_code" id="country_code" value={formData.country_code} onChange={handleInputChange} required>
+                           {/* Country & State */}
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                 <Label htmlFor="country_code" className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                                    Country
+                                 </Label>
+                                 <select
+                                    name="country_code"
+                                    id="country_code"
+                                    value={formData.country_code}
+                                    onChange={handleInputChange}
+                                    required
+                                    disabled={isLoading}
+                                    className="w-full h-11 px-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-sm font-medium text-gray-900 dark:text-gray-100 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                 >
+                                    <option value="">Select Country</option>
                                     {Country.getAllCountries().map((country) => (
                                        <option key={country.isoCode} value={country.isoCode}>
                                           {country.name}
                                        </option>
                                     ))}
                                  </select>
-
-                                 {errors.err?.country_code && <p className="text-start text-red-400 dark:text-red-300 text-sm">{errors.err.country_code[0] || errors.err.country_code}</p>}
+                                 {errors.err?.country_code && <p className="text-rose-500 text-xs font-bold">{errors.err.country_code[0] || errors.err.country_code}</p>}
                               </div>
 
-                              <div>
-                                 <Label htmlFor="state_code">State</Label>
-                                 <select name="state_code" id="state_code" value={formData.state_code} onChange={handleInputChange} required>
-                                    {State.getStatesOfCountry(formData.country_code).map((state) => (
-                                       <option key={state.isoCode} value={state.isoCode}>
-                                          {state.name}
-                                       </option>
-                                    ))}
-                                 </select>
-                                 {errors.err?.state_code && <p className="text-start text-red-400 dark:text-red-300 text-sm">{errors.err.state_code[0] || errors.err.state_code}</p>}
-                              </div>
+                              <div className="space-y-1.5">
+                                 <div className="flex justify-between items-center">
+                                    <Label htmlFor={availableStates.length > 0 ? "state_code" : "state_name"} className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                                       State / Region
+                                    </Label>
+                                    {formData.country_code && availableStates.length === 0 && (
+                                       <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                                          Auto-detected
+                                       </span>
+                                    )}
+                                 </div>
 
-                              {/* Hidden inputs for country utils data */}
-                              <div className="hidden">
-                                 <Input type="hidden" name="country_name" value={Country.getCountryByCode(formData.country_code)?.name || ""} readOnly />
-                                 <Input type="hidden" name="state_name" value={State.getStatesOfCountry(formData.country_code).find((state) => state.isoCode === formData.state_code)?.name || ""} readOnly />
-                                 <Input type="hidden" name="currency" value={Country.getCountryByCode(formData.country_code)?.currency || ""} readOnly />
-                              </div>
-                           </div>
-                        </>
-                     )}
-
-                     {/* Step 3: Security */}
-                     {currentStep === 3 && (
-                        <div className="grid md:grid-cols-2 gap-4">
-                           <div>
-                              <Label htmlFor="pword">Password</Label>
-                              <div className="relative">
-                                 <Input autoFocus id="pword" autoComplete="off" type={showPassword ? "text" : "password"} placeholder="Create a strong password" className={isLoading ? "opacity-50" : ""} disabled={isLoading} name="pword" value={formData.pword} onChange={handleInputChange} required />
-                                 <Button type="button" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8" onClick={() => setShowPassword(!showPassword)}>
-                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                 </Button>
-                              </div>
-                              {errors.err?.pword && <p className="text-start text-red-400 dark:text-red-300 text-sm">{errors.err.pword[0] || errors.err.pword}</p>}
-                           </div>
-
-                           <div>
-                              <Label htmlFor="confirmPword">Confirm Password</Label>
-                              <div className="relative">
-                                 <Input id="confirmPword" type={showConfirmPassword ? "text" : "password"} placeholder="Confirm your password" className={isLoading ? "opacity-50" : ""} disabled={isLoading} name="confirmPword" value={formData.confirmPword} onChange={handleInputChange} required />
-                                 <Button type="button" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                 </Button>
-                              </div>
-                              {errors.err?.confirmPword && <p className="text-start text-red-400 dark:text-red-300 text-sm">{errors.err.confirmPword[0] || errors.err.confirmPword}</p>}
-                           </div>
-                        </div>
-                     )}
-
-                     {/* Step 4: Terms & Submit */}
-                     {currentStep === 4 && (
-                        <div>
-                           <div className="flex items-center space-x-2 mt-1">
-                              <Input
-                                 type="checkbox"
-                                 id="terms_of_service"
-                                 checked={formData.terms_of_service}
-                                 disabled={isLoading}
-                                 name="terms_of_service"
-                                 className={isLoading ? "opacity-50" : ""}
-                                 value=""
-                                 onChange={(e) =>
-                                    setFormData((prev) => ({
-                                       ...prev,
-                                       terms_of_service: e.target.checked,
-                                    }))
-                                 }
-                              />
-                              <Label htmlFor="terms_of_service" className="specialLabel">
-                                 I agree to the{" "}
-                                 <Link href="" className="text-sm text-blue-500 hover:underline">
-                                    Terms of Service
-                                 </Link>{" "}
-                                 and{" "}
-                                 <Link href="" className="text-sm text-blue-500 hover:underline ">
-                                    Privacy Policy
-                                 </Link>
-                              </Label>
-                           </div>
-                           {errors.err?.terms_of_service && <p className="text-start text-red-400 dark:text-red-300 text-sm mb-5">{errors.err.terms_of_service[0] || errors.err.terms_of_service}</p>}
-                        </div>
-                     )}
-
-                     {errors.general && <p className="text-start text-red-400 dark:text-red-300 text-sm">{errors.general}</p>}
-
-                     {/* Navigation Buttons */}
-                     {currentStep > 0 && (
-                        <div className="mt-6 flex items-center justify-between gap-3">
-                           <Button type="button" className={`${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} bg-gray-200 dark:bg-gray-500 text-(--foreground) px-4 py-2 rounded-md`} onClick={handleBack} disabled={isLoading}>
-                              Back
-                           </Button>
-
-                           {currentStep < totalSteps ? (
-                              <Button type="button" className={`${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} bg-(--greenish-color) text-(--white-fff) px-4 py-2 rounded-md`} onClick={handleNext} disabled={isLoading}>
-                                 Next
-                              </Button>
-                           ) : (
-                              <Button type="submit" className={`${isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} transition transition-background w-full bg-(--greenish-color) hover:bg-(--dark-green-color) text-(--white-fff) font-normal p-2 rounded-md`} disabled={isLoading}>
-                                 {isLoading ? (
-                                    <span className="flex justify-center items-center gap-2">
-                                       <FaSpinner className="h-4 w-4 animate-spin" />
-                                       <span>Please wait...</span>
-                                    </span>
+                                 {availableStates.length > 0 ? (
+                                    <select
+                                       name="state_code"
+                                       id="state_code"
+                                       value={formData.state_code}
+                                       onChange={handleInputChange}
+                                       required
+                                       disabled={isLoading}
+                                       className="w-full h-11 px-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-sm font-medium text-gray-900 dark:text-gray-100 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                    >
+                                       <option value="">Select State / Province</option>
+                                       {availableStates.map((state) => (
+                                          <option key={state.isoCode} value={state.isoCode}>
+                                             {state.name}
+                                          </option>
+                                       ))}
+                                    </select>
+                                 ) : formData.country_code ? (
+                                    <Input
+                                       id="state_name"
+                                       name="state_name"
+                                       type="text"
+                                       placeholder={formData.country_name ? `${formData.country_name} (National)` : "Enter State or Region"}
+                                       value={formData.state_name}
+                                       onChange={(e) => {
+                                          const val = e.target.value;
+                                          setFormData((prev) => ({
+                                             ...prev,
+                                             state_name: val,
+                                             state_code: val ? (prev.country_code || "NA") : "",
+                                          }));
+                                       }}
+                                       required
+                                       className={`h-11 rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 ${isLoading ? "opacity-50" : ""}`}
+                                       disabled={isLoading}
+                                    />
                                  ) : (
-                                    "Create Account"
+                                    <select disabled className="w-full h-11 px-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 text-sm text-gray-400 cursor-not-allowed">
+                                       <option>Select country first</option>
+                                    </select>
                                  )}
-                              </Button>
-                           )}
+
+                                 {errors.err?.state_code && (
+                                    <p className="text-rose-500 text-xs font-bold">
+                                       {errors.err.state_code[0] || errors.err.state_code}
+                                    </p>
+                                 )}
+                              </div>
+                           </div>
+
+                           {/* Passwords (IN SAME PLACE WITH EMAIL) */}
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                              <div className="space-y-1.5">
+                                 <Label htmlFor="pword" className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                                    Password
+                                 </Label>
+                                 <div className="relative">
+                                    <Input
+                                       id="pword"
+                                       autoComplete="new-password"
+                                       type={showPassword ? "text" : "password"}
+                                       placeholder="Min. 8 chars, 1 number & symbol"
+                                       className={`h-11 pr-10 rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 ${isLoading ? "opacity-50" : ""}`}
+                                       disabled={isLoading}
+                                       name="pword"
+                                       value={formData.pword}
+                                       onChange={handleInputChange}
+                                       required
+                                    />
+                                    <Button
+                                       type="button"
+                                       className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0"
+                                       onClick={() => setShowPassword(!showPassword)}
+                                    >
+                                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                    </Button>
+                                 </div>
+                                 {errors.err?.pword && <p className="text-rose-500 text-xs font-bold">{errors.err.pword[0] || errors.err.pword}</p>}
+                              </div>
+
+                              <div className="space-y-1.5">
+                                 <Label htmlFor="confirmPword" className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
+                                    Confirm Password
+                                 </Label>
+                                 <div className="relative">
+                                    <Input
+                                       id="confirmPword"
+                                       type={showConfirmPassword ? "text" : "password"}
+                                       placeholder="Re-enter your password"
+                                       className={`h-11 pr-10 rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 ${isLoading ? "opacity-50" : ""}`}
+                                       disabled={isLoading}
+                                       name="confirmPword"
+                                       value={formData.confirmPword}
+                                       onChange={handleInputChange}
+                                       required
+                                    />
+                                    <Button
+                                       type="button"
+                                       className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0"
+                                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    >
+                                       {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                    </Button>
+                                 </div>
+                                 {errors.err?.confirmPword && <p className="text-rose-500 text-xs font-bold">{errors.err.confirmPword[0] || errors.err.confirmPword}</p>}
+                              </div>
+                           </div>
+
+                           {/* Terms of Service */}
+                           <div className="pt-2">
+                              <div className="flex items-center space-x-2.5">
+                                 <input
+                                    type="checkbox"
+                                    id="terms_of_service"
+                                    checked={formData.terms_of_service}
+                                    disabled={isLoading}
+                                    name="terms_of_service"
+                                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-gray-300 dark:border-gray-700 cursor-pointer"
+                                    onChange={(e) =>
+                                       setFormData((prev) => ({
+                                          ...prev,
+                                          terms_of_service: e.target.checked,
+                                       }))
+                                    }
+                                 />
+                                 <Label htmlFor="terms_of_service" className="text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
+                                    I agree to the{" "}
+                                    <Link href="/terms" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
+                                       Terms of Service
+                                    </Link>{" "}
+                                    and{" "}
+                                    <Link href="/privacy" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
+                                       Privacy Policy
+                                    </Link>
+                                 </Label>
+                              </div>
+                              {errors.err?.terms_of_service && (
+                                 <p className="text-rose-500 text-xs font-bold mt-1">{errors.err.terms_of_service[0] || errors.err.terms_of_service}</p>
+                              )}
+                           </div>
                         </div>
                      )}
+
+                     {errors.general && (
+                        <div className="p-3 mt-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs font-bold">
+                           {errors.general}
+                        </div>
+                     )}
+
+                     {/* Navigation / Action Buttons */}
+                     <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-900 flex items-center justify-between gap-3">
+                        {currentStep > 0 ? (
+                           <Button
+                              type="button"
+                              className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors"
+                              onClick={handleBack}
+                              disabled={isLoading}
+                           >
+                              <FaChevronLeft className="w-3 h-3" /> Back
+                           </Button>
+                        ) : (
+                           <div></div>
+                        )}
+
+                        {currentStep < totalSteps ? (
+                           <Button
+                              type="button"
+                              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-2 cursor-pointer shadow-md shadow-emerald-600/20 transition-all ml-auto"
+                              onClick={() => {
+                                 if (validateStep(currentStep)) {
+                                    setCurrentStep((s) => s + 1);
+                                 }
+                              }}
+                              disabled={isLoading}
+                           >
+                              <span>Next Step</span>
+                              <ChevronRight className="w-4 h-4" />
+                           </Button>
+                        ) : (
+                           <Button
+                              type="submit"
+                              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/25 transition-all w-full sm:w-auto ml-auto"
+                              disabled={isLoading}
+                           >
+                              {isLoading ? (
+                                 <span className="flex items-center gap-2">
+                                    <FaSpinner className="h-4 w-4 animate-spin" />
+                                    <span>Creating Account...</span>
+                                 </span>
+                              ) : (
+                                 <span className="flex items-center gap-2">
+                                    <FaSeedling className="w-4 h-4" />
+                                    <span>Create Account</span>
+                                 </span>
+                              )}
+                           </Button>
+                        )}
+                     </div>
                   </form>
 
-                  <div className="mt-6 text-center">
-                     <p className="text-sm text-muted-foreground">
+                  <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-900 text-center">
+                     <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                         Already have an account?{" "}
-                        <Link href="/auth/signin" className="text-blue-500 hover:underline">
+                        <Link href="/auth/signin" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
                            Sign In
                         </Link>
                      </p>
@@ -657,22 +861,6 @@ export function RegisterForm() {
                </CardContent>
             </Card>
          </div>
-
-         {/* Email Verification Overlay */}
-         {/* {showEmailVerification && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <EmailVerification
-            email={formData.email}
-            userType="vendor"
-            onVerified={(user) => {
-              handleEmailVerified(true);
-              // Continue to next step after verification
-              setCurrentStep((s) => Math.min(totalSteps, s + 1));
-            }}
-            onBack={() => setShowEmailVerification(false)}
-          />
-        </div>
-      )} */}
       </div>
    );
 }

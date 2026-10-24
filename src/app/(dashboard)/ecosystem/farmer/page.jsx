@@ -21,7 +21,7 @@ import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 
 export default function FarmerOverview() {
-   const { loading, profile, isVerified, wallet, transactions, availablePrograms, enrollingProgramId, handleEnroll, myCluster } = useFarmerData();
+   const { loading, profile, isVerified, isApproved, isRejected, hasCompletedMapping, wallet, transactions, availablePrograms, enrollingProgramId, handleEnroll, myCluster } = useFarmerData();
    const router = useRouter();
    const [isLocating, setIsLocating] = useState(false);
    const [nearbyClusters, setNearbyClusters] = useState([]);
@@ -46,6 +46,24 @@ export default function FarmerOverview() {
    const walletBalance = wallet ? parseFloat(wallet.balance || 0) : 0;
    const lockedBalance = wallet ? parseFloat(wallet.locked_balance || 0) : 0;
    const farmSize = profile?.farm_size_hectares || 0;
+
+   const today = new Date();
+   const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+   const curEnd = profile?.program_end_date ? new Date(profile.program_end_date) : null;
+   const curEndDateOnly = curEnd ? new Date(curEnd.getFullYear(), curEnd.getMonth(), curEnd.getDate()) : null;
+   const isCurrentProgramEnded = Boolean(
+      (curEndDateOnly && todayDateOnly > curEndDateOnly) ||
+      profile?.program_status === 'completed' ||
+      profile?.program_status === 'ended'
+   );
+
+   const hasActiveOrPendingProgram = Boolean(
+      profile?.program_id &&
+      !isCurrentProgramEnded &&
+      profile?.program_enrollment_status !== 'rejected'
+   );
+
+   const canEnroll = !hasActiveOrPendingProgram;
 
    const findNearbyClusters = () => {
       setIsLocating(true);
@@ -156,7 +174,57 @@ export default function FarmerOverview() {
             )}
          </div>
 
-         {!isVerified && !bannerDismissed && (
+         {/* SuperAdmin Rejection & Revision Alert */}
+         {isRejected && (
+            <div className="relative overflow-hidden bg-gradient-to-r from-rose-500/15 via-red-500/15 to-orange-500/15 border-2 border-rose-500/40 rounded-3xl p-6 md:p-8 shadow-xl animate-in fade-in duration-300">
+               <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                  <div className="flex items-start gap-4">
+                     <div className="p-3 bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-2xl shrink-0 mt-1">
+                        <FaExclamationTriangle size={30} />
+                     </div>
+                     <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                           <span className="inline-block px-3 py-0.5 text-[10px] font-black bg-rose-600 text-white rounded-full uppercase tracking-wider">
+                              Revisions Required
+                           </span>
+                           <span className="text-xs font-bold text-rose-600 dark:text-rose-400">• Verification Returned</span>
+                        </div>
+                        <h3 className="text-xl font-black text-gray-900 dark:text-white">
+                           Action Required: Your Verification Requires Specific Updates
+                        </h3>
+                        {profile?.rejection_reason && (
+                           <div className="p-3.5 bg-rose-100/60 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-xl text-xs text-rose-950 dark:text-rose-200 font-medium leading-relaxed">
+                              <span className="font-bold uppercase tracking-wider text-[10px] block mb-1 text-rose-700 dark:text-rose-400">Feedback from SuperAdmin:</span>
+                              "{profile.rejection_reason}"
+                           </div>
+                        )}
+                        {profile?.rejected_sections && profile.rejected_sections.length > 0 && (
+                           <div className="flex flex-wrap items-center gap-2 pt-1">
+                              <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Items to update:</span>
+                              {profile.rejected_sections.map((sec) => (
+                                 <span key={sec} className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white dark:bg-gray-800 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80 shadow-xs">
+                                    • {sec.replace(/_/g, " ").toUpperCase()}
+                                 </span>
+                              ))}
+                           </div>
+                        )}
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                           All your other information has been safely preserved. Clicking below will open only the specific onboarding steps that need revision.
+                        </p>
+                     </div>
+                  </div>
+                  <Button
+                     onClick={() => router.push("/ecosystem/farmer/onboarding?revision=true")}
+                     className="w-full lg:w-auto px-6 py-4 rounded-2xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 text-white font-black shadow-lg shadow-rose-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 uppercase tracking-wider text-xs shrink-0 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                     Fix & Update Rejected Items →
+                  </Button>
+               </div>
+            </div>
+         )}
+
+         {/* Standard Unverified Notice — hidden once farmer has completed all stages and submitted for approval */}
+         {!isVerified && !isRejected && !hasCompletedMapping && !bannerDismissed && (
             <div className="relative overflow-hidden bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-amber-500/15 border border-amber-500/30 dark:border-amber-500/20 rounded-3xl p-6 md:p-8 shadow-xl animate-in fade-in duration-300">
                <button
                   onClick={() => setBannerDismissed(true)}
@@ -175,7 +243,9 @@ export default function FarmerOverview() {
                            <span className="inline-block px-3 py-0.5 text-[10px] font-black bg-amber-500 text-white dark:text-gray-950 rounded-full uppercase tracking-wider">
                               Unverified Status
                            </span>
-                           <span className="text-xs font-bold text-gray-500 dark:text-gray-400">• Action Required</span>
+                           <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
+                              • Action Required
+                           </span>
                         </div>
                         <h3 className="text-xl font-black text-gray-900 dark:text-white mt-2">
                            Complete Farm Mapping to Verify Account
@@ -200,8 +270,14 @@ export default function FarmerOverview() {
             <StatCard label="Wallet Balance" value={`₦${(walletBalance + lockedBalance).toLocaleString()}`} icon={<FaWallet size={24} />} color="amber" subValue={lockedBalance > 0 ? `₦${lockedBalance.toLocaleString()} locked` : null} />
             <StatCard 
                label="Verification Status" 
-               value={isVerified ? "Verified" : "Unverified"} 
-               subValue={isVerified && profile?.farm_id ? `Farm ID: ${profile.farm_id}` : null}
+               value={isVerified ? "Verified" : isRejected ? "Revision Needed" : hasCompletedMapping ? "Pending Review" : "Unverified"} 
+               subValue={
+                  isVerified && profile?.farm_id
+                     ? `Farm ID: ${profile.farm_id}`
+                     : hasCompletedMapping && !isVerified && !isRejected
+                     ? "Awaiting SuperAdmin approval"
+                     : null
+               }
                icon={isVerified ? <FaCheckCircle size={24} /> : <FaExclamationTriangle size={24} />} 
                color={isVerified ? "emerald" : "amber"} 
             />
@@ -238,7 +314,33 @@ export default function FarmerOverview() {
                               </div>
                            </div>
                         )}
-                        <ProfileItem label="Program" value={profile?.program_name || "Not assigned"} />
+                        <div className="flex justify-between items-center py-4 border-b border-gray-50 dark:border-gray-900 last:border-0 gap-4">
+                           <span className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest shrink-0">Program</span>
+                           <div className="flex flex-col items-end gap-1 text-right">
+                              <span className="font-black text-(--foreground) text-sm truncate max-w-[200px]" title={profile?.program_name || "Not assigned"}>
+                                 {profile?.program_name || "Not assigned"}
+                              </span>
+                              {profile?.program_name && (
+                                 isCurrentProgramEnded ? (
+                                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                                       Ended
+                                    </span>
+                                 ) : profile.program_enrollment_status === 'pending_verification' ? (
+                                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                                       Pending Approval
+                                    </span>
+                                 ) : profile.program_enrollment_status === 'rejected' ? (
+                                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400">
+                                       Rejected
+                                    </span>
+                                 ) : profile.program_enrollment_status === 'verified' ? (
+                                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
+                                       Enrolled
+                                    </span>
+                                 ) : null
+                              )}
+                           </div>
+                        </div>
                         <ProfileItem label="Commodity" value={profile?.commodity || "—"} />
                         <ProfileItem label="Farm Size" value={`${parseFloat(farmSize).toLocaleString()} Hectares`} />
                         <ProfileItem 
@@ -264,7 +366,10 @@ export default function FarmerOverview() {
                <Card className="border-none shadow-xl bg-white dark:bg-gray-950 rounded-3xl overflow-hidden">
                   <CardHeader className="p-8 pb-4 border-b border-gray-100 dark:border-gray-800 flex flex-row items-center justify-between">
                      <CardTitle className="text-xl font-black">Agricultural Programs</CardTitle>
-                     {!profile?.program_id && <span className="text-[10px] font-black bg-orange-100 text-orange-600 px-3 py-1 rounded-full uppercase tracking-widest">Action Required</span>}
+                     {canEnroll && <span className="text-[10px] font-black bg-orange-100 text-orange-600 px-3 py-1 rounded-full uppercase tracking-widest">Action Required</span>}
+                     {!canEnroll && profile?.program_enrollment_status === 'pending_verification' && (
+                        <span className="text-[10px] font-black bg-amber-100 text-amber-700 px-3 py-1 rounded-full uppercase tracking-widest">Pending Review</span>
+                     )}
                   </CardHeader>
                   <CardContent className="p-8">
                      <div className="space-y-4">
@@ -284,8 +389,11 @@ export default function FarmerOverview() {
                                     <ProgramRow 
                                        key={prog.id} 
                                        prog={prog} 
-                                       isEnrolled={profile?.program_id === prog.id} 
-                                       canEnroll={!profile?.program_id}
+                                       isThisProgram={profile?.program_id === prog.id} 
+                                       currentEnrollmentStatus={profile?.program_id === prog.id ? profile?.program_enrollment_status : null}
+                                       isCurrentProgramEnded={profile?.program_id === prog.id ? isCurrentProgramEnded : false}
+                                       canEnroll={canEnroll}
+                                       currentProgramName={profile?.program_name}
                                        enrolling={enrollingProgramId === prog.id}
                                        onEnroll={() => handleEnroll(prog.id)}
                                        isVerified={isVerified}
@@ -321,48 +429,66 @@ export default function FarmerOverview() {
                </Card>
 
                {profile?.program_id && !myCluster && (
-                  <Card className="border-none shadow-xl bg-blue-50/50 dark:bg-blue-950/20 rounded-3xl overflow-hidden">
-                     <CardHeader className="p-8 pb-4 border-b border-blue-100 dark:border-blue-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                           <CardTitle className="text-xl font-black">Local Clusters</CardTitle>
-                           <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mt-1">Discover and join agricultural clusters nearby.</p>
-                        </div>
-                        <Button
-                           onClick={findNearbyClusters}
-                           disabled={isLocating}
-                           className="bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl px-6 py-4 shadow-lg shadow-blue-500/20 uppercase text-xs tracking-widest"
-                        >
-                           {isLocating ? "Scanning..." : "Find Nearby"}
-                        </Button>
-                     </CardHeader>
-                     <CardContent className="p-8">
-                        <div className="space-y-4">
-                           {nearbyClusters.length > 0 ? (
-                              nearbyClusters.map((cluster) => (
-                                 <div key={cluster.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-6 bg-white dark:bg-gray-900 rounded-2xl border border-blue-100 dark:border-blue-800 shadow-sm gap-4 transition-all hover:shadow-md">
-                                    <div className="flex items-center gap-4">
-                                       <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xl">C</div>
-                                       <div>
-                                          <p className="font-black text-lg">{cluster.name}</p>
-                                          <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 mt-1">
-                                             <FaMapMarkerAlt className="text-blue-500" />
-                                             {Math.round(cluster.distance * 1.609).toLocaleString()} KM AWAY • {cluster.region}
-                                          </p>
-                                       </div>
-                                    </div>
-                                    <Button onClick={() => handleJoinCluster(cluster.id)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl px-8 py-4 shadow-lg shadow-emerald-500/20 uppercase tracking-wider text-xs">Join Cluster</Button>
-                                 </div>
-                              ))
-                           ) : (
-                              <div className="text-center py-10 border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-3xl">
-                                 <FaMapMarkerAlt className="text-blue-300 dark:text-blue-700 mx-auto text-4xl mb-3" />
-                                 <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Scan to find nearby clusters</p>
-                              </div>
-                           )}
-                        </div>
-                     </CardContent>
-                  </Card>
-               )}
+                   profile?.program_enrollment_status === 'pending_verification' ? (
+                      <Card className="border-none shadow-xl bg-amber-50/50 dark:bg-amber-950/20 rounded-3xl overflow-hidden p-8 border border-amber-200 dark:border-amber-800/60">
+                         <div className="flex items-start gap-4">
+                            <div className="p-3 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-2xl shrink-0 mt-0.5">
+                               <FaExclamationTriangle size={24} />
+                            </div>
+                            <div>
+                               <h3 className="font-black text-base text-gray-900 dark:text-white">
+                                  Cluster Participation Pending Program Approval
+                               </h3>
+                               <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 leading-relaxed font-medium">
+                                  Your application for <strong className="text-amber-600 dark:text-amber-400 font-bold">{profile.program_name}</strong> is currently under review by the Program Director. Once approved, you can discover and join local agricultural clusters here.
+                               </p>
+                            </div>
+                         </div>
+                      </Card>
+                   ) : (!isCurrentProgramEnded && (profile?.program_enrollment_status === 'verified' || profile?.program_enrollment_status === 'approved')) ? (
+                      <Card className="border-none shadow-xl bg-blue-50/50 dark:bg-blue-950/20 rounded-3xl overflow-hidden">
+                         <CardHeader className="p-8 pb-4 border-b border-blue-100 dark:border-blue-900/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                               <CardTitle className="text-xl font-black">Local Clusters</CardTitle>
+                               <p className="text-xs font-bold text-blue-600 uppercase tracking-widest mt-1">Discover and join agricultural clusters nearby.</p>
+                            </div>
+                            <Button
+                               onClick={findNearbyClusters}
+                               disabled={isLocating}
+                               className="bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl px-6 py-4 shadow-lg shadow-blue-500/20 uppercase text-xs tracking-widest"
+                            >
+                               {isLocating ? "Scanning..." : "Find Nearby"}
+                            </Button>
+                         </CardHeader>
+                         <CardContent className="p-8">
+                            <div className="space-y-4">
+                               {nearbyClusters.length > 0 ? (
+                                  nearbyClusters.map((cluster) => (
+                                     <div key={cluster.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-6 bg-white dark:bg-gray-900 rounded-2xl border border-blue-100 dark:border-blue-800 shadow-sm gap-4 transition-all hover:shadow-md">
+                                        <div className="flex items-center gap-4">
+                                           <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xl">C</div>
+                                           <div>
+                                              <p className="font-black text-lg">{cluster.name}</p>
+                                              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 mt-1">
+                                                 <FaMapMarkerAlt className="text-blue-500" />
+                                                 {Math.round(cluster.distance * 1.609).toLocaleString()} KM AWAY • {cluster.region}
+                                              </p>
+                                           </div>
+                                        </div>
+                                        <Button onClick={() => handleJoinCluster(cluster.id)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl px-8 py-4 shadow-lg shadow-emerald-500/20 uppercase tracking-wider text-xs">Join Cluster</Button>
+                                     </div>
+                                  ))
+                               ) : (
+                                  <div className="text-center py-10 border-2 border-dashed border-blue-200 dark:border-blue-800 rounded-3xl">
+                                     <FaMapMarkerAlt className="text-blue-300 dark:text-blue-700 mx-auto text-4xl mb-3" />
+                                     <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Scan to find nearby clusters</p>
+                                  </div>
+                               )}
+                            </div>
+                         </CardContent>
+                      </Card>
+                   ) : null
+                )}
 
                {myCluster && (
                   <Card className="border-none shadow-xl bg-emerald-50/50 dark:bg-emerald-950/20 rounded-3xl overflow-hidden">
@@ -430,24 +556,149 @@ function ProfileItem({ label, value }) {
    );
 }
 
-function ProgramRow({ prog, isEnrolled, canEnroll, enrolling, onEnroll, isVerified = true }) {
+function ProgramRow({ 
+   prog, 
+   isThisProgram, 
+   currentEnrollmentStatus, 
+   isCurrentProgramEnded, 
+   canEnroll, 
+   currentProgramName, 
+   enrolling, 
+   onEnroll, 
+   isVerified = true 
+}) {
+   const targetFarmers = parseInt(prog.target_farmers, 10) || 0;
+   const enrolledFarmers = parseInt(prog.enrolled_farmers, 10) || 0;
+   const isFull = targetFarmers > 0 && enrolledFarmers >= targetFarmers;
+
+   const today = new Date();
+   const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+   const startDate = prog.start_date ? new Date(prog.start_date) : null;
+   const endDate = prog.end_date ? new Date(prog.end_date) : null;
+
+   const startDateOnly = startDate ? new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()) : null;
+   const endDateOnly = endDate ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()) : null;
+
+   const isUpcoming = startDateOnly && todayDateOnly < startDateOnly;
+   const isEnded = (endDateOnly && todayDateOnly > endDateOnly) || prog.status === 'completed' || prog.status === 'ended';
+
+   // Status for this particular program
+   const isPendingApproval = isThisProgram && currentEnrollmentStatus === 'pending_verification';
+   const isEnrolledAndApproved = isThisProgram && (currentEnrollmentStatus === 'verified' || currentEnrollmentStatus === 'approved') && !isCurrentProgramEnded;
+   const isThisProgramEnded = isThisProgram && isCurrentProgramEnded;
+   const isRejected = isThisProgram && currentEnrollmentStatus === 'rejected';
+
+   let cannotJoinReason = null;
+   if (isEnrolledAndApproved) {
+      cannotJoinReason = "You are currently enrolled in this program.";
+   } else if (isPendingApproval) {
+      cannotJoinReason = "Your enrollment is currently pending approval by the Program Director.";
+   } else if (isThisProgramEnded || isEnded) {
+      cannotJoinReason = "This program has ended. Enrollment is closed.";
+   } else if (!isVerified) {
+      cannotJoinReason = "🔒 Please complete farm mapping & verification first.";
+   } else if (isUpcoming) {
+      cannotJoinReason = `Program enrollment starts on ${startDate.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}.`;
+   } else if (isFull) {
+      cannotJoinReason = `This program has reached its maximum capacity of ${targetFarmers} farmers.`;
+   } else if (!canEnroll) {
+      cannotJoinReason = `You are currently enrolled in '${currentProgramName || "another program"}'. You can join another program once your current program has ended.`;
+   }
+
+   const isJoinDisabled = isEnrolledAndApproved || isPendingApproval || isThisProgramEnded || !canEnroll || enrolling || !isVerified || isFull || isUpcoming || isEnded;
+
    return (
-      <div className={`flex flex-col sm:flex-row sm:items-center justify-between p-6 rounded-3xl border transition-all ${isEnrolled ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 shadow-lg" : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 hover:shadow-xl hover:-translate-y-1"} gap-4`}>
+      <div className={`flex flex-col sm:flex-row sm:items-center justify-between p-6 rounded-3xl border transition-all ${
+         isEnrolledAndApproved 
+            ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 shadow-lg" 
+            : isPendingApproval
+            ? "bg-amber-50/60 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 shadow-md"
+            : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 hover:shadow-xl hover:-translate-y-1"
+      } gap-4`}>
          <div className="flex items-start gap-4">
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg ${isEnrolled ? "bg-emerald-500" : "bg-orange-500"}`}>
-               {isEnrolled ? <FaCheckCircle size={24} /> : <FaSeedling size={24} />}
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg shrink-0 ${
+               isEnrolledAndApproved 
+                  ? "bg-emerald-500" 
+                  : isPendingApproval
+                  ? "bg-amber-500"
+                  : isThisProgramEnded || isEnded 
+                  ? "bg-gray-400" 
+                  : isRejected
+                  ? "bg-rose-500"
+                  : isFull 
+                  ? "bg-rose-500" 
+                  : "bg-orange-500"
+            }`}>
+               {isEnrolledAndApproved ? (
+                  <FaCheckCircle size={24} />
+               ) : isPendingApproval ? (
+                  <span className="text-xl">⏳</span>
+               ) : isRejected ? (
+                  <FaTimes size={24} />
+               ) : (
+                  <FaSeedling size={24} />
+               )}
             </div>
             <div>
-               <h3 className={`font-black text-lg ${isEnrolled ? "text-emerald-900 dark:text-emerald-300" : "text-gray-900 dark:text-white"}`}>{prog.name}</h3>
+               <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className={`font-black text-lg ${
+                     isEnrolledAndApproved 
+                        ? "text-emerald-900 dark:text-emerald-300" 
+                        : isPendingApproval
+                        ? "text-amber-900 dark:text-amber-300"
+                        : "text-gray-900 dark:text-white"
+                  }`}>
+                     {prog.name}
+                  </h3>
+                  {isEnrolledAndApproved && (
+                     <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-300">
+                        Enrolled ✓
+                     </span>
+                  )}
+                  {isPendingApproval && (
+                     <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300 animate-pulse">
+                        Pending Director Approval ⏳
+                     </span>
+                  )}
+                  {isRejected && (
+                     <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-300">
+                        Enrollment Rejected
+                     </span>
+                  )}
+                  {isThisProgramEnded && (
+                     <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border border-gray-300">
+                        Your Program Ended
+                     </span>
+                  )}
+                  {!isThisProgram && isEnded && (
+                     <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
+                        Ended ${endDate ? endDate.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : ""}
+                     </span>
+                  )}
+                  {isFull && !isThisProgram && (
+                     <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-200 dark:border-rose-900">
+                        Target Capacity Reached
+                     </span>
+                  )}
+                  {isUpcoming && (
+                     <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200 dark:border-amber-900">
+                        Starts ${startDate ? startDate.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : ""}
+                     </span>
+                  )}
+               </div>
                <p className="text-[10px] font-black text-gray-500 mt-1 flex flex-wrap items-center gap-2 uppercase tracking-widest">
                   <span className="flex items-center gap-1">
-                     <FaMapMarkerAlt className={isEnrolled ? "text-emerald-500" : "text-orange-400"} /> 
+                     <FaMapMarkerAlt className={isEnrolledAndApproved ? "text-emerald-500" : isPendingApproval ? "text-amber-500" : "text-orange-400"} /> 
                      {prog.region}
                   </span>
                   <span>•</span>
                   <span>{prog.commodity}</span>
                   <span>•</span>
                   <span>{parseFloat(prog.target_hectares || 0).toLocaleString()} HA</span>
+                  <span>•</span>
+                  <span className="font-bold text-gray-700 dark:text-gray-300">
+                     👥 {enrolledFarmers} / {targetFarmers || "∞"} FARMERS
+                  </span>
                   <span>•</span>
                   <span className="text-emerald-600 dark:text-emerald-400 font-extrabold bg-emerald-100 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md">
                      ₦{parseFloat(prog.wallet_balance || 0).toLocaleString()} PROGRAM FUND
@@ -457,16 +708,56 @@ function ProgramRow({ prog, isEnrolled, canEnroll, enrolling, onEnroll, isVerifi
          </div>
          <Button
             onClick={() => {
-               if (!isVerified) {
-                  toast.warning("🔒 Please complete farm mapping & verification first.");
+               if (cannotJoinReason && isJoinDisabled) {
+                  toast.warning(cannotJoinReason);
                   return;
                }
-               onEnroll();
+               if (!isJoinDisabled) {
+                  onEnroll();
+               }
             }}
-            disabled={!canEnroll || enrolling || isEnrolled || !isVerified}
-            className={`px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${isEnrolled ? "bg-emerald-100 text-emerald-600 shadow-none cursor-default" : !isVerified ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 shadow-none cursor-not-allowed" : canEnroll ? "bg-orange-600 text-white shadow-xl shadow-orange-500/20 hover:scale-105" : "bg-gray-100 text-gray-400 shadow-none cursor-not-allowed"}`}
+            disabled={isJoinDisabled}
+            className={`px-8 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${
+               isEnrolledAndApproved 
+                  ? "bg-emerald-100 text-emerald-600 shadow-none cursor-default" 
+                  : isPendingApproval
+                  ? "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-300 shadow-none cursor-default"
+                  : isRejected
+                  ? "bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300 border border-rose-300 shadow-none cursor-not-allowed"
+                  : isThisProgramEnded || isEnded
+                  ? "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500 shadow-none cursor-not-allowed"
+                  : !isVerified 
+                  ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 shadow-none cursor-not-allowed" 
+                  : isUpcoming
+                  ? "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200 shadow-none cursor-not-allowed"
+                  : isFull
+                  ? "bg-rose-50 text-rose-600 dark:bg-rose-950/40 border border-rose-200 shadow-none cursor-not-allowed"
+                  : canEnroll 
+                  ? "bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-500/20 hover:scale-105 cursor-pointer" 
+                  : "bg-gray-100 text-gray-400 shadow-none cursor-not-allowed"
+            }`}
          >
-            {isEnrolled ? "Enrolled ✓" : !isVerified ? "🔒 Verify to Enroll" : enrolling ? "Enrolling..." : "Enroll Now"}
+            {isEnrolledAndApproved 
+               ? "Enrolled ✓" 
+               : isPendingApproval
+               ? "Pending Approval ⏳"
+               : isRejected
+               ? "Application Rejected"
+               : isThisProgramEnded || isEnded
+               ? "Enrollment Ended"
+               : !isVerified 
+               ? "🔒 Verify to Enroll" 
+               : isUpcoming
+               ? `Starts ${startDate ? startDate.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : ""}`
+               : isFull
+               ? "Capacity Full"
+               : enrolling 
+               ? "Submitting..." 
+               : canEnroll
+               ? "Enroll Now"
+               : profile?.program_enrollment_status === 'pending_verification'
+               ? "Pending Approval"
+               : "Enrolled in Another Program"}
          </Button>
       </div>
    );

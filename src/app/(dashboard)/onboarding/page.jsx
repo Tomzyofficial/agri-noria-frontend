@@ -239,7 +239,21 @@ const marketplaceRoleRoutes = {
    trainer: "trainer",
 };
 
-const resolveRedirectPath = (role, workspace) => {
+const resolveRedirectPath = (arg1, arg2) => {
+   let role = arg1;
+   let workspace = arg2;
+
+   const knownWorkspaces = ["ecosystem", "marketplace", "dashboard"];
+   if (
+      typeof role === "string" &&
+      knownWorkspaces.includes(role.toLowerCase().trim()) &&
+      typeof workspace === "string" &&
+      !knownWorkspaces.includes(workspace.toLowerCase().trim())
+   ) {
+      role = arg2;
+      workspace = arg1;
+   }
+
    const normalizedRole = role?.toLowerCase().trim();
    const normalizedWorkspace = workspace?.toLowerCase().trim() || getDefaultWorkspace(normalizedRole);
 

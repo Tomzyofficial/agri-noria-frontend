@@ -19,16 +19,19 @@ async function handler(req, { params }) {
 
       const pathStr = path.join("/");
 
-      // Determine active workspace from Referer
+      // Determine active workspace from Referer or explicit header
       const referer = req.headers.get("referer") || "";
-      let activeWorkspace = "ecosystem"; // default
-      if (referer.includes("/marketplace")) activeWorkspace = "marketplace";
-      else if (referer.includes("/ecosystem")) activeWorkspace = "ecosystem";
+      const explicitWorkspace = req.headers.get("x-active-workspace");
+      let activeWorkspace = explicitWorkspace || "ecosystem";
+      if (!explicitWorkspace) {
+         if (referer.includes("/dashboard/super-admin")) activeWorkspace = "super-admin";
+         else if (referer.includes("/marketplace") || referer.includes("/dashboard/buyer")) activeWorkspace = "marketplace";
+         else if (referer.includes("/ecosystem")) activeWorkspace = "ecosystem";
+      }
 
       // Forward query parameters to backend
       const queryString = req.nextUrl.search;
       const constructedUrl = `${BACKEND_URL}/api/${pathStr}${queryString}`;
-      console.log("Constructed URL:", constructedUrl);
 
       const headers = new Headers(req.headers);
       headers.set("Cookie", cookieHeader);
@@ -37,7 +40,6 @@ async function handler(req, { params }) {
       const backendRes = await fetch(constructedUrl, {
          method: req.method,
          headers: Object.fromEntries(headers.entries()),
-         // signal: AbortSignal.timeout(30000),
          body: req.method !== "GET" && req.method !== "HEAD" ? await req.body : undefined,
          cache: "no-store",
          duplex: "half",

@@ -5,21 +5,20 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   LogOut,
-  X,
-  Menu,
   LayoutDashboard,
   ClipboardList,
   MapPin,
   Calendar,
-  Globe,
   Settings,
-  ShieldCheck,
   Wallet,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
+import { NotificationProvider } from "@/hooks/useNotificationContext";
+import NotificationDrawer from "@/components/notifications/NotificationDrawer";
+import EcosystemHeader from "@/components/dashboard/EcosystemHeader";
 
-export default function FieldOperationsLayout({ children }) {
+function FieldOperationsLayoutInner({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -33,7 +32,7 @@ export default function FieldOperationsLayout({ children }) {
   const handleSignout = async () => {
     try {
       toast.info("Signing out...", { autoClose: 2000, toastId: "signout" });
-        const res = await signoutBridge();
+      const res = await signoutBridge();
       if (!res) {
         toast.error("Signout failed. Try again later.");
         return;
@@ -75,16 +74,6 @@ export default function FieldOperationsLayout({ children }) {
       href: "/ecosystem/field-operations/inspections",
       icon: <MapPin className="w-4 h-4" />,
     },
-    // {
-    //   label: "Verification Queue",
-    //   href: "/ecosystem/field-operations/verifications",
-    //   icon: <ShieldCheck className="w-4 h-4" />,
-    // },
-    // {
-    //   label: "Agronomy Reports",
-    //   href: "/ecosystem/field-operations/reports",
-    //   icon: <ClipboardList className="w-4 h-4" />,
-    // },
     {
       label: "Visit Schedule",
       href: "/ecosystem/field-operations/schedule",
@@ -111,17 +100,13 @@ export default function FieldOperationsLayout({ children }) {
   return (
     <div className="flex min-h-screen bg-(--background)">
       <aside>
-        <div
-          aria-label="Open menu"
-          onClick={handleMenuClick}
-          className="lg:hidden fixed z-50 bg-black dark:bg-white right-4 top-4 cursor-pointer shadow-md p-2 rounded"
-        >
-          {menuOpen ? (
-            <X className="text-white dark:text-black" />
-          ) : (
-            <Menu className="text-white dark:text-black" />
-          )}
-        </div>
+        {/* Backdrop overlay on mobile */}
+        {menuOpen && (
+          <div
+            onClick={() => setMenuOpen(false)}
+            className="lg:hidden fixed inset-0 z-30 bg-black/60 backdrop-blur-xs transition-opacity duration-300"
+          />
+        )}
 
         <div
           className={`${menuOpen ? "left-0 w-64 h-full bg-white shadow-xl" : "-left-64"} transition-all duration-300 fixed z-40 top-0 lg:left-0 lg:w-64 lg:h-screen dark:bg-gray-950 dark:text-(--foreground) lg:bg-white lg:shadow-md p-4 flex flex-col`}
@@ -146,10 +131,6 @@ export default function FieldOperationsLayout({ children }) {
               </Link>
             ))}
 
-            {/* <div className="my-4 border-t border-gray-100 dark:border-gray-800 pt-4">
-                     
-                  </div> */}
-
             <Button
               onClick={handleSignout}
               className="mt-auto cursor-pointer flex items-center text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 p-2 rounded-xl transition-all font-bold"
@@ -161,9 +142,26 @@ export default function FieldOperationsLayout({ children }) {
           </nav>
         </div>
       </aside>
-      <main className="lg:ml-64 w-full lg:p-8 p-4 bg-gray-50 dark:bg-(--background)">
-        {children}
-      </main>
+      <div className="lg:ml-64 flex-1 flex flex-col min-h-screen min-w-0">
+        <EcosystemHeader
+          title="Field Operations & Verification"
+          portalName="Field Operations"
+          role="field_operations"
+          onMenuToggle={handleMenuClick}
+        />
+        <main className="w-full flex-1 lg:p-8 p-4 bg-gray-50 dark:bg-(--background)">
+          {children}
+        </main>
+        <NotificationDrawer />
+      </div>
     </div>
+  );
+}
+
+export default function FieldOperationsLayout({ children }) {
+  return (
+    <NotificationProvider role="field_operations">
+      <FieldOperationsLayoutInner>{children}</FieldOperationsLayoutInner>
+    </NotificationProvider>
   );
 }

@@ -1,17 +1,16 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
-import { FcGoogle } from "react-icons/fc";
-import { FaChevronLeft } from "react-icons/fa6";
 import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 import { useState } from "react";
 import Link from "next/link";
 import { buyerSigninSchema } from "@/_lib/validations/validateSignupSignin";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
-import { FaSpinner } from "react-icons/fa6";
-import { useCartContext } from "@/hooks/useCartContext";
 import { Eye, EyeOff } from "lucide-react";
+import { FaSeedling, FaSpinner } from "react-icons/fa6";
+import { useCartContext } from "@/hooks/useCartContext";
 import { buyerSigninBridge } from "@/actions/authActions";
 
 export function SigninForm() {
@@ -21,7 +20,6 @@ export function SigninForm() {
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -34,42 +32,26 @@ export function SigninForm() {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  //  Client side validation; validate only the current step's field(s)
-  const handleStepClick = () => {
-    let validationResult;
-    if (step === 1) {
-      // Only validate email
-      validationResult = buyerSigninSchema.pick({ email: true }).safeParse({
-        email: formData.email,
-      });
-      if (!validationResult.success) {
-        setErrors({ err: validationResult.error.flatten().fieldErrors });
-        return;
-      }
-      setErrors({});
-      setStep(2);
-    } else if (step === 2) {
-      // Validate password (and all fields before submit)
-      validationResult = buyerSigninSchema.safeParse({
-        email: formData.email,
-        password: formData.password,
-      });
-      if (!validationResult.success) {
-        setErrors({ err: validationResult.error.flatten().fieldErrors });
-        return;
-      }
-      setErrors({});
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const normalizedData = {
-      ...formData,
       email: formData.email.trim().toLowerCase(),
       password: formData.password.trim(),
     };
+
+    setErrors({});
+
+    // Client side validation of both email and password together
+    const validationResult = buyerSigninSchema.safeParse(normalizedData);
+    if (!validationResult.success) {
+      const fieldErrors = validationResult.error.flatten().fieldErrors;
+      setErrors({ err: fieldErrors });
+      const firstMsg = Object.values(fieldErrors).flat().filter(Boolean)[0];
+      if (firstMsg) toast.error(firstMsg);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const res = await buyerSigninBridge(normalizedData);
@@ -79,160 +61,144 @@ export function SigninForm() {
       }
 
       // Handle cart synchronization after successful login
-      // Update local cart state by invoking CartContext merge
       try {
         await mergeCartFromServer(res.buyerId);
       } catch (err) {
-        throw new Error("Failed to merge cart");
+        // Non-blocking error
+        console.error("Cart sync notice:", err);
       }
+
+      toast.success("Signed in successfully!");
       router.push(returnUrl || "/dashboard/buyer");
     } catch (err) {
-      toast.error(err.message || "Internal server error. Try again later.");
+      toast.error(err.message || "Invalid credentials or internal server error.");
+      setErrors((prev) => ({ ...prev, general: err.message }));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div>
-      <div className="mb-5">
-        {step === 1 ? (
-          <p className="text-(--foreground) cursor-pointer">
-            Don&apos;t have an accout?{" "}
+    <div className="w-full">
+      <form noValidate onSubmit={handleSubmit} aria-busy={isLoading} className="space-y-4 text-left">
+        {/* Email Address */}
+        <div className="space-y-1.5 text-left">
+          <Label htmlFor="email" className="block text-left text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+            Email Address
+          </Label>
+          <Input
+            autoFocus
+            className={`h-11 rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 ${isLoading ? "opacity-50" : ""}`}
+            type="email"
+            name="email"
+            id="email"
+            autoComplete="email"
+            placeholder="buyer@agrinoria.eco"
+            value={formData.email}
+            onChange={handleInputChange}
+            disabled={isLoading}
+            required
+          />
+          {errors.err?.email && (
+            <p className="text-rose-500 text-xs font-bold">{errors.err.email[0]}</p>
+          )}
+        </div>
+
+        {/* Password (IN SAME PLACE - NO CONTINUE BUTTON) */}
+        <div className="space-y-1.5 text-left">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password" className="block text-left text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+              Password
+            </Label>
             <Link
-              className="text-blue-500 hover:underline"
+              href="/auth/forgot-password"
+              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+            >
+              Forgot?
+            </Link>
+          </div>
+          <div className="relative">
+            <Input
+              className={`h-11 pr-10 rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 ${isLoading ? "opacity-50" : ""}`}
+              autoComplete="current-password"
+              type={showPassword ? "text" : "password"}
+              name="password"
+              id="password"
+              placeholder="Enter your password"
+              value={formData.password}
+              onChange={handleInputChange}
+              disabled={isLoading}
+              required
+            />
+            <Button
+              type="button"
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+          </div>
+          {errors.err?.password && (
+            <p className="text-rose-500 text-xs font-bold">{errors.err.password[0]}</p>
+          )}
+        </div>
+
+        {errors.general && (
+          <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs font-bold">
+            {errors.general}
+          </div>
+        )}
+
+        {/* Submit Button */}
+        <Button
+          type="submit"
+          className={`w-full h-11 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            isLoading ? "opacity-60 cursor-not-allowed" : ""
+          }`}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <span className="flex items-center gap-2">
+              <FaSpinner className="h-4 w-4 animate-spin" />
+              <span>Signing in...</span>
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              <FaSeedling className="w-4 h-4" />
+              <span>Sign In</span>
+            </span>
+          )}
+        </Button>
+
+        {/* Terms notice */}
+        <p className="text-[11px] text-gray-500 dark:text-gray-400 text-center pt-2">
+          By signing in, you agree to Agri-Noria&apos;s{" "}
+          <Link href="/terms" className="text-emerald-600 dark:text-emerald-400 underline font-semibold">
+            Conditions of Use
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="text-emerald-600 dark:text-emerald-400 underline font-semibold">
+            Privacy Notice
+          </Link>
+          .
+        </p>
+
+        {/* Don't have an account link */}
+        <div className="pt-3 border-t border-gray-100 dark:border-gray-800 text-center">
+          <p className="text-xs text-gray-600 dark:text-gray-400">
+            Don&apos;t have an account?{" "}
+            <Link
+              className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
               href={
                 returnUrl
                   ? `/auth/identification/register?return=${encodeURIComponent(returnUrl)}`
                   : "/auth/identification/register"
               }
             >
-              Register
+              Create Account
             </Link>
           </p>
-        ) : (
-          <Button
-            className="flex items-center"
-            onClick={() => setStep(step - 1)}
-          >
-            <FaChevronLeft /> Back
-          </Button>
-        )}
-      </div>
-      <form noValidate onSubmit={handleSubmit} aria-busy={isLoading}>
-        {/* Email */}
-        {step === 1 && (
-          <>
-            <div>
-              <label htmlFor="email">Enter your email address</label>
-              <Input
-                autoFocus={true}
-                className={`border-1 border-gray-400 p-2 w-full rounded ${isLoading && "opacity-50"}`}
-                type="email"
-                name="email"
-                id="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                disabled={isLoading}
-              />
-              {errors.err?.email && (
-                <p className="text-red-500">{errors.err.email[0]}</p>
-              )}
-              <Button
-                type="button"
-                className={`${
-                  isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-                } bg-(--greenish-color) p-2 w-full rounded text-lg text-(--white-fff) mt-4`}
-                onClick={handleStepClick}
-              >
-                Continue
-              </Button>
-              <p>
-                By continuing, you agree to company name{" "}
-                <Link href="/" className="text-blue-500 underline">
-                  Contidition of Use{" "}
-                </Link>
-                and{" "}
-                <Link href="/" className="text-blue-500 underline">
-                  Privacy Policy
-                </Link>
-              </p>
-            </div>
-
-            {/* Continue with google */}
-            {/* <div>
-              <div className="flex items-center my-6">
-                <hr className="flex-grow h-px bg-gray-200 dark:bg-gray-700 border-0"></hr>
-                <span className="mx-4 text-lg text-center">Or</span>
-                <hr className="flex-grow h-px bg-gray-300 dark:bg-gray-600 border-0"></hr>
-              </div>
-              <Button
-                type="button"
-                className="border-1 w-full flex justify-center gap-2 items-center border-slate-400 p-2 rounded text-(--foreground)"
-              >
-                <span>
-                  <FcGoogle />
-                </span>
-                Continue with google
-              </Button>
-            </div> */}
-          </>
-        )}
-
-        {/* password */}
-        {step === 2 && (
-          <>
-            <div>
-              <label htmlFor="password">Enter your password</label>
-              <div className="relative">
-                <Input
-                  autoFocus={true}
-                  className={`border-1 border-gray-400 p-2 w-full rounded ${isLoading && "opacity-50"}`}
-                  autoComplete="off"
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  id="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  disabled={isLoading}
-                />
-                <Button
-                  type="button"
-                  className="absolute cursor-pointer right-2 top-1/2 transform -translate-y-1/2 h-8 w-8"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-            {errors.err?.password && (
-              <p className="text-red-500">{errors.err.password[0]}</p>
-            )}
-            <Button
-              type="submit"
-              className={`${
-                isLoading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-              } bg-(--greenish-color) hover:bg-(--dark-green-color) transition transition-background p-2 w-full rounded text-lg text-(--white-fff) mt-4`}
-              onClick={() => {
-                handleStepClick();
-                handleSubmit;
-              }}
-            >
-              {isLoading ? (
-                <div className="flex justify-center items-center gap-2">
-                  <FaSpinner className="h-4 w-4 animate-spin" />
-                  <span>Please wait...</span>
-                </div>
-              ) : (
-                "Sign in"
-              )}
-            </Button>
-          </>
-        )}
+        </div>
       </form>
     </div>
   );

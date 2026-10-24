@@ -46,27 +46,43 @@ export function FarmerDataProvider({ children }) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ program_id: programId }),
          });
-         if (res.ok) {
-            toast.success("Successfully enrolled in program!");
+         const data = await res.json().catch(() => ({}));
+         if (res.ok && data.success) {
+            toast.success(data.message || "Enrollment request submitted! Awaiting approval from the Program Director.");
             await refreshData();
          } else {
-            toast.error("Failed to enroll");
+            toast.error(data.error || "Failed to enroll in program");
          }
       } catch (err) {
-         toast.error("Network error");
+         toast.error("Network error while enrolling");
       } finally {
          setEnrollingProgramId(null);
       }
    };
 
-   const isApproved = profile?.vendor_approval_status === "approved" || profile?.approval_status === "approved";
-   const isVerified = (profile?.is_verified === true || profile?.vendor_is_verified === true || profile?.onboarding_status === "verified" || profile?.onboarding_status === "completed" || profile?.vendor_onboarding_status === "verified" || profile?.onboarding_level >= 2 || profile?.vendor_onboarding_level >= 2) && isApproved;
+   const isRejected = profile?.vendor_approval_status === "rejected" || profile?.approval_status === "rejected";
+   const isApproved = (profile?.vendor_approval_status === "approved" || profile?.approval_status === "approved") && !isRejected;
+   const hasCompletedMapping = Boolean(
+      Number(profile?.onboarding_level) >= 2 ||
+      Number(profile?.vendor_onboarding_level) >= 2 ||
+      Number(profile?.onboarding_step) >= 14 ||
+      profile?.onboarding_status === "verified" ||
+      profile?.onboarding_status === "completed" ||
+      profile?.vendor_onboarding_status === "verified" ||
+      profile?.vendor_onboarding_status === "completed" ||
+      (profile?.boundary_polygon && profile?.boundary_polygon !== "[]" && profile?.boundary_polygon !== '""') ||
+      profile?.farm_entrance_photo_url ||
+      profile?.farm_image_url
+   );
+   const isVerified = isApproved;
 
    const value = {
       loading,
       profile,
       isVerified,
       isApproved,
+      isRejected,
+      hasCompletedMapping,
       wallet,
       transactions,
       inputRequests,

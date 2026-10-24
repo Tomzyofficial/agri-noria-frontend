@@ -2,25 +2,31 @@
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { LogOut, X, Menu, LayoutDashboard, Sprout, Store, MapPin, Settings, Wallet, GraduationCap, Tractor, CreditCard, Truck, Users, Lock } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import { LogOut, X, Menu, LayoutDashboard, Sprout, Store, Settings, Wallet, GraduationCap, Tractor, CreditCard, Truck, Users, Lock } from "lucide-react";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
 import { verifyVendorSession } from "@/actions/session";
 import { FarmerDataProvider } from "./useFarmerData";
 import { WorkspaceSwitcher } from "@/components/dashboard/WorkspaceSwitcher";
+import { NotificationProvider } from "@/hooks/useNotificationContext";
+import NotificationDrawer from "@/components/notifications/NotificationDrawer";
+import EcosystemHeader from "@/components/dashboard/EcosystemHeader";
 
-export default function FarmerLayout({ children }) {
+function FarmerLayoutInner({ children }) {
    const [menuOpen, setMenuOpen] = useState(false);
    const [onboardingChecked, setOnboardingChecked] = useState(false);
-   const [isVerified, setIsVerified] = useState(true);
-   const [isApproved, setIsApproved] = useState(true);
+   const [hasBasicInfo, setHasBasicInfo] = useState(true);
+   const [isVerified, setIsVerified] = useState(false);
+   const [isApproved, setIsApproved] = useState(false);
    const pathname = usePathname();
    const router = useRouter();
+   const [optimisticPath, setOptimisticPath] = useState(pathname);
 
    const handleMenuClick = () => setMenuOpen((open) => !open);
 
    useEffect(() => {
+      setOptimisticPath(pathname);
       setMenuOpen(false);
    }, [pathname]);
 
@@ -38,7 +44,7 @@ export default function FarmerLayout({ children }) {
       }
    };
 
-   // Auto-verify session & admin approval
+   // Auto-verify session & admin approval (on mount + 30s interval, NOT on every pathname click)
    useEffect(() => {
       const checkExistingUser = async () => {
          try {
@@ -47,31 +53,12 @@ export default function FarmerLayout({ children }) {
                await handleSignout();
                return;
             }
-            // Check onboarding level and approval
             if (session?.authenticated && session?.role?.toLowerCase() === "farmer") {
-               const hasBasicInfo = session?.onboarding_level >= 1 || (session?.onboarding_status && session?.onboarding_status !== "pending");
-               if (!hasBasicInfo && pathname !== "/ecosystem/farmer/onboarding") {
-                  router.replace("/ecosystem/farmer/onboarding");
-                  return;
-               }
-
                const approved = session?.approval_status === "approved";
+               const basic = approved || session?.onboarding_level >= 1 || (session?.onboarding_status && session?.onboarding_status !== "pending");
+               setHasBasicInfo(Boolean(basic));
                setIsApproved(approved);
-
-               const verified = (session?.is_verified === true || session?.onboarding_status === "verified" || session?.onboarding_status === "completed" || session?.onboarding_level >= 2) && approved;
-               setIsVerified(verified);
-
-               const allowedUnrestrictedPaths = ["/ecosystem/farmer", "/ecosystem/farmer/settings", "/ecosystem/farmer/onboarding"];
-               if (!approved && !allowedUnrestrictedPaths.includes(pathname)) {
-                  toast.warning("🔒 Account pending SuperAdmin approval. Operations are locked.");
-                  router.replace("/ecosystem/farmer");
-                  return;
-               }
-               if (!verified && !allowedUnrestrictedPaths.includes(pathname)) {
-                  toast.warning("🔒 Please complete farm mapping & verification to access this section.");
-                  router.replace("/ecosystem/farmer");
-                  return;
-               }
+               setIsVerified(approved);
             }
             setOnboardingChecked(true);
          } catch (e) {
@@ -82,69 +69,96 @@ export default function FarmerLayout({ children }) {
       checkExistingUser();
       const interval = setInterval(checkExistingUser, 30000);
       return () => clearInterval(interval);
-   }, [pathname, router]);
+   }, []);
 
-   const navMenu = [
-      {
-         label: "Overview",
-         href: "/ecosystem/farmer",
-         icon: <LayoutDashboard className="w-4 h-4" />,
-      },
-      {
-         label: "Harvest & Operations",
-         href: "/ecosystem/farmer/harvest",
-         icon: <Sprout className="w-4 h-4" />,
-      },
-      {
-         label: "Enrolled Programs",
-         href: "/ecosystem/farmer/programs",
-         icon: <Sprout className="w-4 h-4" />,
-      },
-      {
-         label: "My Cluster",
-         href: "/ecosystem/farmer/cluster",
-         icon: <Users className="w-4 h-4" />,
-      },
-      {
-         label: "Training Center",
-         href: "/ecosystem/farmer/training",
-         icon: <GraduationCap className="w-4 h-4" />,
-      },
-      {
-         label: "My Farm",
-         href: "/ecosystem/farmer/farm",
-         icon: <Tractor className="w-4 h-4" />,
-      },
-      {
-         label: "Input Distributors",
-         href: "/ecosystem/farmer/distributors",
-         icon: <Store className="w-4 h-4" />,
-      },
-      {
-         label: "Storage & Logistics",
-         href: "/ecosystem/farmer/logistics",
-         icon: <Truck className="w-4 h-4" />,
-      },
-      {
-         label: "Financing",
-         href: "/ecosystem/farmer/financing",
-         icon: <CreditCard className="w-4 h-4" />,
-      },
-      {
-         label: "My Wallet",
-         href: "/ecosystem/farmer/wallet",
-         icon: <Wallet className="w-4 h-4" />,
-      },
-      {
-         label: "Settings",
-         href: "/ecosystem/farmer/settings",
-         icon: <Settings className="w-4 h-4" />,
-      },
-   ];
+   // Fast synchronous route guard using cached state
+   useEffect(() => {
+      if (!onboardingChecked) return;
+      if (!hasBasicInfo && pathname !== "/ecosystem/farmer/onboarding") {
+         router.replace("/ecosystem/farmer/onboarding");
+         return;
+      }
+      const allowedUnrestrictedPaths = ["/ecosystem/farmer", "/ecosystem/farmer/settings", "/ecosystem/farmer/onboarding"];
+      if (!isApproved && !allowedUnrestrictedPaths.includes(pathname)) {
+         toast.warning("🔒 Account pending SuperAdmin approval. Operations are locked.");
+         router.replace("/ecosystem/farmer");
+         return;
+      }
+      if (!isVerified && !allowedUnrestrictedPaths.includes(pathname)) {
+         toast.warning("🔒 Please complete farm mapping & verification to access this section.");
+         router.replace("/ecosystem/farmer");
+      }
+   }, [onboardingChecked, hasBasicInfo, isApproved, isVerified, pathname, router]);
 
+   const navMenu = useMemo(
+      () => [
+         {
+            label: "Overview",
+            href: "/ecosystem/farmer",
+            icon: <LayoutDashboard className="w-4 h-4" />,
+         },
+         {
+            label: "Harvest & Operations",
+            href: "/ecosystem/farmer/harvest",
+            icon: <Sprout className="w-4 h-4" />,
+         },
+         {
+            label: "Enrolled Programs",
+            href: "/ecosystem/farmer/programs",
+            icon: <Sprout className="w-4 h-4" />,
+         },
+         {
+            label: "My Cluster",
+            href: "/ecosystem/farmer/cluster",
+            icon: <Users className="w-4 h-4" />,
+         },
+         {
+            label: "Training Center",
+            href: "/ecosystem/farmer/training",
+            icon: <GraduationCap className="w-4 h-4" />,
+         },
+         {
+            label: "My Farm",
+            href: "/ecosystem/farmer/farm",
+            icon: <Tractor className="w-4 h-4" />,
+         },
+         {
+            label: "Input Distributors",
+            href: "/ecosystem/farmer/distributors",
+            icon: <Store className="w-4 h-4" />,
+         },
+         {
+            label: "Storage & Logistics",
+            href: "/ecosystem/farmer/logistics",
+            icon: <Truck className="w-4 h-4" />,
+         },
+         {
+            label: "Financing",
+            href: "/ecosystem/farmer/financing",
+            icon: <CreditCard className="w-4 h-4" />,
+         },
+         {
+            label: "My Wallet",
+            href: "/ecosystem/farmer/wallet",
+            icon: <Wallet className="w-4 h-4" />,
+         },
+         {
+            label: "Settings",
+            href: "/ecosystem/farmer/settings",
+            icon: <Settings className="w-4 h-4" />,
+         },
+      ],
+      []
+   );
+
+   const activeTarget = optimisticPath || pathname;
+   const isNavigating = Boolean(optimisticPath && optimisticPath !== pathname);
+   const targetMenuItem = navMenu.find((item) => item.href === optimisticPath);
    const navLinksStyle = (path) => {
-      const isActive = pathname === path;
-      return isActive ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 p-3 rounded-xl shadow-sm border-l-4 border-green-600" : "hover:bg-gray-100 dark:hover:bg-gray-800 p-3 rounded-xl transition-all duration-200 ml-1 text-gray-500 dark:text-gray-400";
+      const isActive = activeTarget === path;
+      return isActive
+         ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 p-3 rounded-xl shadow-sm border-l-4 border-green-600"
+         : "hover:bg-gray-100 dark:hover:bg-gray-800 p-3 rounded-xl transition-colors duration-75 ml-1 text-gray-500 dark:text-gray-400";
    };
 
    if (pathname === "/ecosystem/farmer/onboarding") {
@@ -155,7 +169,6 @@ export default function FarmerLayout({ children }) {
       );
    }
 
-   // Show loading screen while checking onboarding status — never flash the dashboard
    if (!onboardingChecked) {
       return (
          <div className="min-h-screen bg-(--background) flex items-center justify-center">
@@ -182,9 +195,12 @@ export default function FarmerLayout({ children }) {
       <FarmerDataProvider>
          <div className="flex min-h-screen bg-(--background)">
             <aside>
-               <div aria-label="Open menu" onClick={handleMenuClick} className="lg:hidden fixed z-50 bg-black dark:bg-white right-4 top-4 cursor-pointer shadow-md p-2 rounded">
-                  {menuOpen ? <X className="text-white dark:text-black" /> : <Menu className="text-white dark:text-black" />}
-               </div>
+               {menuOpen && (
+                  <div
+                     className="fixed inset-0 bg-black/50 backdrop-blur-xs z-30 lg:hidden"
+                     onClick={() => setMenuOpen(false)}
+                  />
+               )}
 
                <div className={`${menuOpen ? "left-0 w-64 h-full bg-white shadow-xl" : "-left-64"} transition-all duration-300 fixed z-40 top-0 lg:left-0 lg:w-64 lg:h-screen dark:bg-gray-950 dark:text-(--foreground) lg:bg-white lg:shadow-md p-4 flex flex-col border-r border-gray-100 dark:border-gray-800`}>
                   <div className="mb-4 px-2">
@@ -218,7 +234,16 @@ export default function FarmerLayout({ children }) {
                            );
                         }
                         return (
-                           <Link key={item.label} href={item.href} className={`flex items-center gap-3 font-bold text-sm ${navLinksStyle(item.href)}`}>
+                           <Link
+                              key={item.label}
+                              href={item.href}
+                              prefetch={true}
+                              onClick={() => {
+                                 setOptimisticPath(item.href);
+                                 setMenuOpen(false);
+                              }}
+                              className={`flex items-center gap-3 font-bold text-sm ${navLinksStyle(item.href)}`}
+                           >
                               {item.icon} {item.label}
                            </Link>
                         );
@@ -231,21 +256,49 @@ export default function FarmerLayout({ children }) {
                   </nav>
                </div>
             </aside>
-            <main className="lg:ml-64 w-full lg:p-10 p-4 bg-gray-50 dark:bg-black/20 min-h-screen">
-               {!isApproved && pathname === "/ecosystem/farmer" && (
-                  <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 text-amber-900 dark:text-amber-200 shadow-xs">
-                     <Lock className="w-5 h-5 mt-0.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                     <div className="space-y-1">
-                        <h4 className="font-bold text-sm">Account Pending SuperAdmin Approval</h4>
-                        <p className="text-xs text-amber-800/90 dark:text-amber-300/90 leading-relaxed">
-                           Welcome to Agri-Noria! Your registration and onboarding details have been recorded. Before you can request inputs, join programs, participate in clusters, or perform operations, your account must be reviewed and approved by the SuperAdmin.
+            <div className="lg:ml-64 flex-1 flex flex-col min-h-screen min-w-0">
+               <EcosystemHeader
+                  title="Farmer Console"
+                  portalName="Farmer"
+                  role="farmer"
+                  onMenuToggle={handleMenuClick}
+               />
+               <main className="w-full flex-1 lg:p-10 p-4 bg-gray-50 dark:bg-black/20">
+                  {!isApproved && pathname === "/ecosystem/farmer" && (
+                     <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 text-amber-900 dark:text-amber-200 shadow-xs">
+                        <Lock className="w-5 h-5 mt-0.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                        <div className="space-y-1">
+                           <h4 className="font-bold text-sm">Account Pending SuperAdmin Approval</h4>
+                           <p className="text-xs text-amber-800/90 dark:text-amber-300/90 leading-relaxed">
+                              Welcome to Agri-Noria! Your registration and onboarding details have been recorded. Before you can request inputs, join programs, participate in clusters, or perform operations, your account must be reviewed and approved by the SuperAdmin.
+                           </p>
+                        </div>
+                     </div>
+                  )}
+                  {isNavigating ? (
+                     <div className="flex flex-col items-center justify-center min-h-[65vh] gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center">
+                           <div className="w-5 h-5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                        </div>
+                        <p className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                           Opening {targetMenuItem?.label || "Section"}...
                         </p>
                      </div>
-                  </div>
-               )}
-               {children}
-            </main>
+                  ) : (
+                     children
+                  )}
+               </main>
+               <NotificationDrawer />
+            </div>
          </div>
       </FarmerDataProvider>
+   );
+}
+
+export default function FarmerLayout({ children }) {
+   return (
+      <NotificationProvider role="farmer">
+         <FarmerLayoutInner>{children}</FarmerLayoutInner>
+      </NotificationProvider>
    );
 }

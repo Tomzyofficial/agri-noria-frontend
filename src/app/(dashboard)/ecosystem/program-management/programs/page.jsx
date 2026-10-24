@@ -428,6 +428,18 @@ export default function EcosystemProgramsPage() {
                                  <button disabled className="w-full py-3 bg-gray-100 dark:bg-gray-900 text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2">
                                     <EyeOff size={14} /> Program In Configuration (Cannot Enroll)
                                  </button>
+                              ) : (prog.end_date && new Date() > new Date(new Date(prog.end_date).getFullYear(), new Date(prog.end_date).getMonth(), new Date(prog.end_date).getDate(), 23, 59, 59)) ? (
+                                 <button disabled className="w-full py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2">
+                                    <Clock size={14} /> Program Ended ({new Date(prog.end_date).toLocaleDateString("en-GB")})
+                                 </button>
+                              ) : (prog.start_date && new Date() < new Date(new Date(prog.start_date).getFullYear(), new Date(prog.start_date).getMonth(), new Date(prog.start_date).getDate())) ? (
+                                 <button disabled className="w-full py-3 bg-blue-50 dark:bg-blue-950/40 text-blue-500 rounded-2xl font-black text-xs uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2">
+                                    <Clock size={14} /> Enrollment Starts {new Date(prog.start_date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                                 </button>
+                              ) : (parseInt(prog.target_farmers) > 0 && parseInt(prog.enrolled_farmers) >= parseInt(prog.target_farmers)) ? (
+                                 <button disabled className="w-full py-3 bg-rose-50 dark:bg-rose-950/40 text-rose-500 rounded-2xl font-black text-xs uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2">
+                                    <AlertCircle size={14} /> Target Capacity Reached ({prog.enrolled_farmers}/{prog.target_farmers})
+                                 </button>
                               ) : (
                                  <button 
                                     onClick={() => handleEnrollCluster(prog.id)}

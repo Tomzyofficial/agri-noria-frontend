@@ -2,8 +2,8 @@
 import { useState, useEffect } from "react";
 import useSWR from "swr";
 const fetcher = (url) => fetch(url).then((res) => res.json());
-import { 
-   Landmark, Plus, Calendar, User, MapPin, 
+import {
+   Landmark, Plus, Calendar, User, MapPin,
    Search, Filter, ChevronRight, Edit3, Loader2,
    CheckCircle2, Clock, AlertCircle, Coins, Wallet, ArrowUpRight,
    Users, Check, X, ShieldCheck, UserCheck, Key, Copy, Mail, Eye, EyeOff
@@ -11,6 +11,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import StateSelect from "@/components/ui/StateSelect";
+import DatePicker from "@/components/ui/DatePicker";
 import { toast } from "react-toastify";
 import Link from "next/link";
 
@@ -79,12 +81,12 @@ export default function ProgramsPage() {
       }
    };
 
-   const { data: progData, isLoading: loading, mutate: mutatePrograms } = useSWR("/api/proxy/programs/mine", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+   const { data: progData, isLoading: loading, mutate: mutatePrograms } = useSWR("/api/proxy/programs/mine", fetcher, { revalidateOnFocus: true });
    const { data: userData } = useSWR("/api/proxy/auth/verify-vendor", fetcher, { revalidateOnFocus: false });
-   const { data: enrollData, mutate: mutateEnrollments } = useSWR("/api/proxy/programs/institution/enrollments", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+   const { data: enrollData, mutate: mutateEnrollments } = useSWR("/api/proxy/programs/institution/enrollments", fetcher, { revalidateOnFocus: true });
 
    const programs = progData?.success ? (progData.data || []) : [];
-   const currentUser = userData?.authenticated ? userData : null;
+   const currentUser = userData?.authenticated ? { ...userData, id: userData.id || userData.userId } : null;
 
    const enrolledFarmers = enrollData?.data?.farmers || [];
    const enrolledClusters = enrollData?.data?.clusters || [];
@@ -131,7 +133,7 @@ export default function ProgramsPage() {
 
    const handleOpenCreate = () => {
       setFormData({
-         name: "", region: "", commodity: "", 
+         name: "", region: "", commodity: "",
          target_farmers: "", target_hectares: "",
          start_date: "", end_date: ""
       });
@@ -140,16 +142,19 @@ export default function ProgramsPage() {
    };
 
    const handleOpenEdit = (program) => {
-      if (program.created_by !== currentUser?.id) {
+      const myId = currentUser?.id || currentUser?.userId;
+      const isAdmin = ['admin', 'super admin'].includes(currentUser?.role?.toLowerCase());
+
+      if (myId && program.created_by && program.created_by !== myId && !isAdmin) {
          toast.error("You can only modify programs you created");
          return;
       }
       setFormData({
-         name: program.name,
-         region: program.region,
-         commodity: program.commodity,
-         target_farmers: program.target_farmers,
-         target_hectares: program.target_hectares,
+         name: program.name || "",
+         region: program.region || "",
+         commodity: program.commodity || "",
+         target_farmers: program.target_farmers || "",
+         target_hectares: program.target_hectares || "",
          start_date: program.start_date ? program.start_date.split('T')[0] : "",
          end_date: program.end_date ? program.end_date.split('T')[0] : "",
       });
@@ -229,10 +234,18 @@ export default function ProgramsPage() {
 
    const handleSubmit = async (e) => {
       e.preventDefault();
+      if (!formData.region || !formData.region.trim()) {
+         toast.error("Please select a target Nigerian state / region");
+         return;
+      }
+      if (formData.start_date && formData.end_date && formData.end_date < formData.start_date) {
+         toast.error("End date cannot be earlier than start date");
+         return;
+      }
       setSaving(true);
       try {
-         const url = isEditing 
-            ? `/api/proxy/programs/${selectedProgram.id}` 
+         const url = isEditing
+            ? `/api/proxy/programs/${selectedProgram.id}`
             : "/api/proxy/programs/create";
          const method = isEditing ? "PUT" : "POST";
 
@@ -257,13 +270,13 @@ export default function ProgramsPage() {
       }
    };
 
-   const filteredPrograms = programs.filter(p => 
+   const filteredPrograms = programs.filter(p =>
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.commodity.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.region.toLowerCase().includes(searchTerm.toLowerCase())
    );
 
-   if (loading) {
+   if (loading && !progData) {
       return (
          <div className="flex justify-center items-center min-h-[400px]">
             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
@@ -283,7 +296,7 @@ export default function ProgramsPage() {
                </h1>
                <p className="text-gray-500 mt-1 font-medium">Manage and orchestrate agricultural value chain interventions and program financing.</p>
             </div>
-            <Button 
+            <Button
                onClick={handleOpenCreate}
                className="bg-blue-600 hover:bg-blue-700 text-white px-6 h-12 rounded-2xl flex items-center gap-2 shadow-lg shadow-blue-200 dark:shadow-blue-900/20 transition-all active:scale-95"
             >
@@ -296,22 +309,20 @@ export default function ProgramsPage() {
          <div className="flex border-b border-gray-200 dark:border-gray-800 gap-6">
             <button
                onClick={() => setActiveTab("programs")}
-               className={`pb-3 font-bold text-sm transition-all flex items-center gap-2 cursor-pointer ${
-                  activeTab === "programs"
-                     ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
-                     : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-               }`}
+               className={`pb-3 font-bold text-sm transition-all flex items-center gap-2 cursor-pointer ${activeTab === "programs"
+                  ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
+                  : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                  }`}
             >
                <Landmark className="w-4 h-4" />
                Programs ({programs.length})
             </button>
             <button
                onClick={() => setActiveTab("verifications")}
-               className={`pb-3 font-bold text-sm transition-all flex items-center gap-2 cursor-pointer ${
-                  activeTab === "verifications"
-                     ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
-                     : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-               }`}
+               className={`pb-3 font-bold text-sm transition-all flex items-center gap-2 cursor-pointer ${activeTab === "verifications"
+                  ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
+                  : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                  }`}
             >
                <ShieldCheck className="w-4 h-4" />
                Enrollment Verifications
@@ -365,401 +376,403 @@ export default function ProgramsPage() {
 
                {/* List */}
                <Card className="border-none shadow-sm overflow-hidden bg-white dark:bg-gray-950">
-            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex flex-col md:flex-row justify-between items-md-center gap-4">
-               <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input 
-                     placeholder="Search programs..." 
-                     className="pl-9 h-11 w-80 rounded-xl"
-                     value={searchTerm}
-                     onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-               </div>
-               <div className="flex gap-2 items-center">
-                  <Link href="/ecosystem/institution/wallet" className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-xl">
-                     <Wallet className="w-4 h-4" /> Go to Institutional Wallet <ArrowUpRight className="w-3 h-3" />
-                  </Link>
-               </div>
-            </div>
-            <div className="overflow-x-auto">
-               <table className="w-full text-left">
-                  <thead>
-                     <tr className="bg-gray-50 dark:bg-gray-900 text-gray-500 text-[10px] font-black uppercase tracking-widest">
-                        <th className="px-6 py-4">Program Details</th>
-                        <th className="px-6 py-4">Commodity & Region</th>
-                        <th className="px-6 py-4">Targets</th>
-                        <th className="px-6 py-4">Fund Balance</th>
-                        <th className="px-6 py-4">Program Director</th>
-                        <th className="px-6 py-4">Status</th>
-                        <th className="px-6 py-4 text-right">Actions</th>
-                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                     {filteredPrograms.map((program) => (
-                        <tr key={program.id} className="group hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
-                           <td className="px-6 py-5">
-                              <div className="flex items-center gap-3">
-                                 <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 text-blue-600 rounded-xl flex items-center justify-center font-bold">
-                                    {program.name.charAt(0)}
-                                 </div>
-                                 <div>
-                                    <p className="font-bold text-gray-900 dark:text-gray-100">{program.name}</p>
-                                    <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
-                                       <Calendar className="w-3 h-3" />
-                                       {new Date(program.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex flex-col md:flex-row justify-between items-md-center gap-4">
+                     <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Input
+                           placeholder="Search programs..."
+                           className="pl-9 h-11 w-80 rounded-xl"
+                           value={searchTerm}
+                           onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                     </div>
+                     <div className="flex gap-2 items-center">
+                        <Link href="/ecosystem/institution/wallet" className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-xl">
+                           <Wallet className="w-4 h-4" /> Go to Institutional Wallet <ArrowUpRight className="w-3 h-3" />
+                        </Link>
+                     </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                     <table className="w-full text-left">
+                        <thead>
+                           <tr className="bg-gray-50 dark:bg-gray-900 text-gray-500 text-[10px] font-black uppercase tracking-widest">
+                              <th className="px-6 py-4">Program Details</th>
+                              <th className="px-6 py-4">Commodity & Region</th>
+                              <th className="px-6 py-4">Targets</th>
+                              <th className="px-6 py-4">Fund Balance</th>
+                              <th className="px-6 py-4">Program Director</th>
+                              <th className="px-6 py-4 whitespace-nowrap min-w-[150px]">Status</th>
+                              <th className="px-6 py-4 text-right">Actions</th>
+                           </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                           {filteredPrograms.map((program) => (
+                              <tr key={program.id} className="group hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+                                 <td className="px-6 py-5">
+                                    <div className="flex items-center gap-3">
+                                       <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 text-blue-600 rounded-xl flex items-center justify-center font-bold">
+                                          {program.name.charAt(0)}
+                                       </div>
+                                       <div>
+                                          <p className="font-bold text-gray-900 dark:text-gray-100">{program.name}</p>
+                                          <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
+                                             <Calendar className="w-3 h-3" />
+                                             {new Date(program.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                          </div>
+                                       </div>
                                     </div>
-                                 </div>
-                              </div>
-                           </td>
-                           <td className="px-6 py-5">
-                              <div className="space-y-1">
-                                 <p className="text-sm font-bold text-gray-700 dark:text-gray-300 capitalize">{program.commodity}</p>
-                                 <div className="flex items-center gap-1 text-xs text-gray-500">
-                                    <MapPin className="w-3 h-3" /> {program.region}
-                                 </div>
-                              </div>
-                           </td>
-                           <td className="px-6 py-5">
-                              <div className="space-y-1">
-                                 <p className="text-sm font-bold">{program.enrolled_farmers} <span className="text-[10px] text-gray-400 font-normal">/ {program.target_farmers} Farmers</span></p>
-                                 <p className="text-sm font-bold">{program.target_hectares} <span className="text-[10px] text-gray-400 font-normal">Hectares</span></p>
-                              </div>
-                           </td>
-                           <td className="px-6 py-5">
-                              <div className="flex items-center gap-2">
-                                 <div className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 font-black text-xs border border-emerald-200/50 dark:border-emerald-800">
-                                    ₦{parseFloat(program.wallet_balance || 0).toLocaleString()}
-                                 </div>
-                                 <Button 
-                                    onClick={() => setFundingProgram(program)}
-                                    size="sm" 
-                                    className="h-8 px-3 rounded-lg bg-black hover:bg-gray-800 text-white text-xs font-black uppercase tracking-wider dark:bg-white dark:text-black dark:hover:bg-gray-200 transition-all flex items-center gap-1"
-                                 >
-                                    <Coins className="w-3.5 h-3.5" /> Fund
-                                 </Button>
-                              </div>
-                           </td>
-                           <td className="px-6 py-5">
-                               {program.director_name ? (
-                                  <div className="space-y-1.5">
-                                     <div className="flex items-center gap-1.5 font-bold text-sm text-gray-900 dark:text-gray-100">
-                                        <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
-                                        {program.director_name}
-                                     </div>
-                                     <p className="text-xs text-gray-500">{program.director_email}</p>
-                                     {program.director_phone && <p className="text-[10px] text-gray-400 font-mono">{program.director_phone}</p>}
-                                     <div className="flex items-center gap-2 pt-1 flex-wrap">
-                                        <button 
-                                           type="button"
-                                           onClick={() => setSelectedProgramDetails(program)}
-                                           className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 text-[11px] font-bold border border-emerald-300 dark:border-emerald-800 flex items-center gap-1 transition-all shadow-xs cursor-pointer"
-                                           title="Click to view Director login credentials and password"
-                                        >
-                                           <Key className="w-3 h-3 text-emerald-600" />
-                                           Credentials & Password
-                                        </button>
-                                        <button 
-                                           type="button"
-                                           onClick={() => {
-                                              setDirectorForm({ fname: "", lname: "", email: "", phone: "", password: "", sendEmail: true });
-                                              setAppointingProgram(program);
-                                           }} 
-                                           className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-bold cursor-pointer"
-                                        >
-                                           Reassign &rarr;
-                                        </button>
-                                     </div>
-                                  </div>
-                               ) : (
-                                  <div>
-                                     <button 
-                                        type="button"
-                                        onClick={() => {
-                                           setDirectorForm({ fname: "", lname: "", email: "", phone: "", password: "", sendEmail: true });
-                                           setAppointingProgram(program);
-                                        }} 
-                                        className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 text-xs font-black uppercase tracking-wider border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                                     >
-                                        <UserCheck className="w-3.5 h-3.5" /> Appoint Director
-                                     </button>
-                                     <p className="text-[10px] text-gray-400 mt-1">Pending appointment</p>
-                                  </div>
-                               )}
-                            </td>
-                            <td className="px-6 py-5">
-                               {program.status === 'active' ? (
-                                  <div>
-                                     <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                        Active
-                                     </span>
-                                     <p className="text-[10px] text-emerald-600 font-bold mt-1">Live & Enrolling</p>
-                                  </div>
-                               ) : (
-                                  <div>
-                                     <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
-                                        In Configuration
-                                     </span>
-                                     <p className="text-[10px] text-amber-600 font-bold mt-1">Hidden from farmers</p>
-                                  </div>
-                               )}
-                            </td>
-                            <td className="px-6 py-5 text-right">
-                               <div className="flex items-center justify-end gap-2">
-                                  <Button 
-                                     type="button"
-                                     onClick={() => setSelectedProgramDetails(program)}
-                                     size="sm" 
-                                     className="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-                                     title="View Program Details & Director Credentials"
-                                  >
-                                     <Eye className="w-3.5 h-3.5" /> Details
-                                  </Button>
-                                  <Button 
-                                     type="button"
-                                     onClick={() => handleOpenEdit(program)}
-                                     variant="outline" 
-                                     size="sm" 
-                                     className="h-8 px-2.5 rounded-lg border-gray-200 hover:bg-gray-100 text-gray-700 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 text-xs font-bold transition-all cursor-pointer"
-                                     title="Edit Program"
-                                  >
-                                     <Edit3 className="w-3.5 h-3.5" />
-                                  </Button>
-                               </div>
-                            </td>
-                        </tr>
-                     ))}
-                  </tbody>
-               </table>
-            </div>
-         </Card>
-      </>
-   ) : (
-      <div className="space-y-6">
-         <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex items-start gap-3">
-            <ShieldCheck className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
-            <div>
-               <h4 className="text-sm font-black text-amber-900 dark:text-amber-200">Enrolment Approvals Transferred to Program Director</h4>
-               <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
-                  Candidate farmer and cluster enrollments are now operationalized and approved directly by the appointed Program Director in their workspace. You retain institutional oversight below.
-               </p>
-            </div>
-         </div>
-
-         {/* Farmers Verifications */}
-         <Card className="border-none shadow-sm overflow-hidden bg-white dark:bg-gray-950">
-            <CardHeader className="p-6 border-b border-gray-100 dark:border-gray-800 flex flex-row items-center justify-between">
-               <div>
-                  <CardTitle className="text-lg font-black flex items-center gap-2">
-                     <User className="w-5 h-5 text-blue-600" /> Farmer Program Enrollments ({enrolledFarmers.length})
-                  </CardTitle>
-                  <p className="text-xs text-gray-500 font-medium mt-0.5">Review and verify individual farmers who have joined your intervention programs.</p>
-               </div>
-               {pendingFarmers.length > 0 && (
-                  <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-black rounded-full">
-                     {pendingFarmers.length} Awaiting Verification
-                  </span>
-               )}
-            </CardHeader>
-            <div className="overflow-x-auto">
-               <table className="w-full text-left">
-                  <thead>
-                     <tr className="bg-gray-50 dark:bg-gray-900 text-gray-500 text-[10px] font-black uppercase tracking-widest">
-                        <th className="px-6 py-4">Farmer</th>
-                        <th className="px-6 py-4">Program</th>
-                        <th className="px-6 py-4">Farm Size</th>
-                        <th className="px-6 py-4">Enrolled Date</th>
-                        <th className="px-6 py-4">Status</th>
-                        <th className="px-6 py-4 text-right">Actions</th>
-                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                     {enrolledFarmers.map((f) => {
-                        const isVerified = f.enrollment_status === 'verified';
-                        const isPending = f.enrollment_status === 'pending_verification';
-
-                        return (
-                           <tr key={f.farmer_profile_id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
-                              <td className="px-6 py-4">
-                                 <div>
-                                    <p className="font-bold text-gray-900 dark:text-gray-100">{f.fname} {f.lname}</p>
-                                    <p className="text-xs text-gray-500">{f.email || f.phone || "—"}</p>
-                                 </div>
-                              </td>
-                              <td className="px-6 py-4">
-                                 <p className="font-bold text-sm text-blue-600 dark:text-blue-400">{f.program_name}</p>
-                                 <span className="text-xs text-gray-500 capitalize">{f.program_commodity || f.commodity}</span>
-                              </td>
-                              <td className="px-6 py-4 font-bold text-sm">
-                                 {f.farm_size_hectares ? `${f.farm_size_hectares} Ha` : "—"}
-                              </td>
-                              <td className="px-6 py-4 text-xs text-gray-500">
-                                 {f.enrolled_at ? new Date(f.enrolled_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "—"}
-                              </td>
-                              <td className="px-6 py-4">
-                                 {isVerified ? (
-                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-                                       Verified
-                                    </span>
-                                 ) : f.enrollment_status === 'rejected' ? (
-                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">
-                                       Rejected
-                                    </span>
-                                 ) : (
-                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                                       Pending Verification
-                                    </span>
-                                 )}
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                 <div className="flex items-center justify-end gap-2">
-                                    {!isVerified && (
+                                 </td>
+                                 <td className="px-6 py-5">
+                                    <div className="space-y-1">
+                                       <p className="text-sm font-bold text-gray-700 dark:text-gray-300 capitalize">{program.commodity}</p>
+                                       <div className="flex items-center gap-1 text-xs text-gray-500">
+                                          <MapPin className="w-3 h-3" /> {program.region}
+                                       </div>
+                                    </div>
+                                 </td>
+                                 <td className="px-6 py-5">
+                                    <div className="space-y-1">
+                                       <p className="text-sm font-bold">{program.enrolled_farmers} <span className="text-[10px] text-gray-400 font-normal">/ {program.target_farmers} Farmers</span></p>
+                                       <p className="text-sm font-bold">{program.target_hectares} <span className="text-[10px] text-gray-400 font-normal">Hectares</span></p>
+                                    </div>
+                                 </td>
+                                 <td className="px-6 py-5">
+                                    <div className="flex items-center gap-2">
+                                       <div className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 font-black text-xs border border-emerald-200/50 dark:border-emerald-800">
+                                          ₦{parseFloat(program.wallet_balance || 0).toLocaleString()}
+                                       </div>
                                        <Button
+                                          onClick={() => setFundingProgram(program)}
                                           size="sm"
-                                          disabled={verifyingId === f.farmer_profile_id}
-                                          onClick={() => handleVerifyEnrollment('farmer', f.farmer_profile_id, 'verified')}
-                                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8 px-3 rounded-lg font-bold flex items-center gap-1 shadow-xs"
+                                          className="h-8 px-3 rounded-lg bg-black hover:bg-gray-800 text-white text-xs font-black uppercase tracking-wider dark:bg-white dark:text-black dark:hover:bg-gray-200 transition-all flex items-center gap-1"
                                        >
-                                          {verifyingId === f.farmer_profile_id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                                          Verify
+                                          <Coins className="w-3.5 h-3.5" /> Fund
                                        </Button>
+                                    </div>
+                                 </td>
+                                 <td className="px-6 py-5">
+                                    {program.director_name ? (
+                                       <div className="space-y-1.5">
+                                          <div className="flex items-center gap-1.5 font-bold text-sm text-gray-900 dark:text-gray-100">
+                                             <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                                             {program.director_name}
+                                          </div>
+                                          <p className="text-xs text-gray-500">{program.director_email}</p>
+                                          {program.director_phone && <p className="text-[10px] text-gray-400 font-mono">{program.director_phone}</p>}
+                                          <div className="flex items-center gap-2 pt-1 flex-wrap">
+                                             <button
+                                                type="button"
+                                                onClick={() => setSelectedProgramDetails(program)}
+                                                className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 text-[11px] font-bold border border-emerald-300 dark:border-emerald-800 flex items-center gap-1 transition-all shadow-xs cursor-pointer"
+                                                title="Click to view Director login credentials and password"
+                                             >
+                                                <Key className="w-3 h-3 text-emerald-600" />
+                                                Credentials & Password
+                                             </button>
+                                             <button
+                                                type="button"
+                                                onClick={() => {
+                                                   setDirectorForm({ fname: "", lname: "", email: "", phone: "", password: "", sendEmail: true });
+                                                   setAppointingProgram(program);
+                                                }}
+                                                className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-bold cursor-pointer"
+                                             >
+                                                Reassign &rarr;
+                                             </button>
+                                          </div>
+                                       </div>
+                                    ) : (
+                                       <div>
+                                          <button
+                                             type="button"
+                                             onClick={() => {
+                                                setDirectorForm({ fname: "", lname: "", email: "", phone: "", password: "", sendEmail: true });
+                                                setAppointingProgram(program);
+                                             }}
+                                             className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 text-xs font-black uppercase tracking-wider border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                                          >
+                                             <UserCheck className="w-3.5 h-3.5" /> Appoint Director
+                                          </button>
+                                          <p className="text-[10px] text-gray-400 mt-1">Pending appointment</p>
+                                       </div>
                                     )}
-                                    {f.enrollment_status !== 'rejected' && (
+                                 </td>
+                                  <td className="px-6 py-5 whitespace-nowrap min-w-[150px]">
+                                     {program.status === 'active' ? (
+                                        <div className="inline-flex flex-col items-start">
+                                           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 shadow-xs whitespace-nowrap">
+                                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                              Active
+                                           </span>
+                                           <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-1 whitespace-nowrap">Live & Enrolling</p>
+                                        </div>
+                                     ) : (
+                                        <div className="inline-flex flex-col items-start">
+                                           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 shadow-xs whitespace-nowrap">
+                                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                              In Configuration
+                                           </span>
+                                           <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold mt-1 whitespace-nowrap">Hidden from farmers</p>
+                                        </div>
+                                     )}
+                                  </td>
+                                 <td className="px-6 py-5 text-right">
+                                    <div className="flex items-center justify-end gap-2">
                                        <Button
+                                          type="button"
+                                          onClick={() => setSelectedProgramDetails(program)}
                                           size="sm"
+                                          className="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                                          title="View Program Details & Director Credentials"
+                                       >
+                                          <Eye className="w-3.5 h-3.5" /> Details
+                                       </Button>
+                                       <Button
+                                          type="button"
+                                          onClick={() => handleOpenEdit(program)}
                                           variant="outline"
-                                          disabled={verifyingId === f.farmer_profile_id}
-                                          onClick={() => handleVerifyEnrollment('farmer', f.farmer_profile_id, 'rejected')}
-                                          className="text-rose-600 hover:bg-rose-50 border-rose-200 text-xs h-8 px-3 rounded-lg font-bold"
+                                          size="sm"
+                                          className="h-8 px-2.5 rounded-lg border-gray-200 hover:bg-gray-100 text-gray-700 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 text-xs font-bold transition-all cursor-pointer"
+                                          title="Edit Program"
                                        >
-                                          Reject
+                                          <Edit3 className="w-3.5 h-3.5" />
                                        </Button>
-                                    )}
-                                 </div>
-                              </td>
-                           </tr>
-                        );
-                     })}
-                     {enrolledFarmers.length === 0 && (
-                        <tr>
-                           <td colSpan="6" className="text-center py-8 text-gray-500 font-medium">
-                              No farmers enrolled in your programs yet.
-                           </td>
-                        </tr>
-                     )}
-                  </tbody>
-               </table>
-            </div>
-         </Card>
-
-         {/* Clusters Verifications */}
-         <Card className="border-none shadow-sm overflow-hidden bg-white dark:bg-gray-950">
-            <CardHeader className="p-6 border-b border-gray-100 dark:border-gray-800 flex flex-row items-center justify-between">
-               <div>
-                  <CardTitle className="text-lg font-black flex items-center gap-2">
-                     <Users className="w-5 h-5 text-purple-600" /> Cluster Program Enrollments ({enrolledClusters.length})
-                  </CardTitle>
-                  <p className="text-xs text-gray-500 font-medium mt-0.5">Review and verify farmer clusters enrolled in your agricultural intervention programs.</p>
+                                    </div>
+                                 </td>
+                              </tr>
+                           ))}
+                        </tbody>
+                     </table>
+                  </div>
+               </Card>
+            </>
+         ) : (
+            <div className="space-y-6">
+               <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex items-start gap-3">
+                  <ShieldCheck className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+                  <div>
+                     <h4 className="text-sm font-black text-amber-900 dark:text-amber-200">Enrolment Approvals Transferred to Program Director</h4>
+                     <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                        Candidate farmer and cluster enrollments are now operationalized and approved directly by the appointed Program Director in their workspace. You retain institutional oversight below.
+                     </p>
+                  </div>
                </div>
-               {pendingClusters.length > 0 && (
-                  <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-black rounded-full">
-                     {pendingClusters.length} Awaiting Verification
-                  </span>
-               )}
-            </CardHeader>
-            <div className="overflow-x-auto">
-               <table className="w-full text-left">
-                  <thead>
-                     <tr className="bg-gray-50 dark:bg-gray-900 text-gray-500 text-[10px] font-black uppercase tracking-widest">
-                        <th className="px-6 py-4">Cluster Name</th>
-                        <th className="px-6 py-4">Program</th>
-                        <th className="px-6 py-4">Supervisor</th>
-                        <th className="px-6 py-4">Farmers in Cluster</th>
-                        <th className="px-6 py-4">Status</th>
-                        <th className="px-6 py-4 text-right">Actions</th>
-                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                     {enrolledClusters.map((c) => {
-                        const isVerified = c.enrollment_status === 'verified';
 
-                        return (
-                           <tr key={c.cluster_id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
-                              <td className="px-6 py-4">
-                                 <div>
-                                    <p className="font-bold text-gray-900 dark:text-gray-100">{c.cluster_name}</p>
-                                    <p className="text-xs text-gray-500">{c.region || "All Regions"}</p>
-                                 </div>
-                              </td>
-                              <td className="px-6 py-4">
-                                 <p className="font-bold text-sm text-purple-600 dark:text-purple-400">{c.program_name}</p>
-                                 <span className="text-xs text-gray-500 capitalize">{c.program_commodity}</span>
-                              </td>
-                              <td className="px-6 py-4">
-                                 <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                                    {c.supervisor_fname ? `${c.supervisor_fname} ${c.supervisor_lname || ''}` : "Assigned Supervisor"}
-                                 </p>
-                                 <p className="text-xs text-gray-500">{c.supervisor_phone || ""}</p>
-                              </td>
-                              <td className="px-6 py-4 font-bold text-sm">
-                                 {c.farmer_count || 0} Farmers
-                              </td>
-                              <td className="px-6 py-4">
-                                 {isVerified ? (
-                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-                                       Verified
-                                    </span>
-                                 ) : c.enrollment_status === 'rejected' ? (
-                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">
-                                       Rejected
-                                    </span>
-                                 ) : (
-                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                                       Pending Verification
-                                    </span>
-                                 )}
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                 <div className="flex items-center justify-end gap-2">
-                                    {!isVerified && (
-                                       <Button
-                                          size="sm"
-                                          disabled={verifyingId === c.cluster_id}
-                                          onClick={() => handleVerifyEnrollment('cluster', c.cluster_id, 'verified')}
-                                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8 px-3 rounded-lg font-bold flex items-center gap-1 shadow-xs"
-                                       >
-                                          {verifyingId === c.cluster_id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                                          Verify
-                                       </Button>
-                                    )}
-                                    {c.enrollment_status !== 'rejected' && (
-                                       <Button
-                                          size="sm"
-                                          variant="outline"
-                                          disabled={verifyingId === c.cluster_id}
-                                          onClick={() => handleVerifyEnrollment('cluster', c.cluster_id, 'rejected')}
-                                          className="text-rose-600 hover:bg-rose-50 border-rose-200 text-xs h-8 px-3 rounded-lg font-bold"
-                                       >
-                                          Reject
-                                       </Button>
-                                    )}
-                                 </div>
-                              </td>
-                           </tr>
-                        );
-                     })}
-                     {enrolledClusters.length === 0 && (
-                        <tr>
-                           <td colSpan="6" className="text-center py-8 text-gray-500 font-medium">
-                              No clusters enrolled in your programs yet.
-                           </td>
-                        </tr>
+               {/* Farmers Verifications */}
+               <Card className="border-none shadow-sm overflow-hidden bg-white dark:bg-gray-950">
+                  <CardHeader className="p-6 border-b border-gray-100 dark:border-gray-800 flex flex-row items-center justify-between">
+                     <div>
+                        <CardTitle className="text-lg font-black flex items-center gap-2">
+                           <User className="w-5 h-5 text-blue-600" /> Farmer Program Enrollments ({enrolledFarmers.length})
+                        </CardTitle>
+                        <p className="text-xs text-gray-500 font-medium mt-0.5">Review and verify individual farmers who have joined your intervention programs.</p>
+                     </div>
+                     {pendingFarmers.length > 0 && (
+                        <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-black rounded-full">
+                           {pendingFarmers.length} Awaiting Verification
+                        </span>
                      )}
-                  </tbody>
-               </table>
+                  </CardHeader>
+                  <div className="overflow-x-auto">
+                     <table className="w-full text-left">
+                        <thead>
+                           <tr className="bg-gray-50 dark:bg-gray-900 text-gray-500 text-[10px] font-black uppercase tracking-widest">
+                              <th className="px-6 py-4">Farmer</th>
+                              <th className="px-6 py-4">Program</th>
+                              <th className="px-6 py-4">Farm Size</th>
+                              <th className="px-6 py-4">Enrolled Date</th>
+                              <th className="px-6 py-4 whitespace-nowrap min-w-[150px]">Status</th>
+                              <th className="px-6 py-4 text-right">Actions</th>
+                           </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                           {enrolledFarmers.map((f) => {
+                              const isVerified = f.enrollment_status === 'verified';
+                              const isPending = f.enrollment_status === 'pending_verification';
+
+                              return (
+                                 <tr key={f.farmer_profile_id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
+                                    <td className="px-6 py-4">
+                                       <div>
+                                          <p className="font-bold text-gray-900 dark:text-gray-100">{f.fname} {f.lname}</p>
+                                          <p className="text-xs text-gray-500">{f.email || f.phone || "—"}</p>
+                                       </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                       <p className="font-bold text-sm text-blue-600 dark:text-blue-400">{f.program_name}</p>
+                                       <span className="text-xs text-gray-500 capitalize">{f.program_commodity || f.commodity}</span>
+                                    </td>
+                                    <td className="px-6 py-4 font-bold text-sm">
+                                       {f.farm_size_hectares ? `${f.farm_size_hectares} Ha` : "—"}
+                                    </td>
+                                    <td className="px-6 py-4 text-xs text-gray-500">
+                                       {f.enrolled_at ? new Date(f.enrolled_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "—"}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                       {isVerified ? (
+                                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                                             Verified
+                                          </span>
+                                       ) : f.enrollment_status === 'rejected' ? (
+                                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+                                             Rejected
+                                          </span>
+                                       ) : (
+                                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                                             Pending Verification
+                                          </span>
+                                       )}
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                       <div className="flex items-center justify-end gap-2">
+                                          {!isVerified && (
+                                             <Button
+                                                size="sm"
+                                                disabled={verifyingId === f.farmer_profile_id}
+                                                onClick={() => handleVerifyEnrollment('farmer', f.farmer_profile_id, 'verified')}
+                                                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8 px-3 rounded-lg font-bold flex items-center gap-1 shadow-xs"
+                                             >
+                                                {verifyingId === f.farmer_profile_id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                                Verify
+                                             </Button>
+                                          )}
+                                          {f.enrollment_status !== 'rejected' && (
+                                             <Button
+                                                size="sm"
+                                                variant="outline"
+                                                disabled={verifyingId === f.farmer_profile_id}
+                                                onClick={() => handleVerifyEnrollment('farmer', f.farmer_profile_id, 'rejected')}
+                                                className="text-rose-600 hover:bg-rose-50 border-rose-200 text-xs h-8 px-3 rounded-lg font-bold"
+                                             >
+                                                Reject
+                                             </Button>
+                                          )}
+                                       </div>
+                                    </td>
+                                 </tr>
+                              );
+                           })}
+                           {enrolledFarmers.length === 0 && (
+                              <tr>
+                                 <td colSpan="6" className="text-center py-8 text-gray-500 font-medium">
+                                    No farmers enrolled in your programs yet.
+                                 </td>
+                              </tr>
+                           )}
+                        </tbody>
+                     </table>
+                  </div>
+               </Card>
+
+               {/* Clusters Verifications */}
+               <Card className="border-none shadow-sm overflow-hidden bg-white dark:bg-gray-950">
+                  <CardHeader className="p-6 border-b border-gray-100 dark:border-gray-800 flex flex-row items-center justify-between">
+                     <div>
+                        <CardTitle className="text-lg font-black flex items-center gap-2">
+                           <Users className="w-5 h-5 text-purple-600" /> Cluster Program Enrollments ({enrolledClusters.length})
+                        </CardTitle>
+                        <p className="text-xs text-gray-500 font-medium mt-0.5">Review and verify farmer clusters enrolled in your agricultural intervention programs.</p>
+                     </div>
+                     {pendingClusters.length > 0 && (
+                        <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-xs font-black rounded-full">
+                           {pendingClusters.length} Awaiting Verification
+                        </span>
+                     )}
+                  </CardHeader>
+                  <div className="overflow-x-auto">
+                     <table className="w-full text-left">
+                        <thead>
+                           <tr className="bg-gray-50 dark:bg-gray-900 text-gray-500 text-[10px] font-black uppercase tracking-widest">
+                              <th className="px-6 py-4">Cluster Name</th>
+                              <th className="px-6 py-4">Program</th>
+                              <th className="px-6 py-4">Supervisor</th>
+                              <th className="px-6 py-4">Farmers in Cluster</th>
+                              <th className="px-6 py-4 whitespace-nowrap min-w-[150px]">Status</th>
+                              <th className="px-6 py-4 text-right">Actions</th>
+                           </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                           {enrolledClusters.map((c) => {
+                              const isVerified = c.enrollment_status === 'verified';
+
+                              return (
+                                 <tr key={c.cluster_id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50">
+                                    <td className="px-6 py-4">
+                                       <div>
+                                          <p className="font-bold text-gray-900 dark:text-gray-100">{c.cluster_name}</p>
+                                          <p className="text-xs text-gray-500">{c.region || "All Regions"}</p>
+                                       </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                       <p className="font-bold text-sm text-purple-600 dark:text-purple-400">{c.program_name}</p>
+                                       <span className="text-xs text-gray-500 capitalize">{c.program_commodity}</span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                       <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                          {c.supervisor_fname ? `${c.supervisor_fname} ${c.supervisor_lname || ''}` : "Assigned Supervisor"}
+                                       </p>
+                                       <p className="text-xs text-gray-500">{c.supervisor_phone || ""}</p>
+                                    </td>
+                                    <td className="px-6 py-4 font-bold text-sm">
+                                       {c.farmer_count || 0} Farmers
+                                    </td>
+                                    <td className="px-6 py-4">
+                                       {isVerified ? (
+                                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                                             Verified
+                                          </span>
+                                       ) : c.enrollment_status === 'rejected' ? (
+                                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+                                             Rejected
+                                          </span>
+                                       ) : (
+                                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                                             Pending Verification
+                                          </span>
+                                       )}
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                       <div className="flex items-center justify-end gap-2">
+                                          {!isVerified && (
+                                             <Button
+                                                size="sm"
+                                                disabled={verifyingId === c.cluster_id}
+                                                onClick={() => handleVerifyEnrollment('cluster', c.cluster_id, 'verified')}
+                                                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8 px-3 rounded-lg font-bold flex items-center gap-1 shadow-xs"
+                                             >
+                                                {verifyingId === c.cluster_id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                                Verify
+                                             </Button>
+                                          )}
+                                          {c.enrollment_status !== 'rejected' && (
+                                             <Button
+                                                size="sm"
+                                                variant="outline"
+                                                disabled={verifyingId === c.cluster_id}
+                                                onClick={() => handleVerifyEnrollment('cluster', c.cluster_id, 'rejected')}
+                                                className="text-rose-600 hover:bg-rose-50 border-rose-200 text-xs h-8 px-3 rounded-lg font-bold"
+                                             >
+                                                Reject
+                                             </Button>
+                                          )}
+                                       </div>
+                                    </td>
+                                 </tr>
+                              );
+                           })}
+                           {enrolledClusters.length === 0 && (
+                              <tr>
+                                 <td colSpan="6" className="text-center py-8 text-gray-500 font-medium">
+                                    No clusters enrolled in your programs yet.
+                                 </td>
+                              </tr>
+                           )}
+                        </tbody>
+                     </table>
+                  </div>
+               </Card>
             </div>
-         </Card>
-      </div>
-   )}
+         )}
 
          {/* Fund Programme Modal */}
          {fundingProgram && (
@@ -775,9 +788,9 @@ export default function ProgramsPage() {
                            <p className="text-xs text-emerald-100 font-medium mt-0.5">{fundingProgram.name}</p>
                         </div>
                      </div>
-                     <Button 
+                     <Button
                         onClick={() => setFundingProgram(null)}
-                        variant="ghost" 
+                        variant="ghost"
                         className="text-white hover:bg-white/20 h-9 w-9 p-0 rounded-full"
                      >
                         <Plus className="w-5 h-5 rotate-45" />
@@ -797,7 +810,7 @@ export default function ProgramsPage() {
 
                      <div className="space-y-2">
                         <label className="text-xs font-black uppercase text-gray-500 tracking-wider">Amount to Allocate (NGN)</label>
-                        <Input 
+                        <Input
                            type="number"
                            required
                            placeholder="e.g. 5000000"
@@ -821,9 +834,16 @@ export default function ProgramsPage() {
                         <Button
                            type="submit"
                            disabled={isFunding || !fundAmount}
-                           className="flex-1 h-12 rounded-2xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200 dark:shadow-none"
+                           className="flex-1 h-12 rounded-2xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200 dark:shadow-none transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-80"
                         >
-                           {isFunding ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : "Allocate Funds"}
+                           {isFunding ? (
+                              <span className="flex items-center justify-center gap-2.5">
+                                 <Loader2 className="w-5 h-5 animate-spin text-white drop-shadow" />
+                                 <span className="animate-pulse">Allocating Funds...</span>
+                              </span>
+                           ) : (
+                              "Allocate Funds"
+                           )}
                         </Button>
                      </div>
                   </form>
@@ -840,15 +860,15 @@ export default function ProgramsPage() {
                         <h2 className="text-2xl font-black">{isEditing ? "Edit Program" : "Launch Program"}</h2>
                         <p className="text-blue-100 text-sm mt-1">Define the parameters of your intervention.</p>
                      </div>
-                     <Button 
+                     <Button
                         onClick={() => setIsModalOpen(false)}
-                        variant="ghost" 
+                        variant="ghost"
                         className="text-white hover:bg-white/20 h-10 w-10 p-0 rounded-full"
                      >
                         <Plus className="w-6 h-6 rotate-45" />
                      </Button>
                   </div>
-                  
+
                   <form onSubmit={handleSubmit} className="p-8 space-y-6">
                      {!isEditing && (
                         <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 font-medium leading-relaxed">
@@ -858,93 +878,98 @@ export default function ProgramsPage() {
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2 md:col-span-2">
                            <label className="text-xs font-black uppercase text-gray-400 tracking-widest ml-1">Program Name</label>
-                           <Input 
+                           <Input
                               required
                               value={formData.name}
-                              onChange={(e) => setFormData({...formData, name: e.target.value})}
-                              placeholder="e.g. 2024 Rice Enhancement Scheme" 
+                              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                              placeholder="e.g. 2024 Rice Enhancement Scheme"
                               className="h-12 rounded-xl"
                            />
                         </div>
                         <div className="space-y-2">
-                           <label className="text-xs font-black uppercase text-gray-400 tracking-widest ml-1">Target Region</label>
-                           <Input 
+                           <label className="text-xs font-black uppercase text-gray-400 tracking-widest ml-1">Target Region / State</label>
+                           <StateSelect
                               required
                               value={formData.region}
-                              onChange={(e) => setFormData({...formData, region: e.target.value})}
-                              placeholder="e.g. Kaduna State" 
-                              className="h-12 rounded-xl"
+                              onChange={(e) => setFormData({ ...formData, region: e.target.value })}
+                              placeholder="Select State..."
                            />
                         </div>
                         <div className="space-y-2">
                            <label className="text-xs font-black uppercase text-gray-400 tracking-widest ml-1">Commodity</label>
-                           <Input 
+                           <Input
                               required
                               value={formData.commodity}
-                              onChange={(e) => setFormData({...formData, commodity: e.target.value})}
-                              placeholder="e.g. Paddy Rice" 
+                              onChange={(e) => setFormData({ ...formData, commodity: e.target.value })}
+                              placeholder="e.g. Paddy Rice"
                               className="h-12 rounded-xl"
                            />
                         </div>
                         <div className="space-y-2">
                            <label className="text-xs font-black uppercase text-gray-400 tracking-widest ml-1">Target Farmers</label>
-                           <Input 
+                           <Input
                               type="number"
                               required
                               value={formData.target_farmers}
-                              onChange={(e) => setFormData({...formData, target_farmers: e.target.value})}
-                              placeholder="500" 
+                              onChange={(e) => setFormData({ ...formData, target_farmers: e.target.value })}
+                              placeholder="500"
                               className="h-12 rounded-xl"
                            />
                         </div>
                         <div className="space-y-2">
                            <label className="text-xs font-black uppercase text-gray-400 tracking-widest ml-1">Target Hectares</label>
-                           <Input 
+                           <Input
                               type="number"
                               required
                               value={formData.target_hectares}
-                              onChange={(e) => setFormData({...formData, target_hectares: e.target.value})}
-                              placeholder="1000" 
+                              onChange={(e) => setFormData({ ...formData, target_hectares: e.target.value })}
+                              placeholder="1000"
                               className="h-12 rounded-xl"
                            />
                         </div>
                         <div className="space-y-2">
                            <label className="text-xs font-black uppercase text-gray-400 tracking-widest ml-1">Start Date</label>
-                           <Input 
-                              type="date"
+                           <DatePicker
                               required
                               value={formData.start_date}
-                              onChange={(e) => setFormData({...formData, start_date: e.target.value})}
-                              className="h-12 rounded-xl"
+                              onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                              placeholder="Select start date"
                            />
                         </div>
                         <div className="space-y-2">
                            <label className="text-xs font-black uppercase text-gray-400 tracking-widest ml-1">End Date</label>
-                           <Input 
-                              type="date"
+                           <DatePicker
                               required
+                              minDate={formData.start_date}
                               value={formData.end_date}
-                              onChange={(e) => setFormData({...formData, end_date: e.target.value})}
-                              className="h-12 rounded-xl"
+                              onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                              placeholder="Select end date"
                            />
                         </div>
                      </div>
 
                      <div className="pt-4 flex gap-4">
-                        <Button 
+                        <Button
                            type="button"
                            onClick={() => setIsModalOpen(false)}
-                           variant="outline" 
+                           variant="outline"
                            className="flex-1 h-12 rounded-2xl font-bold"
                         >
                            Cancel
                         </Button>
-                        <Button 
+                        <Button
                            type="submit"
                            disabled={saving}
-                           className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-12 rounded-2xl font-bold shadow-lg shadow-blue-200"
+                           className="flex-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 active:scale-[0.98] text-white h-12 rounded-2xl font-black text-sm tracking-wide shadow-xl shadow-blue-500/25 disabled:opacity-80 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 cursor-pointer"
                         >
-                           {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : (isEditing ? "Update Program" : "Launch Program")}
+                           {saving ? (
+                              <span className="flex items-center justify-center gap-2.5">
+                                 <Loader2 className="w-5 h-5 animate-spin text-white drop-shadow" />
+                                 <span className="animate-pulse">{isEditing ? "Updating Program..." : "Launching Program..."}</span>
+                              </span>
+                           ) : (
+                              <span>{isEditing ? "Update Program" : "Launch Program"}</span>
+                           )}
                         </Button>
                      </div>
                   </form>
@@ -966,9 +991,9 @@ export default function ProgramsPage() {
                            <p className="text-xs text-amber-100 font-medium mt-0.5">{appointingProgram.name}</p>
                         </div>
                      </div>
-                     <Button 
+                     <Button
                         onClick={() => setAppointingProgram(null)}
-                        variant="ghost" 
+                        variant="ghost"
                         className="text-white hover:bg-white/20 h-9 w-9 p-0 rounded-full"
                      >
                         <Plus className="w-5 h-5 rotate-45" />
@@ -983,7 +1008,7 @@ export default function ProgramsPage() {
                      <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                            <label className="text-[10px] font-black uppercase tracking-wider text-gray-500">First Name *</label>
-                           <Input 
+                           <Input
                               required
                               placeholder="e.g. Samuel"
                               value={directorForm.fname}
@@ -993,7 +1018,7 @@ export default function ProgramsPage() {
                         </div>
                         <div className="space-y-1">
                            <label className="text-[10px] font-black uppercase tracking-wider text-gray-500">Last Name *</label>
-                           <Input 
+                           <Input
                               required
                               placeholder="e.g. Adeyemi"
                               value={directorForm.lname}
@@ -1005,7 +1030,7 @@ export default function ProgramsPage() {
 
                      <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase tracking-wider text-gray-500">Official Email *</label>
-                        <Input 
+                        <Input
                            type="email"
                            required
                            placeholder="director@agency.gov.ng"
@@ -1017,7 +1042,7 @@ export default function ProgramsPage() {
 
                      <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase tracking-wider text-gray-500">Phone Number (Optional)</label>
-                        <Input 
+                        <Input
                            type="tel"
                            placeholder="+234 800 000 0000"
                            value={directorForm.phone}
@@ -1031,7 +1056,7 @@ export default function ProgramsPage() {
                            <label className="text-[10px] font-black uppercase tracking-wider text-gray-500">Temporary Password</label>
                            <span className="text-[10px] text-amber-600 font-bold">Leave blank to auto-generate</span>
                         </div>
-                        <Input 
+                        <Input
                            type="text"
                            placeholder="Optional custom password"
                            value={directorForm.password}
@@ -1041,7 +1066,7 @@ export default function ProgramsPage() {
                      </div>
 
                      <div className="flex items-center gap-2 pt-1">
-                        <input 
+                        <input
                            type="checkbox"
                            id="sendEmailToggle"
                            checked={directorForm.sendEmail}
@@ -1066,9 +1091,16 @@ export default function ProgramsPage() {
                         <Button
                            type="submit"
                            disabled={isAppointing}
-                           className="flex-1 h-11 rounded-xl font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-lg shadow-amber-200 dark:shadow-none"
+                           className="flex-1 h-11 rounded-xl font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-lg shadow-amber-200 dark:shadow-none transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-80"
                         >
-                           {isAppointing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Appoint Director"}
+                           {isAppointing ? (
+                              <span className="flex items-center justify-center gap-2">
+                                 <Loader2 className="w-4 h-4 animate-spin text-white drop-shadow" />
+                                 <span className="animate-pulse">Appointing Director...</span>
+                              </span>
+                           ) : (
+                              "Appoint Director"
+                           )}
                         </Button>
                      </div>
                   </form>
@@ -1077,7 +1109,7 @@ export default function ProgramsPage() {
          )}
 
          {/* Credential Handover / Display Modal */}
-         
+
          {/* PROGRAM & DIRECTOR DETAILS MODAL */}
          {selectedProgramDetails && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200 overflow-y-auto">
@@ -1091,24 +1123,23 @@ export default function ProgramsPage() {
                         <div>
                            <div className="flex items-center gap-2">
                               <h3 className="text-xl font-black">{selectedProgramDetails.name}</h3>
-                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                                 selectedProgramDetails.status === 'active' 
-                                    ? "bg-emerald-400 text-emerald-950" 
-                                    : "bg-amber-300 text-amber-950"
-                              }`}>
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${selectedProgramDetails.status === 'active'
+                                 ? "bg-emerald-400 text-emerald-950"
+                                 : "bg-amber-300 text-amber-950"
+                                 }`}>
                                  {selectedProgramDetails.status === 'active' ? "Active" : "In Configuration"}
                               </span>
                            </div>
                            <p className="text-xs text-blue-100 font-medium mt-0.5">Program & Institutional Governance Details</p>
                         </div>
                      </div>
-                     <Button 
+                     <Button
                         onClick={() => {
                            setSelectedProgramDetails(null);
                            setShowPassword(false);
                            setShowResetForm(false);
                         }}
-                        variant="ghost" 
+                        variant="ghost"
                         className="text-white hover:bg-white/20 h-9 w-9 p-0 rounded-full"
                      >
                         <X className="w-5 h-5" />
@@ -1190,8 +1221,8 @@ export default function ProgramsPage() {
                                     <span className="text-gray-500 font-sans font-bold">Password:</span>
                                     <div className="flex items-center gap-2">
                                        <span className="font-black text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950 px-2.5 py-1 rounded-lg text-sm tracking-wider">
-                                          {showPassword 
-                                             ? (selectedProgramDetails.director_credentials?.password || "PD-20262026!") 
+                                          {showPassword
+                                             ? (selectedProgramDetails.director_credentials?.password || "PD-20262026!")
                                              : "••••••••••••"}
                                        </span>
                                        <button
@@ -1251,7 +1282,14 @@ export default function ProgramsPage() {
                                           disabled={isResettingPassword}
                                           className="h-9 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0"
                                        >
-                                          {isResettingPassword ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Save Password"}
+                                          {isResettingPassword ? (
+                                    <span className="flex items-center justify-center gap-1.5">
+                                       <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                                       <span className="animate-pulse">Saving...</span>
+                                    </span>
+                                 ) : (
+                                    "Save Password"
+                                 )}
                                        </Button>
                                     </div>
                                  </div>
@@ -1387,9 +1425,9 @@ export default function ProgramsPage() {
                            <p className="text-xs text-emerald-100 font-medium mt-0.5">Ready for Manual Handover</p>
                         </div>
                      </div>
-                     <Button 
+                     <Button
                         onClick={() => setCredentialModalData(null)}
-                        variant="ghost" 
+                        variant="ghost"
                         className="text-white hover:bg-white/20 h-9 w-9 p-0 rounded-full"
                      >
                         <Plus className="w-5 h-5 rotate-45" />

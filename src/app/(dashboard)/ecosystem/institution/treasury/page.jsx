@@ -15,9 +15,9 @@ export default function TreasuryLedgerPage() {
    const [creditNote, setCreditNote] = useState("");
    const [funding, setFunding] = useState(false);
 
-   const { data: txData, isLoading: l1, mutate: mutateTx } = useSWR("/api/proxy/pipeline/stats/platform-wallet/transactions", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
-   const { data: statsData, isLoading: l2, mutate: mutateStats } = useSWR("/api/proxy/pipeline/stats/platform-wallet", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
-   const { data: walletsData, isLoading: l3, mutate: mutateWallets } = useSWR("/api/proxy/admin/institution/wallets", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
+   const { data: txData, isLoading: l1, mutate: mutateTx } = useSWR("/api/proxy/pipeline/stats/platform-wallet/transactions", fetcher, { refreshInterval: 30000, revalidateOnFocus: true });
+   const { data: statsData, isLoading: l2, mutate: mutateStats } = useSWR("/api/proxy/pipeline/stats/platform-wallet", fetcher, { refreshInterval: 30000, revalidateOnFocus: true });
+   const { data: walletsData, isLoading: l3, mutate: mutateWallets } = useSWR("/api/proxy/admin/institution/wallets", fetcher, { refreshInterval: 30000, revalidateOnFocus: true });
 
    const transactions = txData?.success ? (txData.data || []) : [];
    const stats = statsData?.success ? statsData.data : { balance: 0 };

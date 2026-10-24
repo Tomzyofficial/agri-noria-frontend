@@ -1,59 +1,88 @@
 "use client";
 import { useState, useEffect } from "react";
 import {
-   Users, Search, ArrowLeft, Building2, Mail, Phone,
-   Calendar, ChevronRight, ChevronDown, Trophy, Star,
-   User, TrendingUp, X
+   Search, Building2, Phone, Calendar, Trophy,
+   User, X, FileText, ShoppingBag, ShieldCheck, RefreshCw, Loader2
 } from "lucide-react";
-import { Card } from "@/components/ui/Card";
-import Link from "next/link";
+import { FaSeedling } from "react-icons/fa6";
+import { Card, CardContent } from "@/components/ui/Card";
 import { toast } from "react-toastify";
+
+// ─── Empty State Component ────────────────────────────────────────────────────
+function TabEmptyState({ icon: Icon, title, description, badgeText, onResetSearch, isSearching }) {
+   return (
+      <div className="bg-white dark:bg-gray-950 rounded-3xl border border-slate-200/80 dark:border-gray-800 p-10 sm:p-14 text-center max-w-2xl mx-auto shadow-xs space-y-4">
+         <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900 flex items-center justify-center mx-auto shadow-sm">
+            <Icon className="w-8 h-8" />
+         </div>
+         <div className="space-y-1.5">
+            {badgeText && (
+               <span className="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300 mb-1">
+                  {badgeText}
+               </span>
+            )}
+            <h3 className="text-lg font-black text-gray-900 dark:text-white tracking-tight">{title}</h3>
+            <p className="text-xs text-slate-500 dark:text-gray-400 leading-relaxed max-w-md mx-auto font-medium">
+               {description}
+            </p>
+         </div>
+         {isSearching && onResetSearch && (
+            <button
+               onClick={onResetSearch}
+               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300 transition-colors cursor-pointer"
+            >
+               Clear Search Query
+            </button>
+         )}
+      </div>
+   );
+}
 
 // ─── Buyer Detail Modal ───────────────────────────────────────────────────────
 function BuyerModal({ buyer, onClose }) {
    if (!buyer) return null;
    return (
       <div
-         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
          onClick={onClose}
       >
          <div
-            className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6 relative animate-in fade-in zoom-in-95 duration-200"
+            className="bg-white dark:bg-gray-950 rounded-3xl shadow-2xl w-full max-w-md p-6 relative animate-in fade-in zoom-in-95 duration-200 border border-slate-200 dark:border-gray-800"
             onClick={(e) => e.stopPropagation()}
          >
             <button
                onClick={onClose}
-               className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+               className="absolute top-4 right-4 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition cursor-pointer"
             >
-               <X className="w-4 h-4 text-gray-500" />
+               <X className="w-4 h-4 text-slate-400" />
             </button>
 
             <div className="flex items-center gap-4 mb-5">
-               <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-violet-500 flex items-center justify-center text-white text-xl font-bold">
-                  {buyer.buyer_name?.charAt(0) || "U"}
+               <div className="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-xl font-black">
+                  {buyer.buyer_name?.charAt(0) || buyer.buyer_email?.charAt(0) || "B"}
                </div>
                <div>
-                  <h3 className="font-bold text-lg text-(--foreground)">{buyer.buyer_name || "Unknown"}</h3>
-                  <p className="text-sm text-gray-500">{buyer.buyer_email}</p>
+                  <h3 className="font-black text-base text-gray-900 dark:text-white">{buyer.buyer_name || "Procurement Buyer"}</h3>
+                  <p className="text-xs text-slate-500 font-medium">{buyer.buyer_email}</p>
                </div>
             </div>
 
-            <div className="space-y-3 text-sm">
-               <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                  <Phone className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span className="text-gray-600 dark:text-gray-300">{buyer.buyer_phone || "No phone provided"}</span>
+            <div className="space-y-2.5 text-xs">
+               <div className="flex items-center gap-3 p-3.5 bg-slate-50 dark:bg-gray-900 rounded-xl border border-slate-100 dark:border-gray-800">
+                  <Phone className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="text-slate-700 dark:text-gray-300 font-semibold">{buyer.buyer_phone || "No phone provided"}</span>
                </div>
-               <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+               <div className="flex items-center gap-3 p-3.5 bg-slate-50 dark:bg-gray-900 rounded-xl border border-slate-100 dark:border-gray-800">
                   <Calendar className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span className="text-gray-600 dark:text-gray-300">
-                     Registered {new Date(buyer.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+                  <span className="text-slate-700 dark:text-gray-300 font-medium">
+                     Registered {buyer.created_at ? new Date(buyer.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "—"}
                   </span>
                </div>
                {buyer.buyer_type === "aggregator" && (
-                  <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-                     <Building2 className="w-4 h-4 text-blue-500 shrink-0" />
-                     <span className="text-blue-700 dark:text-blue-300 font-medium">
-                        Registered by {buyer.aggregator_fname} {buyer.aggregator_lname}
+                  <div className="flex items-center gap-3 p-3.5 bg-emerald-50/50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40">
+                     <Building2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                     <span className="text-emerald-800 dark:text-emerald-300 font-bold">
+                        Linked via Aggregator {buyer.aggregator_fname} {buyer.aggregator_lname}
                      </span>
                   </div>
                )}
@@ -80,136 +109,56 @@ function AggregatorCard({ aggregator, buyers, searchTerm }) {
    const totalBuyers = parseInt(aggregator.total_buyers) || 0;
    const completedSales = parseInt(aggregator.completed_sales) || 0;
 
-   const scoreColor =
-      completedSales >= 10
-         ? "text-emerald-600 dark:text-emerald-400"
-         : completedSales >= 5
-         ? "text-amber-600 dark:text-amber-400"
-         : "text-gray-500 dark:text-gray-400";
-
    return (
       <>
          {selectedBuyer && <BuyerModal buyer={selectedBuyer} onClose={() => setSelectedBuyer(null)} />}
 
-         <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md">
+         <div className="rounded-3xl border border-slate-200/80 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-xs overflow-hidden transition-all duration-200 hover:shadow-md hover:border-emerald-300">
             {/* Aggregator Header Card */}
             <div
                className="p-5 cursor-pointer group"
                onClick={() => setExpanded((prev) => !prev)}
             >
                <div className="flex items-start gap-4">
-                  {/* Avatar */}
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shrink-0 shadow-lg shadow-blue-200 dark:shadow-blue-900/40">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-black text-lg shrink-0">
                      {aggregator.fname?.charAt(0) || "A"}
                   </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                     <div className="flex items-center gap-2 mb-0.5">
-                        <h3 className="font-bold text-base text-(--foreground) truncate">
+                  <div className="flex-1 min-w-0 space-y-1">
+                     <div className="flex items-center justify-between">
+                        <h4 className="font-black text-sm text-gray-900 dark:text-white truncate">
                            {aggregator.fname} {aggregator.lname}
-                        </h3>
-                        <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                        </h4>
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                            Aggregator
                         </span>
                      </div>
-
-                     <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5">
-                        <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                           <Mail className="w-3 h-3" />
-                           <span className="truncate max-w-[180px]">{aggregator.email}</span>
-                        </div>
-                        {aggregator.phone && (
-                           <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                              <Phone className="w-3 h-3" />
-                              {aggregator.phone}
-                           </div>
-                        )}
-                        <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                           <Calendar className="w-3 h-3" />
-                           Joined {new Date(aggregator.joined_at).toLocaleDateString("en-GB", { month: "short", year: "numeric" })}
-                        </div>
+                     <p className="text-xs text-slate-500 font-medium truncate">{aggregator.email}</p>
+                     <div className="flex items-center gap-3 pt-1 text-[11px] text-slate-400 font-semibold">
+                        <span>{totalBuyers} Buyers Onboarded</span>
+                        <span>•</span>
+                        <span>{completedSales} Completed Contracts</span>
                      </div>
-                  </div>
-
-                  {/* Toggle Icon */}
-                  <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-gray-50 dark:bg-gray-800 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-colors`}>
-                     {expanded
-                        ? <ChevronDown className="w-4 h-4 text-blue-500" />
-                        : <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                     }
-                  </div>
-               </div>
-
-               {/* Stats Row */}
-               <div className="mt-4 grid grid-cols-3 gap-3">
-                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-center">
-                     <div className="flex items-center justify-center gap-1 mb-0.5">
-                        <Users className="w-3.5 h-3.5 text-blue-500" />
-                        <span className="text-xs text-gray-500 font-medium">Buyers</span>
-                     </div>
-                     <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{totalBuyers}</p>
-                  </div>
-
-                  <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl text-center">
-                     <div className="flex items-center justify-center gap-1 mb-0.5">
-                        <Trophy className="w-3.5 h-3.5 text-emerald-500" />
-                        <span className="text-xs text-gray-500 font-medium">Sales</span>
-                     </div>
-                     <p className={`text-xl font-bold ${scoreColor}`}>{completedSales}</p>
-                  </div>
-
-                  <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl text-center">
-                     <div className="flex items-center justify-center gap-1 mb-0.5">
-                        <Star className="w-3.5 h-3.5 text-amber-500" />
-                        <span className="text-xs text-gray-500 font-medium">Score</span>
-                     </div>
-                     <p className={`text-xl font-bold ${scoreColor}`}>
-                        {totalBuyers === 0 ? "—" : Math.round((completedSales / totalBuyers) * 10)}
-                     </p>
                   </div>
                </div>
             </div>
 
-            {/* Expanded Buyer List */}
+            {/* Expandable Buyers List */}
             {expanded && (
-               <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 space-y-3">
+               <div className="p-4 bg-slate-50/60 dark:bg-gray-900/40 border-t border-slate-100 dark:border-gray-900 space-y-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2">Onboarded Off-Takers</p>
                   {filteredBuyers.length === 0 ? (
-                     <div className="text-center py-8 text-gray-400 text-sm">
-                        <User className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                        No buyers registered yet
-                     </div>
+                     <p className="text-xs text-slate-400 italic px-2">No individual buyers linked yet.</p>
                   ) : (
-                     <>
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                           Registered Buyers ({filteredBuyers.length})
-                        </p>
-                        {filteredBuyers.map((buyer) => (
-                           <div
-                              key={buyer.id}
-                              onClick={() => setSelectedBuyer(buyer)}
-                              className="flex items-center gap-3 p-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700 cursor-pointer hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm transition-all group"
-                           >
-                              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-blue-500 flex items-center justify-center text-white text-sm font-bold shrink-0">
-                                 {buyer.buyer_name?.charAt(0) || "B"}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                 <p className="font-medium text-sm text-(--foreground) truncate">
-                                    {buyer.buyer_name || "Unknown Buyer"}
-                                 </p>
-                                 <p className="text-xs text-gray-500 truncate">{buyer.buyer_email}</p>
-                              </div>
-                              <div className="text-right shrink-0">
-                                 <p className="text-xs text-gray-400">
-                                    {new Date(buyer.created_at).toLocaleDateString("en-GB", {
-                                       day: "numeric", month: "short"
-                                    })}
-                                 </p>
-                                 <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-blue-500 transition-colors mt-0.5 ml-auto" />
-                              </div>
-                           </div>
-                        ))}
-                     </>
+                     filteredBuyers.map((b) => (
+                        <div
+                           key={b.id}
+                           onClick={() => setSelectedBuyer(b)}
+                           className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-gray-950 border border-slate-100 dark:border-gray-800 hover:border-emerald-300 cursor-pointer transition-colors text-xs"
+                        >
+                           <span className="font-bold text-gray-900 dark:text-white">{b.buyer_name || b.buyer_email}</span>
+                           <span className="text-slate-400 text-[11px]">View Profile →</span>
+                        </div>
+                     ))
                   )}
                </div>
             )}
@@ -227,23 +176,24 @@ function DirectBuyerCard({ buyer }) {
          {selected && <BuyerModal buyer={buyer} onClose={() => setSelected(false)} />}
          <div
             onClick={() => setSelected(true)}
-            className="flex items-center gap-3 p-4 bg-white dark:bg-gray-900 rounded-2xl border border-purple-100 dark:border-purple-900/30 cursor-pointer hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md transition-all group"
+            className="flex items-center gap-3.5 p-5 bg-white dark:bg-gray-950 rounded-3xl border border-slate-200/80 dark:border-gray-800 cursor-pointer hover:border-emerald-300 hover:shadow-md transition-all group"
          >
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-fuchsia-500 flex items-center justify-center text-white font-bold shrink-0">
-               {buyer.buyer_name?.charAt(0) || buyer.buyer_email?.charAt(0) || "U"}
+            <div className="w-11 h-11 rounded-2xl bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 flex items-center justify-center font-black text-sm shrink-0">
+               {buyer.buyer_name?.charAt(0) || buyer.buyer_email?.charAt(0) || "D"}
             </div>
             <div className="flex-1 min-w-0">
-               <p className="font-semibold text-sm text-(--foreground) truncate">
-                  {buyer.buyer_name || "Direct User"}
+               <p className="font-bold text-xs text-gray-900 dark:text-white truncate">
+                  {buyer.buyer_name || "Direct Procurement Buyer"}
                </p>
-               <p className="text-xs text-gray-500 truncate">{buyer.buyer_email}</p>
+               <p className="text-[11px] text-slate-500 font-medium truncate">{buyer.buyer_email}</p>
+               {buyer.buyer_phone && <p className="text-[10px] text-slate-400">{buyer.buyer_phone}</p>}
             </div>
             <div className="text-right shrink-0 space-y-1">
-               <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 block">
-                  Direct
+               <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 block">
+                  Direct Buyer
                </span>
-               <p className="text-xs text-gray-400">
-                  {new Date(buyer.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+               <p className="text-[10px] text-slate-400 font-medium">
+                  {buyer.created_at ? new Date(buyer.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "—"}
                </p>
             </div>
          </div>
@@ -254,42 +204,62 @@ function DirectBuyerCard({ buyer }) {
 // ─── Agreement Card Component ───────────────────────────────────────────────
 function AgreementCard({ ag }) {
    return (
-      <Card className={`rounded-2xl border-none shadow-sm bg-white dark:bg-gray-900 overflow-hidden border-l-4 ${ag.is_pre_harvest ? 'border-amber-500' : 'border-green-500'}`}>
-         <CardContent className="p-6">
-            <div className="flex justify-between items-start mb-4">
+      <Card className={`rounded-3xl border shadow-xs bg-white dark:bg-gray-950 overflow-hidden text-left border-l-4 ${ag.is_pre_harvest ? 'border-l-amber-500' : 'border-l-emerald-500'}`}>
+         <CardContent className="p-6 space-y-4">
+            <div className="flex justify-between items-start gap-2">
                <div>
-                  <h3 className="font-black text-lg text-gray-900 dark:text-white">{ag.buyer_name}</h3>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{ag.product_details?.commodity} Procurement</p>
+                  <h3 className="font-black text-sm text-gray-900 dark:text-white">{ag.buyer_name || "Procurement Buyer"}</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                     {ag.product_details?.commodity || "Agricultural Produce"} Contract
+                  </p>
                </div>
-               <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${ag.is_pre_harvest ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                  ag.is_pre_harvest 
+                     ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' 
+                     : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+               }`}>
                   {ag.is_pre_harvest ? 'Pre-Harvest' : 'Post-Harvest'}
                </span>
             </div>
 
-            <div className="space-y-2 mb-4 text-xs">
-               <div className="flex justify-between border-b border-gray-50 dark:border-gray-800 pb-1">
-                  <span className="text-gray-400">Financing</span>
-                  <span className="font-black">₦{parseFloat(ag.financing_amount || 0).toLocaleString()}</span>
+            <div className="space-y-2 text-xs">
+               <div className="flex justify-between border-b border-slate-100 dark:border-gray-900 pb-1.5">
+                  <span className="text-slate-400">Financing Volume</span>
+                  <span className="font-black text-gray-900 dark:text-white">₦{parseFloat(ag.financing_amount || 0).toLocaleString()}</span>
                </div>
-               <div className="flex justify-between border-b border-gray-50 dark:border-gray-800 pb-1">
-                  <span className="text-gray-400">Aggregator</span>
-                  <span className="font-bold text-blue-600">{ag.aggregator_name || 'System'}</span>
+               <div className="flex justify-between border-b border-slate-100 dark:border-gray-900 pb-1.5">
+                  <span className="text-slate-400">Brokering Aggregator</span>
+                  <span className="font-bold text-emerald-600">{ag.aggregator_name || 'Agri-Noria Core'}</span>
                </div>
                <div className="flex justify-between">
-                  <span className="text-gray-400">Status</span>
-                  <span className="font-bold uppercase text-amber-600">{ag.status}</span>
+                  <span className="text-slate-400">Execution Status</span>
+                  <span className="font-bold uppercase text-amber-600">{ag.status || "Pending"}</span>
                </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-               <button onClick={() => window.open(ag.agreement_pdf_url)} className="text-[10px] font-bold py-2 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 transition-colors">View PDF</button>
+            <div className="grid grid-cols-2 gap-2 pt-1">
+               {ag.agreement_pdf_url ? (
+                  <button onClick={() => window.open(ag.agreement_pdf_url)} className="text-[11px] font-bold py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors cursor-pointer">
+                     View PDF
+                  </button>
+               ) : (
+                  <button disabled className="text-[11px] font-medium py-2 bg-slate-50 text-slate-400 rounded-xl cursor-not-allowed">
+                     Draft PDF
+                  </button>
+               )}
                <button 
                   onClick={() => {
-                     navigator.clipboard.writeText(`${window.location.origin}/review-agreement/${ag.secure_token}`);
-                     toast.success("Link copied!");
+                     if (ag.secure_token) {
+                        navigator.clipboard.writeText(`${window.location.origin}/review-agreement/${ag.secure_token}`);
+                        toast.success("Procurement agreement review link copied!");
+                     } else {
+                        toast.info("No public review token attached to this agreement.");
+                     }
                   }}
-                  className="text-[10px] font-bold py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-               >Copy Link</button>
+                  className="text-[11px] font-bold py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 rounded-xl transition-colors cursor-pointer"
+               >
+                  Copy Review Link
+               </button>
             </div>
          </CardContent>
       </Card>
@@ -305,28 +275,36 @@ export default function EcosystemBuyersPage() {
    const [searchTerm, setSearchTerm] = useState("");
    const [activeTab, setActiveTab] = useState("agreements");
 
-   useEffect(() => {
-      const fetchData = async () => {
-         try {
-            const [aggRes, buyerRes, agreementRes] = await Promise.all([
-               fetch("/api/proxy/admin/aggregator-stats"),
-               fetch("/api/proxy/admin/aggregator-buyers"),
-               fetch("/api/proxy/admin/all-agreements") // Assuming this endpoint exists
-            ]);
+   const fetchData = async () => {
+      try {
+         setLoading(true);
+         const [aggRes, buyerRes, agreementRes] = await Promise.all([
+            fetch("/api/proxy/admin/aggregator-stats"),
+            fetch("/api/proxy/admin/aggregator-buyers"),
+            fetch("/api/proxy/admin/all-agreements")
+         ]);
 
+         if (aggRes.ok) {
             const aggJson = await aggRes.json();
-            const buyerJson = await buyerRes.json();
-            const agreementJson = await agreementRes.json();
-
             if (aggJson.success) setAggregators(aggJson.data || []);
-            if (buyerJson.success) setAllBuyers(buyerJson.data || []);
-            if (agreementJson.success) setAgreements(agreementJson.data || []);
-         } catch (error) {
-            console.error("Error fetching ecosystem data:", error);
-         } finally {
-            setLoading(false);
          }
-      };
+         if (buyerRes.ok) {
+            const buyerJson = await buyerRes.json();
+            if (buyerJson.success) setAllBuyers(buyerJson.data || []);
+         }
+         if (agreementRes.ok) {
+            const agreementJson = await agreementRes.json();
+            if (agreementJson.success) setAgreements(agreementJson.data || []);
+         }
+      } catch (error) {
+         console.error("Error fetching ecosystem data:", error);
+         toast.error("Failed to refresh ecosystem procurement data");
+      } finally {
+         setLoading(false);
+      }
+   };
+
+   useEffect(() => {
       fetchData();
    }, []);
 
@@ -336,92 +314,196 @@ export default function EcosystemBuyersPage() {
       ag.product_details?.commodity?.toLowerCase().includes(searchTerm.toLowerCase())
    );
 
+   const directBuyers = allBuyers.filter(b => b.buyer_type === 'direct');
+   const filteredDirectBuyers = directBuyers.filter(b =>
+      b.buyer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      b.buyer_email?.toLowerCase().includes(searchTerm.toLowerCase())
+   );
+
+   const postHarvestCount = agreements.filter(a => !a.is_pre_harvest).length;
+   const preHarvestCount = agreements.filter(a => a.is_pre_harvest).length;
+
    return (
-      <div className="space-y-6">
-         {/* Header */}
-         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
-            <div>
-               <h1 className="text-3xl font-black tracking-tight">Ecosystem Procurement</h1>
-               <p className="text-gray-500 mt-1">Monitor and manage all buyer agreements across the platform.</p>
+      <div className="max-w-7xl mx-auto space-y-7 text-left pb-12">
+         {/* Top Header */}
+         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-gray-950 p-6 sm:p-7 rounded-3xl border border-slate-200/80 dark:border-gray-800 shadow-sm">
+            <div className="space-y-1">
+               <div className="flex items-center gap-2.5">
+                  <span className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+                     <ShoppingBag className="w-5 h-5" />
+                  </span>
+                  <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-white">
+                     Ecosystem Procurement & Off-Takers
+                  </h1>
+                  <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                     Trade Desk
+                  </span>
+               </div>
+               <p className="text-xs text-slate-500 dark:text-gray-400 font-medium">
+                  Monitor buyer agreements, aggregator networks, off-taker agreements, and direct marketplace procurement.
+               </p>
             </div>
-            <div className="relative w-full md:w-80">
-               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-               <input
-                  placeholder="Search buyer or commodity..."
-                  className="w-full pl-10 pr-4 py-3 text-sm border-none bg-gray-50 dark:bg-gray-900 rounded-2xl focus:ring-2 focus:ring-blue-500"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-               />
+
+            <div className="flex items-center gap-3">
+               <div className="relative w-full md:w-72">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                     placeholder="Search buyer, aggregator or commodity..."
+                     className="w-full h-11 pl-10 pr-4 text-xs border border-slate-200 dark:border-gray-800 bg-slate-50/50 dark:bg-gray-900 rounded-xl focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition"
+                     value={searchTerm}
+                     onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+               </div>
+               <button
+                  onClick={fetchData}
+                  disabled={loading}
+                  className="p-2.5 rounded-xl border border-slate-200 dark:border-gray-800 bg-slate-50 hover:bg-slate-100 dark:bg-gray-900 text-slate-600 dark:text-gray-300 transition cursor-pointer disabled:opacity-50 shrink-0"
+                  title="Refresh Procurement Data"
+               >
+                  <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-emerald-600" : ""}`} />
+               </button>
             </div>
          </div>
 
-         {/* Tabs */}
-         <div className="flex gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-2xl w-fit">
+         {/* Prominent Live Loading Banner */}
+         {loading && (
+            <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-300 text-xs font-bold shadow-xs animate-pulse">
+               <Loader2 className="w-4 h-4 animate-spin text-emerald-600 shrink-0" />
+               <span>Fetching live procurement agreements, aggregator networks & off-taker records...</span>
+            </div>
+         )}
+
+         {/* Segmented Navigation Tabs with Counts */}
+         <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100/80 dark:bg-gray-900 rounded-2xl w-fit">
             {[
-               { id: "agreements", label: "Procurement Agreements", icon: <Calendar className="w-4 h-4" /> },
-               { id: "aggregators", label: "Aggregator Network", icon: <Building2 className="w-4 h-4" /> },
-               { id: "direct", label: "Direct Buyers", icon: <User className="w-4 h-4" /> }
+               { id: "agreements", label: "Procurement Agreements", count: agreements.length, icon: <Calendar className="w-3.5 h-3.5" /> },
+               { id: "aggregators", label: "Aggregator Network", count: aggregators.length, icon: <Building2 className="w-3.5 h-3.5" /> },
+               { id: "direct", label: "Direct Buyers", count: directBuyers.length, icon: <User className="w-3.5 h-3.5" /> }
             ].map(tab => (
                <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                     activeTab === tab.id ? "bg-white dark:bg-gray-700 shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-700"
+                  className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                     activeTab === tab.id 
+                        ? "bg-white dark:bg-gray-800 shadow-sm text-emerald-700 dark:text-emerald-300" 
+                        : "text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                >
-                  {tab.icon} {tab.label}
+                  {tab.icon}
+                  <span>{tab.label}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                     activeTab === tab.id ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" : "bg-slate-200/70 dark:bg-gray-800 text-slate-500"
+                  }`}>
+                     {tab.count}
+                  </span>
                </button>
             ))}
          </div>
 
-         {/* Content Area */}
+         {/* Tab Content Area */}
          {loading ? (
-            <div className="py-20 text-center animate-pulse">Loading ecosystem data...</div>
+            <div className="py-24 text-center space-y-3">
+               <Loader2 className="w-8 h-8 text-emerald-600 animate-spin mx-auto" />
+               <p className="text-xs text-slate-500 font-medium">Loading ecosystem procurement telemetry...</p>
+            </div>
          ) : activeTab === "agreements" ? (
-            <div className="space-y-10">
-               {/* Harvest Ready Section */}
-               <section>
-                  <h3 className="text-lg font-black mb-6 flex items-center gap-2 text-green-600">
-                     <span className="h-2 w-8 bg-green-600 rounded-full"></span>
-                     Post-Harvest Agreements
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                     {filteredAgreements.filter(a => !a.is_pre_harvest).map(ag => (
-                        <AgreementCard key={ag.id} ag={ag} />
-                     ))}
-                     {filteredAgreements.filter(a => !a.is_pre_harvest).length === 0 && (
-                        <p className="text-gray-400 italic text-sm">No post-harvest agreements active.</p>
-                     )}
-                  </div>
-               </section>
+            <div className="space-y-8">
+               {agreements.length === 0 ? (
+                  <TabEmptyState
+                     icon={FileText}
+                     title="No Procurement Agreements Created Yet"
+                     description="Procurement agreements represent formal contracts between aggregators and commercial buyers (off-takers) for agricultural produce like maize, soya, or cassava. When agreements are issued and signed, they will appear here with financing and escrow details."
+                     badgeText="Contracts Empty State"
+                  />
+               ) : (
+                  <>
+                     {/* Harvest Ready Section */}
+                     <section className="space-y-4">
+                        <div className="flex items-center gap-2">
+                           <span className="h-2.5 w-2.5 bg-emerald-500 rounded-full"></span>
+                           <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">
+                              Post-Harvest Agreements ({postHarvestCount})
+                           </h3>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                           {filteredAgreements.filter(a => !a.is_pre_harvest).map(ag => (
+                              <AgreementCard key={ag.id} ag={ag} />
+                           ))}
+                        </div>
+                        {filteredAgreements.filter(a => !a.is_pre_harvest).length === 0 && (
+                           <p className="text-xs text-slate-400 italic bg-white dark:bg-gray-950 p-6 rounded-2xl border border-slate-100 dark:border-gray-800">
+                              No active post-harvest fulfillment agreements currently registered.
+                           </p>
+                        )}
+                     </section>
 
-               {/* Pre-Harvest Section */}
-               <section>
-                  <h3 className="text-lg font-black mb-6 flex items-center gap-2 text-amber-600">
-                     <span className="h-2 w-8 bg-amber-600 rounded-full"></span>
-                     Pre-Harvest (Deferred) Agreements
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                     {filteredAgreements.filter(a => a.is_pre_harvest).map(ag => (
-                        <AgreementCard key={ag.id} ag={ag} />
-                     ))}
-                     {filteredAgreements.filter(a => a.is_pre_harvest).length === 0 && (
-                        <p className="text-gray-400 italic text-sm">No pre-harvest agreements active.</p>
-                     )}
-                  </div>
-               </section>
+                     {/* Pre-Harvest Section */}
+                     <section className="space-y-4">
+                        <div className="flex items-center gap-2">
+                           <span className="h-2.5 w-2.5 bg-amber-500 rounded-full"></span>
+                           <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">
+                              Pre-Harvest (Forward Contracts) ({preHarvestCount})
+                           </h3>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                           {filteredAgreements.filter(a => a.is_pre_harvest).map(ag => (
+                              <AgreementCard key={ag.id} ag={ag} />
+                           ))}
+                        </div>
+                        {filteredAgreements.filter(a => a.is_pre_harvest).length === 0 && (
+                           <p className="text-xs text-slate-400 italic bg-white dark:bg-gray-950 p-6 rounded-2xl border border-slate-100 dark:border-gray-800">
+                              No active forward/pre-harvest financing agreements currently registered.
+                           </p>
+                        )}
+                     </section>
+                  </>
+               )}
             </div>
          ) : activeTab === "aggregators" ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               {aggregators.map(agg => (
-                  <AggregatorCard key={agg.aggregator_id} aggregator={agg} buyers={allBuyers.filter(b => b.aggregator_id === agg.aggregator_id)} searchTerm={searchTerm} />
-               ))}
+            <div>
+               {aggregators.length === 0 ? (
+                  <TabEmptyState
+                     icon={Building2}
+                     title="No Aggregator Networks Active"
+                     description="Aggregators organize and coordinate local smallholder farmer clusters, bridging primary harvest output with bulk industrial off-takers. Once aggregators register and link regional buyers, their network performance, completed agreements, and volume will be tracked here."
+                     badgeText="Network Empty State"
+                  />
+               ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                     {aggregators.map(agg => (
+                        <AggregatorCard key={agg.aggregator_id} aggregator={agg} buyers={allBuyers.filter(b => b.aggregator_id === agg.aggregator_id)} searchTerm={searchTerm} />
+                     ))}
+                  </div>
+               )}
             </div>
          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-               {allBuyers.filter(b => b.buyer_type === 'direct').map(buyer => (
-                  <DirectBuyerCard key={buyer.id} buyer={buyer} />
-               ))}
+            <div>
+               {directBuyers.length === 0 ? (
+                  <TabEmptyState
+                     icon={User}
+                     title="No Direct Marketplace Buyers Registered"
+                     description="Direct buyers procure agricultural produce directly through open marketplace channels without an intermediary aggregator. When direct procurement accounts are created, their procurement histories and contact profiles will be listed here."
+                     badgeText="Direct Buyers Empty State"
+                  />
+               ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                     {filteredDirectBuyers.map(buyer => (
+                        <DirectBuyerCard key={buyer.id} buyer={buyer} />
+                     ))}
+                     {filteredDirectBuyers.length === 0 && (
+                        <div className="col-span-full">
+                           <TabEmptyState
+                              icon={Search}
+                              title="No Direct Buyers Matching Search"
+                              description={`No direct buyers matched your query "${searchTerm}".`}
+                              onResetSearch={() => setSearchTerm("")}
+                              isSearching={true}
+                           />
+                        </div>
+                     )}
+                  </div>
+               )}
             </div>
          )}
       </div>
