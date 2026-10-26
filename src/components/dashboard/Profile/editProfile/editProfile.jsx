@@ -52,6 +52,9 @@ export function VendorProfileEdit({ onProfileEdit, initialVendor }) {
 
    let banks = [];
    const { data, error, isLoading } = useSwr("/api/proxy/vendor/wallet/banks", fetcher);
+   if (!isLoading && error) {
+      console.error(error);
+   }
    if (!isLoading && !error && data?.banks) {
       banks = data.banks;
    }

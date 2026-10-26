@@ -152,7 +152,7 @@ export default function DashboardLayout({ children }) {
                      </Link>
                   ))}
 
-                  <Button onClick={handleSignout} type="submit" className="absolute cursor-pointer flex items-center text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-4 py-2 rounded-lg transition-colors w-[calc(100%-2rem)] justify-start gap-2 bg-transparent bottom-6">
+                  <Button onClick={handleSignout} type="submit" className="cursor-pointer flex items-center text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors w-[calc(100%-2rem)] justify-start gap-2 bg-transparent">
                      <span>
                         <LogOut className="w-4 mr-1" />
                      </span>

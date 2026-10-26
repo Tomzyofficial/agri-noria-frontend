@@ -42,10 +42,10 @@ const fetcher = async (url) => {
          cookie: cookieHeader,
       },
    });
-   if (!res.ok) {
-      throw new Error(data.error || data.message || "Request failed");
-   }
    const data = await res.json();
+   if (!res.ok) {
+      throw new Error(data.error || "Request failed");
+   }
    return data;
 };
 
