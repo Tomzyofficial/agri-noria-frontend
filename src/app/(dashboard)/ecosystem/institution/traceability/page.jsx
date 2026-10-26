@@ -23,9 +23,11 @@ export default function TraceabilityPage() {
       try {
         const res = await fetch("/api/proxy/admin/institution/traceability");
         const json = await res.json();
-        if (json.success) setData(json.data || []);
+        if (json.success && Array.isArray(json.data)) {
+          setData(json.data);
+        }
       } catch (error) {
-        console.error("Failed to load data:", error);
+        console.error("Failed to load traceability data:", error);
       } finally {
         setLoading(false);
       }
@@ -36,19 +38,22 @@ export default function TraceabilityPage() {
   const filtered = data.filter((item) =>
     (item.batch_number || "").toLowerCase().includes(search.toLowerCase()) ||
     (item.crop || "").toLowerCase().includes(search.toLowerCase()) ||
-    (item.origin || "").toLowerCase().includes(search.toLowerCase())
+    (item.origin || "").toLowerCase().includes(search.toLowerCase()) ||
+    (item.destination || "").toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-black text-(--foreground) tracking-tight">Traceability Ledger</h1>
-        <p className="text-sm text-gray-500 font-bold uppercase tracking-widest mt-1">Track Commodity Movement</p>
+        <p className="text-sm text-gray-500 font-bold uppercase tracking-widest mt-1">
+          End-to-End Custody Tracking from Farm-Gate to Storage & Destination
+        </p>
       </div>
 
       <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
         <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <CardTitle>Batch Tracking</CardTitle>
+          <CardTitle>Commodity Batch Tracking</CardTitle>
           <div className="relative max-w-sm w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
@@ -61,7 +66,9 @@ export default function TraceabilityPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="h-64 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
+            <div className="h-64 flex items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
@@ -70,31 +77,56 @@ export default function TraceabilityPage() {
                     <th className="px-6 py-4 font-bold rounded-l-lg">Batch Number</th>
                     <th className="px-6 py-4 font-bold">Crop</th>
                     <th className="px-6 py-4 font-bold">Qty (MT)</th>
-                    <th className="px-6 py-4 font-bold">Origin</th>
-                    <th className="px-6 py-4 font-bold">Destination</th>
-                    <th className="px-6 py-4 font-bold">Status</th>
-                    <th className="px-6 py-4 font-bold rounded-r-lg">Last Updated</th>
+                    <th className="px-6 py-4 font-bold">Origin (Farm Gate)</th>
+                    <th className="px-6 py-4 font-bold">Destination Facility</th>
+                    <th className="px-6 py-4 font-bold">Custody Status</th>
+                    <th className="px-6 py-4 font-bold rounded-r-lg">Timestamp</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                   {filtered.length === 0 ? (
-                    <tr><td colSpan="7" className="px-6 py-8 text-center text-gray-500">No traceability records found.</td></tr>
+                    <tr>
+                      <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                        No traceability records found.
+                      </td>
+                    </tr>
                   ) : (
                     filtered.map((item, idx) => {
-                      const st = statusConfig[(item.status || "").toLowerCase()] || statusConfig.pending;
+                      const rawStatus = (item.status || item.batch_status || "pending").toLowerCase();
+                      const st = statusConfig[rawStatus] || statusConfig.pending;
+                      const dateVal = item.timestamp || item.created_at;
+
                       return (
                         <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-gray-900/20 transition-colors">
-                          <td className="px-6 py-4 font-mono font-bold text-(--foreground)">{item.batch_number || 'N/A'}</td>
-                          <td className="px-6 py-4 text-gray-600 dark:text-gray-300 font-semibold">{item.crop || '—'}</td>
-                          <td className="px-6 py-4 text-gray-600 dark:text-gray-300 font-bold">{item.quantity_mt ? Number(item.quantity_mt).toLocaleString() : '—'}</td>
-                          <td className="px-6 py-4 text-gray-600 dark:text-gray-300 flex items-center gap-2"><MapPin className="w-4 h-4 text-gray-400"/>{item.origin || '—'}</td>
-                          <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{item.destination || '—'}</td>
+                          <td className="px-6 py-4 font-mono font-bold text-(--foreground)">
+                            {item.batch_number || "—"}
+                          </td>
+                          <td className="px-6 py-4 text-gray-700 dark:text-gray-300 font-semibold">
+                            {item.crop || "—"}
+                          </td>
+                          <td className="px-6 py-4 text-gray-700 dark:text-gray-300 font-bold">
+                            {item.quantity_mt ? `${Number(item.quantity_mt).toLocaleString()} MT` : "—"}
+                          </td>
+                          <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
+                            <div className="flex items-center gap-1.5">
+                              <MapPin className="w-4 h-4 text-rose-500 shrink-0" />
+                              <span>{item.origin || "—"}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
+                            <div className="flex items-center gap-1.5">
+                              <Warehouse className="w-4 h-4 text-blue-500 shrink-0" />
+                              <span>{item.destination || "—"}</span>
+                            </div>
+                          </td>
                           <td className="px-6 py-4">
                             <span className={`px-2.5 py-1 text-xs font-bold rounded-lg capitalize ${st.color}`}>
                               {st.label}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-gray-500">{item.timestamp ? new Date(item.timestamp).toLocaleString() : 'N/A'}</td>
+                          <td className="px-6 py-4 text-gray-500 font-mono text-xs">
+                            {dateVal ? new Date(dateVal).toLocaleString() : "—"}
+                          </td>
                         </tr>
                       );
                     })

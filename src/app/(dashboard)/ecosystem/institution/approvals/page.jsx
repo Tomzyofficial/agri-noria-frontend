@@ -118,7 +118,7 @@ export default function FinanceApprovalsPage() {
   useEffect(() => {
     if (authData) {
       const role = authData.role?.toLowerCase();
-      if (role !== "finance" && role !== "super admin" && role !== "admin") {
+      if (role !== "finance" && role !== "super admin" && role !== "admin" && role !== "cooperative") {
         toast.error("Access Denied: Finance role required");
         router.replace("/ecosystem/institution");
       }

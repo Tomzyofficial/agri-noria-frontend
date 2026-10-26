@@ -9,7 +9,7 @@ import { FaSeedling } from "react-icons/fa6";
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
-import { Loader2, Maximize2, ZoomIn, ChevronLeft, ChevronRight, RefreshCw, AlertTriangle, CheckSquare, Square, X, MapPin, FileText, Download, Copy, ExternalLink, Compass } from "lucide-react";
+import { Loader2, Maximize2, ZoomIn, ChevronLeft, ChevronRight, RefreshCw, AlertTriangle, CheckSquare, Square, X, MapPin, FileText, Download, Copy, ExternalLink, Compass, ShieldAlert, ShieldCheck } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotificationContext";
 
 const MapComponent = dynamic(() => import("@/app/(dashboard)/ecosystem/farmer/onboarding/MapComponent"), { ssr: false });
@@ -45,6 +45,8 @@ function UserManagementContent() {
    const [rejectionReason, setRejectionReason] = useState("");
    const [rejectedSections, setRejectedSections] = useState([]);
    const [viewingPolygonModal, setViewingPolygonModal] = useState(null);
+   const [suspensionModal, setSuspensionModal] = useState(null); // { userId, name, email, role, currentStatus }
+   const [suspendingId, setSuspendingId] = useState(null);
    const { lastEvent } = useNotifications();
 
    // Debounce search input by 350ms
@@ -101,10 +103,27 @@ function UserManagementContent() {
       }
    }, [lastEvent, fetchUsers]);
 
-   const handleToggleSuspension = async (userId, currentStatus) => {
-      if (!confirm(`Are you sure you want to ${currentStatus ? "activate" : "suspend"} this account?`)) return;
+   const openSuspensionModal = (user, currentStatus) => {
+      if (!user) return;
+      setSuspensionModal({
+         userId: user.id,
+         name: `${user.fname || ''} ${user.lname || ''}`.trim() || user.company_name || user.email || 'User',
+         email: user.email,
+         role: user.role,
+         currentStatus: Boolean(currentStatus),
+      });
+   };
 
+   const handleToggleSuspension = (userId, currentStatus, userObj = null) => {
+      const targetUser = userObj || users.find((u) => u.id === userId) || selectedFarmerModal || { id: userId };
+      openSuspensionModal(targetUser, currentStatus);
+   };
+
+   const handleConfirmSuspension = async () => {
+      if (!suspensionModal) return;
+      const { userId, currentStatus } = suspensionModal;
       try {
+         setSuspendingId(userId);
          const res = await fetch("/api/proxy/admin/users/toggle-suspension", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
@@ -117,6 +136,7 @@ function UserManagementContent() {
                setSelectedFarmerModal((prev) => (prev ? { ...prev, is_suspended: !currentStatus } : null));
             }
             toast.success(`User ${!currentStatus ? "suspended" : "activated"} successfully`);
+            setSuspensionModal(null);
          } else {
             const err = await res.json();
             toast.error(err.error || "Failed to update status");
@@ -124,6 +144,8 @@ function UserManagementContent() {
       } catch (err) {
          console.error("Error toggling suspension:", err);
          toast.error("An error occurred");
+      } finally {
+         setSuspendingId(null);
       }
    };
 
@@ -833,7 +855,7 @@ function UserManagementContent() {
                                              {/* 4. SUSPEND / ACTIVATE */}
                                              {(isApproved || isSuspended) && (
                                                 <button
-                                                   onClick={() => handleToggleSuspension(user.id, user.is_suspended)}
+                                                   onClick={() => handleToggleSuspension(user.id, user.is_suspended, user)}
                                                    title={user.is_suspended ? "Activate account access" : "Suspend account access"}
                                                    className={`px-2.5 py-1.5 text-xs rounded-xl font-bold transition cursor-pointer shrink-0 ${
                                                       user.is_suspended 
@@ -1476,7 +1498,7 @@ function UserManagementContent() {
                      <div className="flex items-center gap-2">
                         {selectedFarmerModal.is_suspended ? (
                            <button
-                              onClick={() => handleToggleSuspension(selectedFarmerModal.id, true)}
+                              onClick={() => handleToggleSuspension(selectedFarmerModal.id, true, selectedFarmerModal)}
                               className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
                            >
                               <FaCheckCircle className="w-3.5 h-3.5" />
@@ -1484,6 +1506,15 @@ function UserManagementContent() {
                            </button>
                         ) : (
                            <>
+                              {selectedFarmerModal.approval_status === "approved" && (
+                                 <button
+                                    onClick={() => handleToggleSuspension(selectedFarmerModal.id, false, selectedFarmerModal)}
+                                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-100 text-rose-600 hover:bg-rose-50 border border-rose-200 dark:bg-gray-800 dark:border-gray-700 transition-all cursor-pointer"
+                                 >
+                                    <AlertTriangle className="w-3.5 h-3.5" />
+                                    <span>Suspend Account</span>
+                                 </button>
+                              )}
                               {/* REJECT BUTTON */}
                               {selectedFarmerModal.approval_status !== "rejected" &&
                                  selectedFarmerModal.approval_status !== "approved" && (
@@ -1743,6 +1774,127 @@ function UserManagementContent() {
                            <>
                               <FaBan className="w-3.5 h-3.5" />
                               <span>Confirm Rejection & Send Notice</span>
+                           </>
+                        )}
+                     </button>
+                  </div>
+               </div>
+            </div>
+         )}
+
+         {/* ======================================================= */}
+         {/* SUSPEND / ACTIVATE CONFIRMATION MODAL                   */}
+         {/* ======================================================= */}
+         {suspensionModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+               <div 
+                  className="bg-white dark:bg-gray-900 border border-slate-200/80 dark:border-gray-800 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+                  onClick={(e) => e.stopPropagation()}
+               >
+                  {/* Modal Header */}
+                  <div className="p-6 pb-4 flex items-start gap-4">
+                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                        suspensionModal.currentStatus 
+                           ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60" 
+                           : "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/60"
+                     }`}>
+                        {suspensionModal.currentStatus ? (
+                           <ShieldCheck className="w-6 h-6" />
+                        ) : (
+                           <AlertTriangle className="w-6 h-6" />
+                        )}
+                     </div>
+                     <div className="flex-1 min-w-0">
+                        <h3 className="text-base font-black text-gray-900 dark:text-white tracking-tight">
+                           {suspensionModal.currentStatus ? "Reactivate Account Access" : "Suspend Account Access"}
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-gray-400 mt-1">
+                           {suspensionModal.currentStatus
+                              ? "Restore platform operations and permissions for this user."
+                              : "Restrict platform access and freeze all operational privileges."}
+                        </p>
+                     </div>
+                     <button
+                        type="button"
+                        onClick={() => setSuspensionModal(null)}
+                        className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-800 transition cursor-pointer"
+                     >
+                        <X className="w-4 h-4" />
+                     </button>
+                  </div>
+
+                  {/* User Context Card */}
+                  <div className="px-6 py-2 space-y-3">
+                     <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-gray-850/60 border border-slate-200/70 dark:border-gray-800 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-gray-800 text-slate-700 dark:text-gray-300 font-black flex items-center justify-center text-sm uppercase shrink-0">
+                           {suspensionModal.name?.charAt(0) || "U"}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                           <p className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                              {suspensionModal.name}
+                           </p>
+                           <p className="text-[11px] text-slate-500 dark:text-gray-400 truncate">
+                              {suspensionModal.email}
+                           </p>
+                        </div>
+                        {suspensionModal.role && (
+                           <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-200 dark:bg-gray-800 text-slate-700 dark:text-gray-300 shrink-0">
+                              {suspensionModal.role}
+                           </span>
+                        )}
+                     </div>
+
+                     <div className={`p-3.5 rounded-2xl border text-xs leading-relaxed ${
+                        suspensionModal.currentStatus
+                           ? "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200/70 dark:border-emerald-800/50 text-emerald-900 dark:text-emerald-200"
+                           : "bg-rose-50/50 dark:bg-rose-950/20 border-rose-200/70 dark:border-rose-800/50 text-rose-900 dark:text-rose-200"
+                     }`}>
+                        {suspensionModal.currentStatus ? (
+                           <>
+                              Are you sure you want to <strong>reactivate</strong> this account? The user will immediately regain access to their workspace, can log in, and resume all operational activities.
+                           </>
+                        ) : (
+                           <>
+                              Are you sure you want to <strong>suspend</strong> this account? The user will be immediately logged out and prevented from accessing dashboard features, publishing schedules, or executing transactions.
+                           </>
+                        )}
+                     </div>
+                  </div>
+
+                  {/* Modal Footer */}
+                  <div className="p-5 mt-2 border-t border-slate-100 dark:border-gray-800 flex items-center justify-end gap-3 bg-slate-50/60 dark:bg-gray-900/60">
+                     <button
+                        type="button"
+                        onClick={() => setSuspensionModal(null)}
+                        disabled={suspendingId === suspensionModal.userId}
+                        className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 hover:bg-slate-300 dark:bg-gray-800 text-slate-700 dark:text-gray-200 transition cursor-pointer disabled:opacity-50"
+                     >
+                        Cancel
+                     </button>
+                     <button
+                        type="button"
+                        onClick={handleConfirmSuspension}
+                        disabled={suspendingId === suspensionModal.userId}
+                        className={`inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-md transition cursor-pointer disabled:opacity-50 ${
+                           suspensionModal.currentStatus
+                              ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20"
+                              : "bg-rose-600 hover:bg-rose-700 shadow-rose-600/20"
+                        }`}
+                     >
+                        {suspendingId === suspensionModal.userId ? (
+                           <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>Updating...</span>
+                           </>
+                        ) : suspensionModal.currentStatus ? (
+                           <>
+                              <FaCheckCircle className="w-3.5 h-3.5" />
+                              <span>Confirm Reactivation</span>
+                           </>
+                        ) : (
+                           <>
+                              <AlertTriangle className="w-3.5 h-3.5" />
+                              <span>Confirm Suspension</span>
                            </>
                         )}
                      </button>

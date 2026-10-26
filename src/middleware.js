@@ -73,6 +73,7 @@ export default async function middleware(request) {
       pathname.startsWith("/dashboard") ||
       pathname.startsWith("/ecosystem") ||
       pathname.startsWith("/marketplace") ||
+      pathname.startsWith("/onboarding") ||
       request.headers.get("rsc") === "1" ||
       Boolean(request.headers.get("next-router-prefetch"));
 
@@ -106,7 +107,80 @@ export default async function middleware(request) {
    }
 
    try {
-      // VENDOR PROTECTION
+      // ─── SUPER-ADMIN DASHBOARD PROTECTION ───
+      // Requires vendor-session JWT with role "super admin" or "admin"
+      if (pathname.startsWith("/dashboard/super-admin")) {
+         const token =
+            request.cookies.get("vendor-session")?.value ||
+            request.cookies.get("ecosystem-session")?.value;
+
+         if (!token) {
+            const loginUrl = new URL("/auth/signin", request.url);
+            loginUrl.searchParams.set("redirect", pathname);
+            return NextResponse.redirect(loginUrl);
+         }
+
+         try {
+            const { payload } = await jwtVerify(token, vendorKey);
+            const userRole = payload.role?.toLowerCase();
+
+            // Only super admin and admin roles can access the super-admin dashboard
+            if (userRole !== "super admin" && userRole !== "admin") {
+               return NextResponse.redirect(new URL("/", request.url));
+            }
+         } catch (jwtError) {
+            console.error("Middleware: Super-admin JWT verification failed:", jwtError.message);
+            const loginUrl = new URL("/auth/signin", request.url);
+            loginUrl.searchParams.set("redirect", pathname);
+            return NextResponse.redirect(loginUrl);
+         }
+      }
+
+      // ─── BUYER DASHBOARD PROTECTION ───
+      // Requires buyer-session JWT
+      if (pathname.startsWith("/dashboard/buyer")) {
+         const token = request.cookies.get("buyer-session")?.value;
+
+         if (!token) {
+            const loginUrl = new URL("/auth/signin", request.url);
+            loginUrl.searchParams.set("redirect", pathname);
+            return NextResponse.redirect(loginUrl);
+         }
+
+         try {
+            await jwtVerify(token, buyerKey);
+         } catch (jwtError) {
+            console.error("Middleware: Buyer dashboard JWT verification failed:", jwtError.message);
+            const loginUrl = new URL("/auth/signin", request.url);
+            loginUrl.searchParams.set("redirect", pathname);
+            return NextResponse.redirect(loginUrl);
+         }
+      }
+
+      // ─── ONBOARDING PROTECTION ───
+      // Requires a valid vendor-session JWT (any vendor role)
+      if (pathname.startsWith("/onboarding")) {
+         const token =
+            request.cookies.get("vendor-session")?.value ||
+            request.cookies.get("ecosystem-session")?.value;
+
+         if (!token) {
+            const loginUrl = new URL("/auth/signin", request.url);
+            loginUrl.searchParams.set("redirect", pathname);
+            return NextResponse.redirect(loginUrl);
+         }
+
+         try {
+            await jwtVerify(token, vendorKey);
+         } catch (jwtError) {
+            console.error("Middleware: Onboarding JWT verification failed:", jwtError.message);
+            const loginUrl = new URL("/auth/signin", request.url);
+            loginUrl.searchParams.set("redirect", pathname);
+            return NextResponse.redirect(loginUrl);
+         }
+      }
+
+      // ─── VENDOR PROTECTION (marketplace & ecosystem) ───
       if (pathname.startsWith("/marketplace") || pathname.startsWith("/ecosystem")) {
          const token =
             request.cookies.get("vendor-session")?.value ||
@@ -114,7 +188,9 @@ export default async function middleware(request) {
             request.cookies.get("ecosystem-session")?.value;
 
          if (!token) {
-            return NextResponse.redirect(new URL("/", request.url));
+            const loginUrl = new URL("/auth/signin", request.url);
+            loginUrl.searchParams.set("redirect", pathname);
+            return NextResponse.redirect(loginUrl);
          }
 
          try {
@@ -216,23 +292,29 @@ export default async function middleware(request) {
             }
          } catch (jwtError) {
             console.error("Middleware: JWT verification failed:", jwtError.message);
-            return NextResponse.redirect(new URL("/", request.url));
+            const loginUrl = new URL("/auth/signin", request.url);
+            loginUrl.searchParams.set("redirect", pathname);
+            return NextResponse.redirect(loginUrl);
          }
       }
 
-      // BUYER PROTECTION
+      // ─── BUYER ROUTES PROTECTION (/buyer/*) ───
       if (pathname.startsWith("/buyer")) {
          const token = request.cookies.get("buyer-session")?.value;
 
          if (!token) {
-            return NextResponse.redirect(new URL("/", request.url));
+            const loginUrl = new URL("/auth/signin", request.url);
+            loginUrl.searchParams.set("redirect", pathname);
+            return NextResponse.redirect(loginUrl);
          }
 
          try {
             await jwtVerify(token, buyerKey);
          } catch (jwtError) {
             console.error("Middleware: Buyer JWT verification failed:", jwtError.message);
-            return NextResponse.redirect(new URL("/", request.url));
+            const loginUrl = new URL("/auth/signin", request.url);
+            loginUrl.searchParams.set("redirect", pathname);
+            return NextResponse.redirect(loginUrl);
          }
       }
 
@@ -244,5 +326,5 @@ export default async function middleware(request) {
 }
 
 export const config = {
-   matcher: ["/marketplace/:path*", "/ecosystem/:path*", "/buyer/:path*", "/((?!api|_next/static|_next/image|favicon.ico).*)"],
+   matcher: ["/dashboard/:path*", "/marketplace/:path*", "/ecosystem/:path*", "/buyer/:path*", "/onboarding/:path*", "/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

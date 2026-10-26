@@ -115,6 +115,7 @@ export function useVehicleForm() {
             });
             setPreview(null);
             toast.success("Vehicle uploaded successfully");
+            if (typeof window !== "undefined") { window.location.href = "/marketplace/logistics/vehicles"; }
          }
       } catch (err) {
          console.log("error occurred while sending vehicle data", err);

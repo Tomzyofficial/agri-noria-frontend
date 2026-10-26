@@ -55,7 +55,7 @@ export default function SalesWalletPage() {
                         </div>
                         <div>
                             <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Total Earned</p>
-                            <p className="text-xl font-bold mt-1">₦1,250,000</p>
+                            <p className="text-xl font-bold mt-1">₦{transactions.filter(t => t.type === 'credit').reduce((acc, t) => acc + parseFloat(t.amount || 0), 0).toLocaleString()}</p>
                         </div>
                     </div>
                 </div>
