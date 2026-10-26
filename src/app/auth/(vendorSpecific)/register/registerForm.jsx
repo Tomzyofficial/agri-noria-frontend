@@ -167,15 +167,11 @@ export function RegisterForm() {
    const handleWorkspaceSelect = (workspaceId) => {
       if (workspaceId === "ecosystem") {
          if (ecosystemSettings.maintenanceMode) {
-            toast.error(
-               `${ecosystemSettings.platformName} Ecosystem is currently under Emergency Maintenance Mode. Please try again later or contact ${ecosystemSettings.platformEmail}.`
-            );
+            toast.error(`${ecosystemSettings.platformName} Ecosystem is currently under Emergency Maintenance Mode. Please try again later or contact ${ecosystemSettings.platformEmail}.`);
             return;
          }
          if (ecosystemSettings.allowNewRegistrations === false) {
-            toast.error(
-               `Public registrations for the ${ecosystemSettings.platformName} Ecosystem are currently closed by Platform Governance. Contact ${ecosystemSettings.platformEmail} (${ecosystemSettings.supportPhone}) for institutional onboarding.`
-            );
+            toast.error(`Public registrations for the ${ecosystemSettings.platformName} Ecosystem are currently closed by Platform Governance. Contact ${ecosystemSettings.platformEmail} (${ecosystemSettings.supportPhone}) for institutional onboarding.`);
             return;
          }
       }
@@ -365,9 +361,7 @@ export function RegisterForm() {
                   <FaSeedling className="w-7 h-7" />
                </div>
                <h1 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Create your account</h1>
-               <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold mt-1">
-                  Join the Agri-Noria ecosystem to empower agricultural trade and operations
-               </p>
+               <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold mt-1">Join the Agri-Noria ecosystem to empower agricultural trade and operations</p>
             </div>
 
             <Card className="border border-emerald-100 dark:border-gray-800 shadow-xl bg-white dark:bg-gray-950 rounded-3xl overflow-hidden p-2 sm:p-4">
@@ -386,10 +380,7 @@ export function RegisterForm() {
                   {/* Progress bar */}
                   <div className="w-full mt-3">
                      <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                        <div
-                           className="h-full bg-gradient-to-r from-emerald-600 to-teal-500 rounded-full transition-all duration-300"
-                           style={{ width: `${((currentStep + 1) / (totalSteps + 1)) * 100}%` }}
-                        />
+                        <div className="h-full bg-gradient-to-r from-emerald-600 to-teal-500 rounded-full transition-all duration-300" style={{ width: `${((currentStep + 1) / (totalSteps + 1)) * 100}%` }} />
                      </div>
                   </div>
                </CardHeader>
@@ -406,39 +397,23 @@ export function RegisterForm() {
 
                            <div className="grid gap-3">
                               {workspaceOptions.map((workspace) => {
-                                 const isEcosystemBlocked =
-                                    workspace.id === "ecosystem" &&
-                                    (ecosystemSettings.maintenanceMode || ecosystemSettings.allowNewRegistrations === false);
+                                 const isEcosystemBlocked = workspace.id === "ecosystem" && (ecosystemSettings.maintenanceMode || ecosystemSettings.allowNewRegistrations === false);
                                  return (
                                     <button
                                        key={workspace.id}
                                        type="button"
                                        className={`w-full text-left p-4 rounded-2xl border-2 transition-all flex items-center justify-between group ${
-                                          isEcosystemBlocked
-                                             ? "border-rose-200 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20 opacity-80 cursor-not-allowed"
-                                             : "border-emerald-50 dark:border-gray-800 bg-emerald-50/30 dark:bg-gray-900/40 hover:border-emerald-500 dark:hover:border-emerald-500 hover:bg-emerald-50/60"
+                                          isEcosystemBlocked ? "border-rose-200 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20 opacity-80 cursor-not-allowed" : "border-emerald-50 dark:border-gray-800 bg-emerald-50/30 dark:bg-gray-900/40 hover:border-emerald-500 dark:hover:border-emerald-500 hover:bg-emerald-50/60"
                                        }`}
                                        onClick={() => handleWorkspaceSelect(workspace.id)}
                                     >
                                        <div className="space-y-1">
                                           <div className="flex items-center gap-2 flex-wrap">
-                                             <span className="font-bold text-gray-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-400 block text-sm sm:text-base">
-                                                {workspace.title}
-                                             </span>
-                                             {workspace.id === "ecosystem" && ecosystemSettings.maintenanceMode && (
-                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-rose-600 text-white">
-                                                   503 Maintenance
-                                                </span>
-                                             )}
-                                             {workspace.id === "ecosystem" && !ecosystemSettings.maintenanceMode && ecosystemSettings.allowNewRegistrations === false && (
-                                                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-600 text-white">
-                                                   Registrations Closed
-                                                </span>
-                                             )}
+                                             <span className="font-bold text-gray-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-400 block text-sm sm:text-base">{workspace.title}</span>
+                                             {workspace.id === "ecosystem" && ecosystemSettings.maintenanceMode && <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-rose-600 text-white">503 Maintenance</span>}
+                                             {workspace.id === "ecosystem" && !ecosystemSettings.maintenanceMode && ecosystemSettings.allowNewRegistrations === false && <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-600 text-white">Registrations Closed</span>}
                                           </div>
-                                          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                                             {workspace.description}
-                                          </p>
+                                          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{workspace.description}</p>
                                        </div>
                                        <div className="w-8 h-8 rounded-full bg-white dark:bg-gray-800 border border-emerald-200 dark:border-gray-700 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all ml-3 shrink-0">
                                           <ChevronRight className="h-4 w-4" />
@@ -458,11 +433,7 @@ export function RegisterForm() {
                                  <span className="text-gray-500">Selected Workspace: </span>
                                  <span className="font-bold text-emerald-800 dark:text-emerald-300">{selectedWorkspaceTitle}</span>
                               </div>
-                              <button
-                                 type="button"
-                                 onClick={() => setCurrentStep(0)}
-                                 className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
-                              >
+                              <button type="button" onClick={() => setCurrentStep(0)} className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer">
                                  Change
                               </button>
                            </div>
@@ -475,28 +446,15 @@ export function RegisterForm() {
                            <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
                               {selectedRoleCategories.map((category) => (
                                  <div key={category.name} className="border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden bg-white dark:bg-gray-900">
-                                    <button
-                                       type="button"
-                                       className="w-full flex items-center justify-between p-3.5 hover:bg-emerald-50/40 dark:hover:bg-gray-800/60 transition-colors"
-                                       onClick={() => setExpandedCategory(expandedCategory === category.name ? null : category.name)}
-                                    >
+                                    <button type="button" className="w-full flex items-center justify-between p-3.5 hover:bg-emerald-50/40 dark:hover:bg-gray-800/60 transition-colors" onClick={() => setExpandedCategory(expandedCategory === category.name ? null : category.name)}>
                                        <span className="font-bold text-xs uppercase tracking-wider text-gray-800 dark:text-gray-200">{category.name}</span>
-                                       {expandedCategory === category.name ? (
-                                          <ChevronDown className="w-4 h-4 text-emerald-600" />
-                                       ) : (
-                                          <ChevronRight className="w-4 h-4 text-gray-400" />
-                                       )}
+                                       {expandedCategory === category.name ? <ChevronDown className="w-4 h-4 text-emerald-600" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
                                     </button>
 
                                     {expandedCategory === category.name && (
                                        <div className="p-2.5 pt-0 grid gap-1.5 bg-gray-50/50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800">
                                           {category.roles.map((role) => (
-                                             <button
-                                                key={role}
-                                                type="button"
-                                                className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-emerald-600 hover:text-white transition-all flex items-center justify-between group"
-                                                onClick={() => handleRoleSelect(role)}
-                                             >
+                                             <button key={role} type="button" className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-emerald-600 hover:text-white transition-all flex items-center justify-between group" onClick={() => handleRoleSelect(role)}>
                                                 <span>{role}</span>
                                                 <FaSeedling className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                                              </button>
@@ -521,11 +479,7 @@ export function RegisterForm() {
                                  <span className="font-medium text-gray-600 dark:text-gray-400">Role:</span>
                                  <span className="font-bold text-emerald-800 dark:text-emerald-300">{formData.role}</span>
                               </div>
-                              <button
-                                 type="button"
-                                 onClick={() => setCurrentStep(1)}
-                                 className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
-                              >
+                              <button type="button" onClick={() => setCurrentStep(1)} className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer">
                                  Change Role
                               </button>
                            </div>
@@ -536,19 +490,7 @@ export function RegisterForm() {
                                  <Label htmlFor="fname" className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
                                     First Name
                                  </Label>
-                                 <Input
-                                    autoFocus
-                                    id="fname"
-                                    type="text"
-                                    autoComplete="given-name"
-                                    className={`h-11 rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 ${isLoading ? "opacity-50" : ""}`}
-                                    disabled={isLoading}
-                                    placeholder="e.g. Samuel"
-                                    name="fname"
-                                    value={formData.fname}
-                                    onChange={handleInputChange}
-                                    required
-                                 />
+                                 <Input autoFocus id="fname" type="text" autoComplete="given-name" className={`h-11 rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 ${isLoading ? "opacity-50" : ""}`} disabled={isLoading} placeholder="e.g. Samuel" name="fname" value={formData.fname} onChange={handleInputChange} required />
                                  {errors.err?.fname && <p className="text-rose-500 text-xs font-bold">{errors.err.fname[0] || errors.err.fname}</p>}
                               </div>
 
@@ -556,18 +498,7 @@ export function RegisterForm() {
                                  <Label htmlFor="lname" className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
                                     Last Name
                                  </Label>
-                                 <Input
-                                    id="lname"
-                                    type="text"
-                                    autoComplete="family-name"
-                                    className={`h-11 rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 ${isLoading ? "opacity-50" : ""}`}
-                                    disabled={isLoading}
-                                    placeholder="e.g. Adeleke"
-                                    name="lname"
-                                    value={formData.lname}
-                                    onChange={handleInputChange}
-                                    required
-                                 />
+                                 <Input id="lname" type="text" autoComplete="family-name" className={`h-11 rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 ${isLoading ? "opacity-50" : ""}`} disabled={isLoading} placeholder="e.g. Adeleke" name="lname" value={formData.lname} onChange={handleInputChange} required />
                                  {errors.err?.lname && <p className="text-rose-500 text-xs font-bold">{errors.err.lname[0] || errors.err.lname}</p>}
                               </div>
                            </div>
@@ -578,18 +509,7 @@ export function RegisterForm() {
                                  <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
                                     Email Address
                                  </Label>
-                                 <Input
-                                    id="email"
-                                    type="email"
-                                    autoComplete="email"
-                                    placeholder="farmer@agrinoria.eco"
-                                    name="email"
-                                    className={`h-11 rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 ${isLoading ? "opacity-50" : ""}`}
-                                    disabled={isLoading}
-                                    value={formData.email}
-                                    onChange={handleInputChange}
-                                    required
-                                 />
+                                 <Input id="email" type="email" autoComplete="email" placeholder="farmer@agrinoria.eco" name="email" className={`h-11 rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 ${isLoading ? "opacity-50" : ""}`} disabled={isLoading} value={formData.email} onChange={handleInputChange} required />
                                  {errors.err?.email && <p className="text-rose-500 text-xs font-bold">{errors.err.email[0] || errors.err.email}</p>}
                               </div>
 
@@ -597,18 +517,7 @@ export function RegisterForm() {
                                  <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
                                     Phone Number
                                  </Label>
-                                 <Input
-                                    id="phone"
-                                    autoComplete="tel"
-                                    type="tel"
-                                    className={`h-11 rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 ${isLoading ? "opacity-50" : ""}`}
-                                    disabled={isLoading}
-                                    placeholder="08012345678"
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleInputChange}
-                                    required
-                                 />
+                                 <Input id="phone" autoComplete="tel" type="tel" className={`h-11 rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 ${isLoading ? "opacity-50" : ""}`} disabled={isLoading} placeholder="08012345678" name="phone" value={formData.phone} onChange={handleInputChange} required />
                                  {errors.err?.phone && <p className="text-rose-500 text-xs font-bold">{errors.err.phone[0] || errors.err.phone}</p>}
                               </div>
                            </div>
@@ -643,11 +552,7 @@ export function RegisterForm() {
                                     <Label htmlFor={availableStates.length > 0 ? "state_code" : "state_name"} className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
                                        State / Region
                                     </Label>
-                                    {formData.country_code && availableStates.length === 0 && (
-                                       <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
-                                          Auto-detected
-                                       </span>
-                                    )}
+                                    {formData.country_code && availableStates.length === 0 && <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">Auto-detected</span>}
                                  </div>
 
                                  {availableStates.length > 0 ? (
@@ -679,7 +584,7 @@ export function RegisterForm() {
                                           setFormData((prev) => ({
                                              ...prev,
                                              state_name: val,
-                                             state_code: val ? (prev.country_code || "NA") : "",
+                                             state_code: val ? prev.country_code || "NA" : "",
                                           }));
                                        }}
                                        required
@@ -692,11 +597,7 @@ export function RegisterForm() {
                                     </select>
                                  )}
 
-                                 {errors.err?.state_code && (
-                                    <p className="text-rose-500 text-xs font-bold">
-                                       {errors.err.state_code[0] || errors.err.state_code}
-                                    </p>
-                                 )}
+                                 {errors.err?.state_code && <p className="text-rose-500 text-xs font-bold">{errors.err.state_code[0] || errors.err.state_code}</p>}
                               </div>
                            </div>
 
@@ -719,11 +620,7 @@ export function RegisterForm() {
                                        onChange={handleInputChange}
                                        required
                                     />
-                                    <Button
-                                       type="button"
-                                       className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0"
-                                       onClick={() => setShowPassword(!showPassword)}
-                                    >
+                                    <Button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0" onClick={() => setShowPassword(!showPassword)}>
                                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </Button>
                                  </div>
@@ -746,11 +643,7 @@ export function RegisterForm() {
                                        onChange={handleInputChange}
                                        required
                                     />
-                                    <Button
-                                       type="button"
-                                       className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0"
-                                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    >
+                                    <Button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-0" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </Button>
                                  </div>
@@ -786,28 +679,17 @@ export function RegisterForm() {
                                     </Link>
                                  </Label>
                               </div>
-                              {errors.err?.terms_of_service && (
-                                 <p className="text-rose-500 text-xs font-bold mt-1">{errors.err.terms_of_service[0] || errors.err.terms_of_service}</p>
-                              )}
+                              {errors.err?.terms_of_service && <p className="text-rose-500 text-xs font-bold mt-1">{errors.err.terms_of_service[0] || errors.err.terms_of_service}</p>}
                            </div>
                         </div>
                      )}
 
-                     {errors.general && (
-                        <div className="p-3 mt-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs font-bold">
-                           {errors.general}
-                        </div>
-                     )}
+                     {errors.general && <div className="p-3 mt-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs font-bold">{errors.general}</div>}
 
                      {/* Navigation / Action Buttons */}
                      <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-900 flex items-center justify-between gap-3">
                         {currentStep > 0 ? (
-                           <Button
-                              type="button"
-                              className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors"
-                              onClick={handleBack}
-                              disabled={isLoading}
-                           >
+                           <Button type="button" className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 text-xs font-bold flex items-center gap-2 cursor-pointer transition-colors" onClick={handleBack} disabled={isLoading}>
                               <FaChevronLeft className="w-3 h-3" /> Back
                            </Button>
                         ) : (
@@ -829,11 +711,7 @@ export function RegisterForm() {
                               <ChevronRight className="w-4 h-4" />
                            </Button>
                         ) : (
-                           <Button
-                              type="submit"
-                              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/25 transition-all w-full sm:w-auto ml-auto"
-                              disabled={isLoading}
-                           >
+                           <Button type="submit" className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/25 transition-all w-full sm:w-auto ml-auto" disabled={isLoading}>
                               {isLoading ? (
                                  <span className="flex items-center gap-2">
                                     <FaSpinner className="h-4 w-4 animate-spin" />
