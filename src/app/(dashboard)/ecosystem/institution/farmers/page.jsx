@@ -796,11 +796,11 @@ export default function FarmersRegistryPage() {
 
       {/* Add / Import Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div role="dialog" aria-modal="true" aria-labelledby="add-farmers-modal-title" className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-950 rounded-3xl p-6 max-w-xl w-full shadow-2xl border border-gray-100 dark:border-gray-900 space-y-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-black text-(--foreground)">Add / Import Farmers</h3>
+                <h3 id="add-farmers-modal-title" className="text-xl font-black text-(--foreground)">Add / Import Farmers</h3>
                 <p className="text-xs text-gray-500 font-semibold mt-0.5">
                   Register new members or link existing Agri-Noria digital IDs
                 </p>
@@ -845,8 +845,10 @@ export default function FarmersRegistryPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">First Name</Label>
+                    <Label htmlFor="farmer-fname" className="text-xs font-bold uppercase tracking-wider text-gray-500">First Name</Label>
                     <Input
+                      id="farmer-fname"
+                      aria-label="Farmer First Name"
                       placeholder="e.g. Chukwuemeka"
                       value={form.fname}
                       onChange={(e) => setForm({ ...form, fname: e.target.value })}
@@ -855,8 +857,10 @@ export default function FarmersRegistryPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">Last Name</Label>
+                    <Label htmlFor="farmer-lname" className="text-xs font-bold uppercase tracking-wider text-gray-500">Last Name</Label>
                     <Input
+                      id="farmer-lname"
+                      aria-label="Farmer Last Name"
                       placeholder="e.g. Okafor"
                       value={form.lname}
                       onChange={(e) => setForm({ ...form, lname: e.target.value })}
@@ -868,8 +872,10 @@ export default function FarmersRegistryPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">Phone Number (Digital Key)</Label>
+                    <Label htmlFor="farmer-phone" className="text-xs font-bold uppercase tracking-wider text-gray-500">Phone Number (Digital Key)</Label>
                     <Input
+                      id="farmer-phone"
+                      aria-label="Farmer Phone Number (Digital Key)"
                       placeholder="e.g. 08012345678"
                       value={form.phone}
                       onChange={(e) => setForm({ ...form, phone: e.target.value })}
@@ -878,8 +884,10 @@ export default function FarmersRegistryPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">NIN (Optional)</Label>
+                    <Label htmlFor="farmer-nin" className="text-xs font-bold uppercase tracking-wider text-gray-500">NIN (Optional)</Label>
                     <Input
+                      id="farmer-nin"
+                      aria-label="National ID Number"
                       placeholder="National ID Number"
                       value={form.nin}
                       onChange={(e) => setForm({ ...form, nin: e.target.value })}
@@ -890,8 +898,10 @@ export default function FarmersRegistryPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">Commodity</Label>
+                    <Label htmlFor="farmer-commodity" className="text-xs font-bold uppercase tracking-wider text-gray-500">Commodity</Label>
                     <Input
+                      id="farmer-commodity"
+                      aria-label="Farmer Primary Commodity"
                       placeholder="e.g. Cassava, Maize"
                       value={form.commodity}
                       onChange={(e) => setForm({ ...form, commodity: e.target.value })}

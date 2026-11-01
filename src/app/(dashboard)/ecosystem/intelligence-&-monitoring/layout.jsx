@@ -49,13 +49,16 @@ export default function IntelligenceLayout({ children }) {
   // Auto-verify session
   useEffect(() => {
     const checkExistingUser = async () => {
+      if (typeof navigator !== "undefined" && !navigator.onLine) return;
       try {
         const response = await fetch("/api/proxy/auth/existing-user", {
           method: "GET",
         });
-        if (response.status !== 500 && response.status !== 200) {
-          const data = await response.json();
-          if (data?.existing === false) await handleSignout();
+        if (response.status === 401 || response.status === 404) {
+          const data = await response.json().catch(() => null);
+          if (data?.existing === false && !data?.proxyNetworkError) {
+            router.replace("/auth/signin");
+          }
         }
       } catch {
         return;

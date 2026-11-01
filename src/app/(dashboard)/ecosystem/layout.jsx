@@ -43,6 +43,11 @@ export const useEcosystemSettings = () => useContext(EcosystemSettingsContext);
 
 export default function EcosystemEnforcementLayout({ children }) {
   const router = useRouter();
+    useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.title = "Ecosystem Workspace | Agri-Noria";
+    }
+  }, []);
   const [settings, setSettings] = useState(() => {
     if (typeof window !== "undefined" && window.__ECOSYSTEM_SETTINGS__) {
       return { ...DEFAULT_ECOSYSTEM_SETTINGS, ...window.__ECOSYSTEM_SETTINGS__ };
@@ -50,6 +55,7 @@ export default function EcosystemEnforcementLayout({ children }) {
     return DEFAULT_ECOSYSTEM_SETTINGS;
   });
   const [checkingMaintenance, setCheckingMaintenance] = useState(false);
+  const [reconnectingNetwork, setReconnectingNetwork] = useState(false);
 
   // Email verification state (Menu 2: emailVerificationRequired)
   const [emailStatus, setEmailStatus] = useState({
@@ -98,9 +104,12 @@ export default function EcosystemEnforcementLayout({ children }) {
           }
         }
       } else if (res.status === 503) {
-        const next = { ...settingsRef.current, maintenanceMode: true };
-        settingsRef.current = next;
-        setSettings(next);
+        const errJson = await res.json().catch(() => ({}));
+        if (errJson?.maintenance) {
+          const next = { ...settingsRef.current, maintenanceMode: true };
+          settingsRef.current = next;
+          setSettings(next);
+        }
       }
     } catch (err) {
       console.warn("[EcosystemSettings] Error fetching settings:", err);
@@ -276,7 +285,7 @@ export default function EcosystemEnforcementLayout({ children }) {
     };
   }, []);
 
-  // 5. Intercept window.fetch inside Ecosystem to enforce 503 Maintenance, 403 Email Verification, 400 Geotag, & FormData upload checks
+  // 5. Intercept window.fetch inside Ecosystem to enforce 503 Maintenance, 403 Email Verification, 400 Geotag, FormData upload checks, & resilient data loading
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!window.__ORIGINAL_FETCH__) {
@@ -284,8 +293,30 @@ export default function EcosystemEnforcementLayout({ children }) {
     }
     const originalFetch = window.__ORIGINAL_FETCH__;
 
+    const waitForNetworkOrDelay = (ms = 2000) =>
+      new Promise((resolve) => {
+        let settled = false;
+        const done = () => {
+          if (settled) return;
+          settled = true;
+          window.removeEventListener("online", done);
+          clearTimeout(timer);
+          resolve();
+        };
+        const timer = setTimeout(done, ms);
+        window.addEventListener("online", done, { once: true });
+      });
+
+    const isBackgroundPollUrl = (u) =>
+      u.includes("/api/proxy/ecosystem/settings") ||
+      u.includes("/api/proxy/email-verification/status") ||
+      u.includes("/api/proxy/auth/existing-user") ||
+      u.includes("/api/proxy/notifications") ||
+      u.includes("/api/proxy/programs/notifications");
+
     window.fetch = async (input, init = {}) => {
       const urlStr = typeof input === "string" ? input : input?.url || "";
+      const method = String(init?.method || (typeof input === "object" && input?.method) || "GET").toUpperCase();
 
       let nextInit = { ...init };
       if (urlStr.includes("/api/proxy")) {
@@ -330,14 +361,51 @@ export default function EcosystemEnforcementLayout({ children }) {
         }
       }
 
-      const response = await originalFetch(input, nextInit);
+      const isDataGetRequest =
+        method === "GET" &&
+        urlStr.includes("/api/proxy") &&
+        !isBackgroundPollUrl(urlStr);
+
+      let response;
+      while (true) {
+        try {
+          response = await originalFetch(input, nextInit);
+
+          // Check if response is a transient proxy/network error (and NOT maintenance mode)
+          if (isDataGetRequest && (response.status === 502 || response.status === 503 || response.status === 504 || response.status === 500)) {
+            let errBody = null;
+            try {
+              errBody = await response.clone().json();
+            } catch {}
+
+            if (errBody?.maintenance) {
+              // Genuine 503 Maintenance Mode — break and handle below
+              break;
+            }
+
+            if (errBody?.proxyNetworkError || errBody?.message === "Proxy error" || response.status === 502 || response.status === 504) {
+              // Network/backend was unreachable: keep fetch pending so page stays in loading state until data is fetched
+              setReconnectingNetwork(true);
+              await waitForNetworkOrDelay(2000);
+              continue;
+            }
+          }
+
+          setReconnectingNetwork(false);
+          break;
+        } catch (networkErr) {
+          if (isDataGetRequest) {
+            // Browser is offline or fetch failed: keep fetch pending so page stays in loading state until network returns
+            setReconnectingNetwork(true);
+            await waitForNetworkOrDelay(2000);
+            continue;
+          }
+          throw networkErr;
+        }
+      }
 
       if (urlStr.includes("/api/proxy") && !urlStr.includes("/api/proxy/ecosystem/settings")) {
-        if (response.status === 503) {
-          const next = { ...settingsRef.current, maintenanceMode: true };
-          settingsRef.current = next;
-          setSettings(next);
-        } else if (response.status === 403 || response.status === 400) {
+        if (response.status === 503 || response.status === 403 || response.status === 400) {
           try {
             const clone = response.clone();
             const data = await clone.json();
@@ -563,6 +631,15 @@ export default function EcosystemEnforcementLayout({ children }) {
           >
             Verify Email Now
           </button>
+        </div>
+      )}
+
+      {reconnectingNetwork && (
+        <div className="lg:ml-64 bg-emerald-950/90 text-emerald-200 border-b border-emerald-700/40 px-4 py-1.5 text-xs flex items-center justify-center gap-2 relative z-30 backdrop-blur-md">
+          <RefreshCw size={13} className="animate-spin text-emerald-400 shrink-0" />
+          <span className="font-bold">
+            Reconnecting to server — waiting for network to finish loading your Ecosystem data...
+          </span>
         </div>
       )}
 

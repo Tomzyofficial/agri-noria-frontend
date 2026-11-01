@@ -16,6 +16,7 @@ export function BuyerDataProvider({ children }) {
 
    const fetchData = useCallback(async () => {
       setLoading(true);
+      let fetchedOk = false;
       try {
          const [matchesRes, statsRes, clustersRes, preHarvestRes, fwContractsRes] = await Promise.all([
             fetch("/api/proxy/pipeline/warehouse/inventory"),
@@ -28,11 +29,13 @@ export function BuyerDataProvider({ children }) {
          if (matchesRes.ok) { 
             const d = await matchesRes.json(); 
             setBuyerMatches(d.data || []); 
+            fetchedOk = true;
          }
          
          if (statsRes.ok) { 
             const d = await statsRes.json(); 
             setStats(d.data || {}); 
+            fetchedOk = true;
          }
          
          if (preHarvestRes.ok) {
@@ -60,9 +63,12 @@ export function BuyerDataProvider({ children }) {
          }
       } catch (err) { 
          console.error("Error fetching buyer data:", err);
-         toast.error("Failed to load dashboard data");
       } finally { 
-         setLoading(false); 
+         if (fetchedOk) {
+            setLoading(false); 
+         } else {
+            setTimeout(() => fetchData(), 2500);
+         }
       }
    }, []);
 

@@ -146,7 +146,23 @@ export default function FieldAuditsPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
-                            {filteredAudits.map((audit) => (
+                            {filteredAudits.length === 0 ? (
+                                <tr>
+                                    <td colSpan="7" className="px-8 py-16 text-center text-gray-500 font-bold">
+                                        <p className="text-base text-gray-700 dark:text-gray-300">No field audits match your query {search ? `"${search}"` : ""}</p>
+                                        <p className="text-xs text-gray-400 mt-1">Try searching by Audit ID (e.g. AUD-8400), target cluster, or officer name.</p>
+                                        {(search || statusFilter !== 'all') && (
+                                            <button 
+                                                type="button" 
+                                                onClick={() => { setSearch(''); setStatusFilter('all'); }}
+                                                className="mt-3 text-xs font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider hover:underline"
+                                            >
+                                                Reset Filters
+                                            </button>
+                                        )}
+                                    </td>
+                                </tr>
+                            ) : filteredAudits.map((audit) => (
                                 <tr key={audit.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors group">
                                     <td className="px-8 py-6">
                                         <p className="font-mono font-black text-slate-900 dark:text-white tracking-tight">{audit.id}</p>

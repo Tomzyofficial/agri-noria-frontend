@@ -127,7 +127,7 @@ export default function SuperAdminWalletPage() {
                </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto custom-horizontal-scrollbar">
                <table className="w-full text-left border-collapse">
                   <thead>
                      <tr className="bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 text-xs uppercase font-bold tracking-widest">

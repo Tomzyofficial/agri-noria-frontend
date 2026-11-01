@@ -402,7 +402,7 @@ export default function ProgramsPage() {
                               <th className="px-6 py-4">Fund Balance</th>
                               <th className="px-6 py-4">Program Director</th>
                               <th className="px-6 py-4 whitespace-nowrap min-w-[150px]">Status</th>
-                              <th className="px-6 py-4 text-right">Actions</th>
+                              <th className="px-6 py-4 text-right sticky right-0 bg-gray-50 dark:bg-gray-900/90 shadow-md z-10">Actions</th>
                            </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -516,7 +516,7 @@ export default function ProgramsPage() {
                                         </div>
                                      )}
                                   </td>
-                                 <td className="px-6 py-5 text-right">
+                                 <td className="px-6 py-5 text-right sticky right-0 bg-white dark:bg-gray-950 shadow-md z-10">
                                     <div className="flex items-center justify-end gap-2">
                                        <Button
                                           type="button"

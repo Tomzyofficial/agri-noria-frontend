@@ -517,7 +517,21 @@ export function RegisterForm() {
                                  <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
                                     Phone Number
                                  </Label>
-                                 <Input id="phone" autoComplete="tel" type="tel" className={`h-11 rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 ${isLoading ? "opacity-50" : ""}`} disabled={isLoading} placeholder="08012345678" name="phone" value={formData.phone} onChange={handleInputChange} required />
+                                 <Input
+                                    id="phone"
+                                    autoComplete="tel"
+                                    type="tel"
+                                    className={`h-11 rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 ${isLoading ? "opacity-50" : ""}`}
+                                    disabled={isLoading}
+                                    placeholder="e.g. 08012345678 or +2348012345678"
+                                    name="phone"
+                                    value={formData.phone}
+                                    onChange={handleInputChange}
+                                    required
+                                 />
+                                 <p className="text-[11px] text-gray-400 dark:text-gray-500">
+                                    Enter 11-digit local format (e.g. 08012345678) or international (+234...).
+                                 </p>
                                  {errors.err?.phone && <p className="text-rose-500 text-xs font-bold">{errors.err.phone[0] || errors.err.phone}</p>}
                               </div>
                            </div>

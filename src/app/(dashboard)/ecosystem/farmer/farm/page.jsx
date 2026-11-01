@@ -35,7 +35,7 @@ export default function MyFarmPage() {
          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ActivityStat 
                label="Primary Commodity" 
-               value={profile?.commodity || "Maize"} 
+               value={profile?.commodity || "Not specified"} 
                icon={<FaTractor size={24} />} 
                color="blue" 
             />

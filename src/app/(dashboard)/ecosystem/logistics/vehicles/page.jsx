@@ -13,7 +13,13 @@ export default function EcosystemVehiclesPage() {
   const [filterType, setFilterType] = useState("all");
   const { data, error, isLoading, mutate } = useSWR("/api/proxy/vendor/logistics/vehicles", fetcher);
 
-  const listings = data?.listings || [];
+  const listings = Array.isArray(data?.listings)
+    ? data.listings
+    : Array.isArray(data?.data?.listings)
+    ? data.data.listings
+    : Array.isArray(data?.data)
+    ? data.data
+    : [];
 
   const filteredVehicles = listings.filter((veh) => {
     const matchesSearch = 
@@ -185,6 +191,7 @@ export default function EcosystemVehiclesPage() {
             const tons = parseFloat(veh.max_tons) || (veh.max_weight_kg ? parseFloat(veh.max_weight_kg) / 1000 : 0);
             const status = (veh.status || "available").toLowerCase();
             const baseAmount = parseFloat(veh.base_amount) || parseFloat(veh.rate_amount) || 0;
+            const displayImage = Array.isArray(veh.image) ? veh.image[0] : (veh.image || (Array.isArray(veh.images) ? veh.images[0] : veh.images));
 
             return (
               <div
@@ -194,9 +201,9 @@ export default function EcosystemVehiclesPage() {
                 <div>
                   {/* Image or Vehicle Icon header */}
                   <div className="relative w-full h-44 bg-gray-100 dark:bg-gray-800/80 flex items-center justify-center overflow-hidden">
-                    {veh.image ? (
+                    {displayImage ? (
                       <img
-                        src={veh.image}
+                        src={displayImage}
                         alt={veh.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                       />

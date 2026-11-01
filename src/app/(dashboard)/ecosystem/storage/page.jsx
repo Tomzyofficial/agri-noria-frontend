@@ -39,6 +39,7 @@ export default function StorageDashboard() {
   const [viewingMedia, setViewingMedia] = useState(null);
 
   const fetchData = async (showToast = false) => {
+    let fetchedSuccessfully = false;
     try {
       if (showToast) setIsRefreshing(true);
       const [statsRes, ticketsRes, preHarvestRes, sessRes] = await Promise.all([
@@ -47,32 +48,47 @@ export default function StorageDashboard() {
         fetch("/api/proxy/pipeline/preharvest/opportunities"),
         fetch("/api/auth/session").catch(() => null)
       ]);
-      const statsData = await statsRes.json();
-      const ticketsData = await ticketsRes.json();
-      const preHarvestData = await preHarvestRes.json();
+      const statsData = await statsRes.json().catch(() => ({}));
+      const ticketsData = await ticketsRes.json().catch(() => ({}));
+      const preHarvestData = await preHarvestRes.json().catch(() => ({}));
 
-      if (statsData.success) setStats(statsData.data);
-      if (ticketsData.success) setTickets(ticketsData.data);
-      if (preHarvestData.success) setPreHarvestListings(preHarvestData.data);
+      if (statsData.success) {
+        setStats(statsData.data);
+        fetchedSuccessfully = true;
+      }
+      if (ticketsData.success) {
+        setTickets(ticketsData.data);
+        fetchedSuccessfully = true;
+      }
+      if (preHarvestData.success) {
+        setPreHarvestListings(preHarvestData.data);
+      }
+      if (statsRes.status === 401 || statsRes.status === 403) {
+        fetchedSuccessfully = true;
+      }
 
       if (sessRes && sessRes.ok) {
         const sessData = await sessRes.json().catch(() => null);
-        if (sessData?.authenticated) {
+        if (sessData?.authenticated && !sessData?.networkError) {
           setIsApproved(sessData.approval_status === "approved");
         }
       } else {
         const fallbackSess = await verifyVendorSession().catch(() => null);
-        if (fallbackSess?.authenticated) {
+        if (fallbackSess?.authenticated && !fallbackSess?.networkError) {
           setIsApproved(fallbackSess.approval_status === "approved");
         }
       }
 
-      if (showToast) toast.success("Storage metrics synced");
+      if (showToast && fetchedSuccessfully) toast.success("Storage metrics synced");
     } catch (error) {
-      console.error("Error fetching storage data:", error);
+      console.warn("Retrying storage data fetch:", error?.message);
     } finally {
-      setLoading(false);
       setIsRefreshing(false);
+      if (fetchedSuccessfully || showToast) {
+        setLoading(false);
+      } else {
+        setTimeout(() => fetchData(false), 2000);
+      }
     }
   };
 

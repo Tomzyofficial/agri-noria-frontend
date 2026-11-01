@@ -35,6 +35,7 @@ import {
   HelpCircle,
   CreditCard,
   Users,
+  Car,
 } from "lucide-react";
 import { HarvestRequestModals } from "@/components/harvest/HarvestRequestModals";
 import {
@@ -126,7 +127,7 @@ const PIPELINE_STEPS = [
 function getBatchStepIndex(batch) {
   if (batch.insurance_status === "active") return 4;
   if (batch.status === "stored") return 3;
-  if (batch.logistics_ticket_number) return 2;
+  if (batch.logistics_ticket_number || batch.delivery_method === "self_delivery") return 2;
   if (batch.status === "storage_reserved" || batch.storage_ticket_number) return 1;
   return 0;
 }
@@ -251,18 +252,30 @@ export default function FarmerHarvestPage() {
   const fetchBatches = async (silent = false) => {
     if (!silent) setLoading(true);
     else setRefreshing(true);
+    let fetchedSuccessfully = false;
     try {
-      const res = await fetch("/api/proxy/vendor/commodity-operations/harvest/batches");
-      const data = await res.json();
-      if (data.success) {
-        setBatches(data.data || []);
+      const res = await fetch("/api/proxy/vendor/commodity-operations/harvest/batches", {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success) {
+          setBatches(data.data || []);
+          fetchedSuccessfully = true;
+        }
+      } else if (res.status === 401 || res.status === 403) {
+        fetchedSuccessfully = true;
       }
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to load harvest batches");
+      console.warn("Retrying harvest batches fetch:", error?.message);
     } finally {
-      setLoading(false);
       setRefreshing(false);
+      if (fetchedSuccessfully || silent) {
+        setLoading(false);
+      } else {
+        // Keep loading=true until data is actually fetched
+        setTimeout(() => fetchBatches(false), 2000);
+      }
     }
   };
 
@@ -821,7 +834,11 @@ export default function FarmerHarvestPage() {
             </div>
           </div>
           <div className="mt-3">
-            <p className="text-2xl font-black text-slate-900 dark:text-white">{batches.length}</p>
+            {loading ? (
+              <div className="h-7 w-14 rounded-lg bg-slate-200 dark:bg-slate-800 animate-pulse" />
+            ) : (
+              <p className="text-2xl font-black text-slate-900 dark:text-white">{batches.length}</p>
+            )}
             <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
               Traceable farm-gate lots
             </p>
@@ -839,12 +856,16 @@ export default function FarmerHarvestPage() {
             </div>
           </div>
           <div className="mt-3">
-            <p className="text-2xl font-black text-slate-900 dark:text-white">
-              {totalDeclaredMt.toLocaleString()}{" "}
-              <span className="text-xs font-bold text-emerald-500">MT</span>
-            </p>
+            {loading ? (
+              <div className="h-7 w-20 rounded-lg bg-slate-200 dark:bg-slate-800 animate-pulse" />
+            ) : (
+              <p className="text-2xl font-black text-slate-900 dark:text-white">
+                {totalDeclaredMt.toLocaleString()}{" "}
+                <span className="text-xs font-bold text-emerald-500">MT</span>
+              </p>
+            )}
             <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
-              ~{totalDeclaredBags.toLocaleString()} standard bags
+              {loading ? "Loading volume..." : `~${totalDeclaredBags.toLocaleString()} standard bags`}
             </p>
           </div>
         </div>
@@ -861,9 +882,13 @@ export default function FarmerHarvestPage() {
           </div>
           <div className="mt-3 space-y-1.5">
             <div className="flex items-baseline justify-between">
-              <p className="text-xl font-black text-slate-900 dark:text-white">
-                {yieldUtilizationPct}%
-              </p>
+              {loading ? (
+                <div className="h-6 w-12 rounded-lg bg-slate-200 dark:bg-slate-800 animate-pulse" />
+              ) : (
+                <p className="text-xl font-black text-slate-900 dark:text-white">
+                  {yieldUtilizationPct}%
+                </p>
+              )}
               <span className="text-[10px] font-bold text-slate-400">
                 of {maxPlausibleYieldMt} MT max
               </span>
@@ -877,7 +902,7 @@ export default function FarmerHarvestPage() {
                     ? "bg-amber-500"
                     : "bg-emerald-500"
                 }`}
-                style={{ width: `${Math.min(100, yieldUtilizationPct)}%` }}
+                style={{ width: `${loading ? 0 : Math.min(100, yieldUtilizationPct)}%` }}
               />
             </div>
           </div>
@@ -894,7 +919,11 @@ export default function FarmerHarvestPage() {
             </div>
           </div>
           <div className="mt-3">
-            <p className="text-2xl font-black text-slate-900 dark:text-white">{storedCount}</p>
+            {loading ? (
+              <div className="h-7 w-14 rounded-lg bg-slate-200 dark:bg-slate-800 animate-pulse" />
+            ) : (
+              <p className="text-2xl font-black text-slate-900 dark:text-white">{storedCount}</p>
+            )}
             <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
               Reserved / Stored batches
             </p>
@@ -912,7 +941,11 @@ export default function FarmerHarvestPage() {
             </div>
           </div>
           <div className="mt-3">
-            <p className="text-2xl font-black text-slate-900 dark:text-white">{inTransitCount}</p>
+            {loading ? (
+              <div className="h-7 w-14 rounded-lg bg-slate-200 dark:bg-slate-800 animate-pulse" />
+            ) : (
+              <p className="text-2xl font-black text-slate-900 dark:text-white">{inTransitCount}</p>
+            )}
             <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
               Active transport tickets
             </p>
@@ -930,9 +963,13 @@ export default function FarmerHarvestPage() {
             </div>
           </div>
           <div className="mt-3">
-            <p className="text-2xl font-black text-slate-900 dark:text-white">{insuredCount}</p>
+            {loading ? (
+              <div className="h-7 w-14 rounded-lg bg-slate-200 dark:bg-slate-800 animate-pulse" />
+            ) : (
+              <p className="text-2xl font-black text-slate-900 dark:text-white">{insuredCount}</p>
+            )}
             <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">
-              Escrow: ₦{totalWalletBalance.toLocaleString()}
+              {loading ? "Syncing escrow..." : `Escrow: ₦${totalWalletBalance.toLocaleString()}`}
             </p>
           </div>
         </div>
@@ -942,16 +979,16 @@ export default function FarmerHarvestPage() {
       {/* 3. PIPELINE FILTER TABS & SEARCH BAR */}
       {/* ========================================================================= */}
       <div className="bg-white dark:bg-slate-950 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0">
+        <div className="flex items-center gap-1.5 overflow-x-auto custom-horizontal-scrollbar pb-1 lg:pb-0">
           {[
-            { id: "all", label: `All Batches (${batches.length})` },
+            { id: "all", label: `All Batches (${loading ? "..." : batches.length})` },
             {
               id: "declared",
-              label: `Harvest Declared (${batches.filter((b) => b.status === "harvest_declared").length})`,
+              label: `Harvest Declared (${loading ? "..." : batches.filter((b) => b.status === "harvest_declared").length})`,
             },
-            { id: "storage_reserved", label: `Storage Reserved (${storedCount})` },
-            { id: "in_transit", label: `Logistics Booked (${inTransitCount})` },
-            { id: "stored", label: `Stored & Insured (${insuredCount})` },
+            { id: "storage_reserved", label: `Storage Reserved (${loading ? "..." : storedCount})` },
+            { id: "in_transit", label: `Logistics Booked (${loading ? "..." : inTransitCount})` },
+            { id: "stored", label: `Stored & Insured (${loading ? "..." : insuredCount})` },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -1156,28 +1193,60 @@ export default function FarmerHarvestPage() {
                     {(batch.status === "harvest_declared" ||
                       batch.status === "storage_reserved") && (
                       <>
-                        <button
-                          type="button"
-                          onClick={() => openRequestModal("storage", batch)}
-                          className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow-md shadow-emerald-600/20 flex items-center gap-2 transition cursor-pointer"
-                        >
-                          <Warehouse className="w-4 h-4" />
-                          <span>
-                            {batch.storage_ticket_number ? "Update Storage" : "Request Storage"}
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openRequestModal("logistics", batch)}
-                          className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl shadow-md shadow-indigo-600/20 flex items-center gap-2 transition cursor-pointer"
-                        >
-                          <Truck className="w-4 h-4" />
-                          <span>
-                            {batch.logistics_ticket_number
-                              ? "Dispatch Another Truck"
-                              : "Request Logistics"}
-                          </span>
-                        </button>
+                        {!batch.storage_ticket_number ? (
+                          <button
+                            type="button"
+                            onClick={() => openRequestModal("storage", batch)}
+                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow-md shadow-emerald-600/20 flex items-center gap-2 transition cursor-pointer"
+                          >
+                            <Warehouse className="w-4 h-4" />
+                            <span>Book Storage & Transport</span>
+                          </button>
+                        ) : batch.delivery_method === "self_delivery" ? (
+                          <>
+                            <div className="inline-flex items-center gap-1.5 px-3 py-2 bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 text-xs font-bold rounded-xl">
+                              <Car className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                              <span>Self-Delivery Active</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => openRequestModal("logistics", batch)}
+                              className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl shadow-sm flex items-center gap-1.5 transition cursor-pointer"
+                              title="Switch from self-delivery to platform haulage truck"
+                            >
+                              <Truck className="w-3.5 h-3.5" />
+                              <span>Switch to Platform Truck</span>
+                            </button>
+                          </>
+                        ) : batch.logistics_ticket_number ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => openRequestModal("storage", batch)}
+                              className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 transition cursor-pointer"
+                            >
+                              <Warehouse className="w-3.5 h-3.5" />
+                              <span>Manage Storage</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openRequestModal("logistics", batch)}
+                              className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 transition cursor-pointer"
+                            >
+                              <Truck className="w-3.5 h-3.5" />
+                              <span>Dispatch Another Truck</span>
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => openRequestModal("logistics", batch)}
+                            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl shadow-md shadow-indigo-600/20 flex items-center gap-2 transition cursor-pointer"
+                          >
+                            <Truck className="w-4 h-4" />
+                            <span>Arrange Transport</span>
+                          </button>
+                        )}
                       </>
                     )}
 
@@ -1195,7 +1264,7 @@ export default function FarmerHarvestPage() {
                 </div>
 
                 {/* Linked Storage & Logistics Tickets Strip (if any exist) */}
-                {(batch.storage_ticket_number || batch.logistics_ticket_number) && (
+                {(batch.storage_ticket_number || batch.logistics_ticket_number || batch.delivery_method === "self_delivery") && (
                   <div className="px-6 pb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                     {batch.storage_ticket_number && (
                       <div className="p-3.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/25 border border-emerald-200/80 dark:border-emerald-800/60 flex items-center justify-between gap-3 text-xs">
@@ -1224,6 +1293,37 @@ export default function FarmerHarvestPage() {
                           </span>
                           <span className="font-black text-emerald-700 dark:text-emerald-300">
                             ₦{Number(batch.storage_fee || 0).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {batch.delivery_method === "self_delivery" && (
+                      <div className="p-3.5 rounded-2xl bg-teal-50/60 dark:bg-teal-950/25 border border-teal-200/80 dark:border-teal-800/60 flex items-center justify-between gap-3 text-xs">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-xl bg-teal-600/15 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+                            <Car className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-black text-teal-800 dark:text-teal-300">
+                                GATE-PASS-DIRECT
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-teal-200/70 dark:bg-teal-900 text-teal-900 dark:text-teal-200">
+                                Self-Delivery Pass
+                              </span>
+                            </div>
+                            <p className="text-slate-600 dark:text-slate-300 font-semibold truncate mt-0.5">
+                              Driver: {batch.self_delivery_driver_name || "Self / Owner"} • Plate: {batch.self_delivery_vehicle_plate || "Own Vehicle"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-[10px] text-slate-400 block uppercase font-bold">
+                            Transport Fee
+                          </span>
+                          <span className="font-black text-teal-700 dark:text-teal-300">
+                            ₦0 (Free Direct Drop)
                           </span>
                         </div>
                       </div>
@@ -1266,7 +1366,7 @@ export default function FarmerHarvestPage() {
 
                 {/* 5-Stage Visual Pipeline Progress Footer */}
                 <div className="bg-slate-50 dark:bg-slate-900/60 px-6 py-3.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                  <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+                  <div className="flex items-center gap-2 overflow-x-auto custom-horizontal-scrollbar w-full md:w-auto pb-1 md:pb-0">
                     {PIPELINE_STEPS.map((st, idx) => {
                       const done = idx <= stepIdx;
                       const current = idx === stepIdx;
@@ -1282,7 +1382,11 @@ export default function FarmerHarvestPage() {
                             }`}
                           >
                             <CheckCircle2 className="w-3 h-3" />
-                            <span>{st.label}</span>
+                            <span>
+                              {st.key === "logistics" && batch.delivery_method === "self_delivery"
+                                ? "Direct Gate Pass"
+                                : st.label}
+                            </span>
                           </span>
                           {idx < PIPELINE_STEPS.length - 1 && (
                             <ArrowRight className="w-3 h-3 text-slate-300 dark:text-slate-700" />

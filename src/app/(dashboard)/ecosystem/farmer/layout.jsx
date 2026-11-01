@@ -47,10 +47,15 @@ function FarmerLayoutInner({ children }) {
    // Auto-verify session & admin approval (on mount + 30s interval, NOT on every pathname click)
    useEffect(() => {
       const checkExistingUser = async () => {
+         if (typeof navigator !== "undefined" && !navigator.onLine) {
+            return;
+         }
          try {
             const session = await verifyVendorSession();
+            if (session?.networkError) {
+               return;
+            }
             if (session?.authenticated === false) {
-               await handleSignout();
                return;
             }
             if (session?.authenticated && session?.role?.toLowerCase() === "farmer") {
@@ -59,11 +64,10 @@ function FarmerLayoutInner({ children }) {
                setHasBasicInfo(Boolean(basic));
                setIsApproved(approved);
                setIsVerified(approved);
+               setOnboardingChecked(true);
             }
-            setOnboardingChecked(true);
          } catch (e) {
-            console.error(e);
-            setOnboardingChecked(true);
+            console.warn("Transient session check skipped:", e?.message);
          }
       };
       checkExistingUser();

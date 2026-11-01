@@ -69,7 +69,7 @@ export default function EscrowPage() {
           <div>
             <CardTitle className="text-lg font-black text-emerald-900 dark:text-emerald-300 flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-emerald-600" />
-              Pending Harvest Settlement Waterfalls (Step 17 & 18)
+              Pending Harvest Settlement Waterfalls
             </CardTitle>
             <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-medium">
               Human-in-the-loop authorization: verify input loan recovery deductions before final farmer disbursement.

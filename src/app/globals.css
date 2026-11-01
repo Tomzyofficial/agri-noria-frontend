@@ -100,17 +100,88 @@ h4 {
    font-family: "DM Sans", sans-serif;
 }
 
-/* scrollbar */
+/* Accessible Modern Global Scrollbars */
+* {
+   scrollbar-width: thin;
+   scrollbar-color: rgba(16, 185, 129, 0.4) transparent;
+}
+
 ::-webkit-scrollbar {
-   width: 0;
-   display: none;
+   width: 7px;
+   height: 7px;
+   display: block;
 }
+
 ::-webkit-scrollbar-track {
-   background: none;
+   background: rgba(0, 0, 0, 0.04);
+   border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb {
-   background: none;
-   border-radius: 3px;
+   background: rgba(16, 185, 129, 0.4);
+   border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+   background: rgba(16, 185, 129, 0.7);
+}
+
+@media (prefers-color-scheme: dark) {
+   * {
+      scrollbar-color: rgba(16, 185, 129, 0.5) rgba(255, 255, 255, 0.04);
+   }
+   ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.04);
+   }
+   ::-webkit-scrollbar-thumb {
+      background: rgba(16, 185, 129, 0.5);
+   }
+   ::-webkit-scrollbar-thumb:hover {
+      background: rgba(16, 185, 129, 0.8);
+   }
+}
+
+/* Explicit custom horizontal scrollbar for menus, tables, and pill strips */
+.custom-horizontal-scrollbar,
+.custom-scrollbar {
+   scrollbar-width: thin;
+   scrollbar-color: #10b981 rgba(0, 0, 0, 0.06);
+   -webkit-overflow-scrolling: touch;
+}
+
+.custom-horizontal-scrollbar::-webkit-scrollbar,
+.custom-scrollbar::-webkit-scrollbar {
+   height: 6px;
+   width: 6px;
+   display: block !important;
+}
+
+.custom-horizontal-scrollbar::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-track {
+   background: rgba(0, 0, 0, 0.06);
+   border-radius: 9999px;
+}
+
+.custom-horizontal-scrollbar::-webkit-scrollbar-thumb,
+.custom-scrollbar::-webkit-scrollbar-thumb {
+   background: #10b981;
+   border-radius: 9999px;
+}
+
+.custom-horizontal-scrollbar::-webkit-scrollbar-thumb:hover,
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+   background: #059669;
+}
+
+@media (prefers-color-scheme: dark) {
+   .custom-horizontal-scrollbar,
+   .custom-scrollbar {
+      scrollbar-color: #10b981 rgba(255, 255, 255, 0.1);
+   }
+   .custom-horizontal-scrollbar::-webkit-scrollbar-track,
+   .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+   }
 }
 
 .no-scrollbar::-webkit-scrollbar {

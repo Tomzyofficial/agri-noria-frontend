@@ -126,8 +126,16 @@ export function ViewItem({ storage }) {
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border-t border-stone-200 dark:border-stone-700">
                         <DetailItem icon={<Warehouse className="h-5 w-5" />} label="Storage Type" value={storage.storage_type || "Not specified"} />
                         <DetailItem icon={<Thermometer className="h-5 w-5" />} label="Temperature Control" value={storage.temperature ? `${storage.temperature}°C` : "Not temperature controlled"} />
-                        <DetailItem icon={<Ruler className="h-5 w-5" />} label="Capacity" value={storage.capacity ? `${storage.capacity} sq ft` : "Not specified"} />
-                        <DetailItem icon={<Box className="h-5 w-5" />} label="Available Space" value={storage.available ? `${storage.available} sq ft available` : "Not specified"} />
+                        <DetailItem 
+                           icon={<Ruler className="h-5 w-5" />} 
+                           label="Capacity" 
+                           value={storage.capacity ? `${String(storage.capacity).replace(/\s*(sq\s*ft|sqft|m²|m2)\s*$/i, "").trim()} sq ft` : "Not specified"} 
+                        />
+                        <DetailItem 
+                           icon={<Box className="h-5 w-5" />} 
+                           label="Available Space" 
+                           value={storage.available ? `${String(storage.available).replace(/\s*(sq\s*ft|sqft|m²|m2|available)\s*$/i, "").trim()} sq ft available` : "Not specified"} 
+                        />
                         <DetailItem icon={<MapPin className="h-5 w-5" />} label="Location" value={`${storage.location}`} />
                         <DetailItem
                            icon={<FaRegMoneyBill1 className="h-5 w-5" />}

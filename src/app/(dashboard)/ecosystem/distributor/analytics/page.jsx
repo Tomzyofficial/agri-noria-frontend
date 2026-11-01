@@ -58,11 +58,11 @@ export default function DistributorAnalyticsPage() {
     (r) => r.items_status !== "delivered" && r.items_status !== "dispatched",
   ).length;
   const totalAssigned = statsData?.summary?.total_assigned ?? inputs.length;
-  const successRate = totalAssigned
+  const successRate = totalAssigned > 0
     ? ((statsData?.summary?.total_delivered ?? completedDeliveries) /
         totalAssigned) *
       100
-    : 100;
+    : 0;
 
   return (
     <div className="space-y-8 pb-20 max-w-6xl mx-auto">

@@ -6,7 +6,7 @@ import {
   FaFileContract, FaIdCard, FaBuilding, FaFilter
 } from "react-icons/fa";
 import { FaSeedling } from "react-icons/fa6";
-import { useEffect, useState, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 import { Loader2, Maximize2, ZoomIn, ChevronLeft, ChevronRight, RefreshCw, AlertTriangle, CheckSquare, Square, X, MapPin, FileText, Download, Copy, ExternalLink, Compass, ShieldAlert, ShieldCheck } from "lucide-react";
@@ -38,6 +38,16 @@ function UserManagementContent() {
 
    // Action States
    const [approvingId, setApprovingId] = useState(null);
+   const roleScrollRef = useRef(null);
+
+   const scrollRoleBar = (direction) => {
+      if (roleScrollRef.current) {
+         roleScrollRef.current.scrollBy({
+            left: direction === "left" ? -280 : 280,
+            behavior: "smooth"
+         });
+      }
+   };
    const [rejectingId, setRejectingId] = useState(null);
    const [selectedFarmerModal, setSelectedFarmerModal] = useState(null);
    const [enlargedImage, setEnlargedImage] = useState(null); // { url, title }
@@ -387,40 +397,72 @@ function UserManagementContent() {
          </div>
 
          {/* Role Breakdown Filter Container */}
-         <div className="bg-white dark:bg-gray-950 p-6 sm:p-7 rounded-3xl border border-slate-200/80 dark:border-gray-800 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-gray-900 pb-3">
+         <div className="bg-white dark:bg-gray-950 p-5 sm:p-6 rounded-3xl border border-slate-200/80 dark:border-gray-800 shadow-sm space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-gray-900 pb-3">
                <div>
-                  <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                     <FaFilter className="text-emerald-600 w-3.5 h-3.5" />
-                     <span>Filter Participants by Operational Role</span>
-                  </h3>
+                  <div className="flex items-center gap-2.5">
+                     <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                        <FaFilter className="text-emerald-600 w-3.5 h-3.5" />
+                        <span>Filter Participants by Operational Role</span>
+                     </h3>
+                     <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/80 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 shadow-2xs">
+                        ↔ Horizontal Scroll ({roleCounts.length + 1} roles)
+                     </span>
+                  </div>
                   <p className="text-xs text-slate-500 dark:text-gray-400 font-medium mt-0.5">
                      Quickly isolate specific stakeholder classes across institutional, farmer, logistics, and trading roles
                   </p>
                </div>
-               {selectedRole && (
-                  <button
-                     onClick={() => {
-                        setSelectedRole(null);
-                        setPage(1);
-                     }}
-                     className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer self-start sm:self-auto"
-                  >
-                     Reset to All Roles ×
-                  </button>
-               )}
+               <div className="flex items-center gap-3 self-start sm:self-auto">
+                  {selectedRole && (
+                     <button
+                        onClick={() => {
+                           setSelectedRole(null);
+                           setPage(1);
+                        }}
+                        className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                     >
+                        Reset to All Roles ×
+                     </button>
+                  )}
+                  {/* Left & Right quick scroll navigation controls */}
+                  <div className="flex items-center gap-1.5 bg-slate-100/80 dark:bg-gray-900 p-1 rounded-xl border border-slate-200/60 dark:border-gray-800">
+                     <button
+                        type="button"
+                        onClick={() => scrollRoleBar("left")}
+                        title="Scroll roles left"
+                        className="p-1 rounded-lg hover:bg-white dark:hover:bg-gray-800 text-slate-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition cursor-pointer shadow-2xs"
+                        aria-label="Scroll left"
+                     >
+                        <ChevronLeft className="w-4 h-4" />
+                     </button>
+                     <span className="text-[10px] font-bold text-slate-400 px-1 select-none">Slide</span>
+                     <button
+                        type="button"
+                        onClick={() => scrollRoleBar("right")}
+                        title="Scroll roles right"
+                        className="p-1 rounded-lg hover:bg-white dark:hover:bg-gray-800 text-slate-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition cursor-pointer shadow-2xs"
+                        aria-label="Scroll right"
+                     >
+                        <ChevronRight className="w-4 h-4" />
+                     </button>
+                  </div>
+               </div>
             </div>
 
-            {/* Filter Pills */}
-            <div className="flex flex-wrap gap-2 pt-1">
+            {/* Filter Pills - Horizontally scrollable strip with visible custom scrollbar */}
+            <div 
+               ref={roleScrollRef}
+               className="flex items-center gap-2 pt-1 pb-3 overflow-x-auto custom-horizontal-scrollbar scroll-smooth"
+            >
                <button
                   onClick={() => {
                      setSelectedRole(null);
                      setPage(1);
                   }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                      !selectedRole 
-                        ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 scale-105" 
+                        ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 scale-102" 
                         : "bg-slate-100 hover:bg-emerald-50 dark:bg-gray-900 text-slate-700 dark:text-gray-300 hover:text-emerald-800 dark:hover:text-emerald-300 border border-slate-200/80 dark:border-gray-800"
                   }`}
                >
@@ -439,9 +481,9 @@ function UserManagementContent() {
                            setSelectedRole(isSelected ? null : r.role);
                            setPage(1);
                         }}
-                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                            isSelected
-                              ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/25 scale-105 font-bold"
+                              ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/25 scale-102 font-bold"
                               : "bg-slate-100/80 hover:bg-emerald-50/70 dark:bg-gray-900/90 text-slate-700 dark:text-gray-300 hover:text-emerald-800 dark:hover:text-emerald-300 border border-slate-200/70 dark:border-gray-800"
                         }`}
                      >
@@ -488,14 +530,14 @@ function UserManagementContent() {
                </div>
 
                {/* Navigation Tabs & Rows Selector */}
-               <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-gray-900">
-                  <div className="flex flex-wrap items-center gap-2">
+               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-gray-900">
+                  <div className="flex items-center gap-2 overflow-x-auto custom-horizontal-scrollbar pb-1.5 max-w-full">
                      <button
                         onClick={() => {
                            setActiveTab("vendors");
                            setPage(1);
                         }}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                            activeTab === "vendors" 
                               ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20" 
                               : "bg-slate-100 hover:bg-slate-200/70 dark:bg-gray-900 text-slate-600 dark:text-gray-400"
@@ -509,7 +551,7 @@ function UserManagementContent() {
                            setActiveTab("pending");
                            setPage(1);
                         }}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                            activeTab === "pending" 
                               ? "bg-amber-500 text-white shadow-md shadow-amber-500/20" 
                               : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 hover:bg-amber-100/70"
@@ -528,7 +570,7 @@ function UserManagementContent() {
                            setActiveTab("buyers");
                            setPage(1);
                         }}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                            activeTab === "buyers" 
                               ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20" 
                               : "bg-slate-100 hover:bg-slate-200/70 dark:bg-gray-900 text-slate-600 dark:text-gray-400"
@@ -569,7 +611,7 @@ function UserManagementContent() {
                      </span>
                   </div>
                ) : activeTab === "buyers" ? (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto custom-horizontal-scrollbar">
                      <table className="w-full text-left text-xs">
                         <thead>
                            <tr className="bg-slate-50/80 dark:bg-gray-900/60 border-b border-slate-200/80 dark:border-gray-800 text-slate-500 dark:text-gray-400 uppercase tracking-wider font-bold text-[11px]">
@@ -606,7 +648,7 @@ function UserManagementContent() {
                      </table>
                   </div>
                ) : (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto custom-horizontal-scrollbar">
                      <table className="w-full min-w-[1250px] text-left text-xs">
                         <thead>
                            <tr className="bg-slate-50/80 dark:bg-gray-900/60 border-b border-slate-200/80 dark:border-gray-800 text-slate-500 dark:text-gray-400 uppercase tracking-wider font-bold text-[11px]">

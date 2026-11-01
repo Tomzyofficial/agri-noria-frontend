@@ -66,7 +66,9 @@ export function VehicleForm() {
                         <option value="">Choose one</option>
                         <option value="enclosed_box">Enclosed Box</option>
                         <option value="open_bed">Open Bed / Flatbed</option>
+                        <option value="tipper">Bulk Grain Tipper</option>
                         <option value="refrigerated">Refrigerated Cold-Chain</option>
+                        <option value="tanker">Liquid / Bulk Tanker</option>
                      </select>
                   </div>
                   <div>

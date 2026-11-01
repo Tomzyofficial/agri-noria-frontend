@@ -80,6 +80,14 @@ export default function CreateListingForm() {
             location: true,
          });
       } else if (step === 3) {
+         if (formData.min_budget && formData.max_budget) {
+            const minB = parseFloat(formData.min_budget);
+            const maxB = parseFloat(formData.max_budget);
+            if (!isNaN(minB) && !isNaN(maxB) && minB > maxB) {
+               toast.error("Minimum budget cannot be greater than maximum budget.");
+               return false;
+            }
+         }
          schemaForStep = schemaValidation.pick({
             price_type: true,
          });
@@ -112,6 +120,14 @@ export default function CreateListingForm() {
    // Handle form submission
    const handleSubmit = async (e) => {
       e.preventDefault();
+      if (formData.min_budget && formData.max_budget) {
+         const minB = parseFloat(formData.min_budget);
+         const maxB = parseFloat(formData.max_budget);
+         if (!isNaN(minB) && !isNaN(maxB) && minB > maxB) {
+            toast.error("Minimum budget cannot be greater than maximum budget.");
+            return;
+         }
+      }
       setLoading(true);
       try {
          const submitData = new FormData();

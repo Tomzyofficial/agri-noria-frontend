@@ -6,14 +6,14 @@ export const registerFormSchema = z.object({
     .string()
     .trim()
     .min(2, { message: "First Name must be at least 2 characters long." })
-    .regex(/^[A-Za-z\s]+$/, {
-      message: "First name must contain only letters",
+    .regex(/^[A-Za-z\s'-]+$/, {
+      message: "First name must contain only letters, hyphens, and apostrophes",
     }),
   lname: z
     .string()
     .trim()
     .min(2, { message: "Last Name must be at least 2 characters long." })
-    .regex(/^[A-Za-z\s]+$/, { message: "Last name must contain only letters" }),
+    .regex(/^[A-Za-z\s'-]+$/, { message: "Last name must contain only letters, hyphens, and apostrophes" }),
   email: z
     .string()
     .trim()
@@ -22,8 +22,11 @@ export const registerFormSchema = z.object({
   phone: z
     .string()
     .trim()
-    .min(11, { message: "Phone number is required" })
-    .max(11, { message: "Phone number must be 11 characters long" }),
+    .min(10, { message: "Phone number must be at least 10 characters long" })
+    .max(16, { message: "Phone number cannot exceed 16 characters" })
+    .regex(/^(\+?[0-9\s-]{10,16})$/, {
+      message: "Phone number must be valid local (e.g. 08012345678) or international (+234...) format",
+    }),
   country_code: z.string().trim().min(2, { message: "Country is required" }),
   state_code: z.string().trim().min(2, { message: "State is required" }),
   // role: z.string().trim().min(2, { message: "Account type is required" }),
@@ -70,7 +73,7 @@ export const buyerSignupSchema = z.object({
     .string()
     .trim()
     .min(2, { message: "Full Name is required" })
-    .regex(/^[A-Za-z\s]+$/, { message: "Full name must contain only letters" }),
+    .regex(/^[A-Za-z\s'-]+$/, { message: "Full name must contain only letters, hyphens, and apostrophes" }),
   password: z
     .string()
     .trim()

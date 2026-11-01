@@ -78,13 +78,14 @@ export async function signoutBridge() {
    cookieStore.delete("marketplace-session");
    cookieStore.delete("ecosystem-session");
 
-   const backend = await fetch(apiUrl("/api/auth/vendor/signout"), {
-      method: "POST",
-   });
-
-   if (!backend.ok) {
-      return false;
+   try {
+      await fetch(apiUrl("/api/auth/vendor/signout"), {
+         method: "POST",
+      });
+   } catch {
+      // Ignore backend connection failure when clearing session cookies locally
    }
+
    return true;
 }
 
@@ -151,11 +152,10 @@ export async function buyerSignoutBridge() {
    const cookieStore = await cookies();
    cookieStore.delete("buyer-session");
    cookieStore.delete("cart-session");
-   const backend = await fetch(apiUrl("/api/auth/buyer/signout"), {
-      method: "POST",
-   });
-   if (!backend.ok) {
-      return false;
-   }
+   try {
+      await fetch(apiUrl("/api/auth/buyer/signout"), {
+         method: "POST",
+      });
+   } catch {}
    return true;
 }

@@ -22,7 +22,17 @@ import {
   Box,
   Package,
   TrendingUp,
-  Sparkles
+  Sparkles,
+  Phone,
+  Mail,
+  MessageSquare,
+  FileText,
+  Building2,
+  ExternalLink,
+  Copy,
+  UserCheck,
+  Check,
+  Calendar
 } from "lucide-react";
 import { FaSpinner } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -42,6 +52,29 @@ export default function LogisticsDashboard() {
   const [ticketFilter, setTicketFilter] = useState("all");
   const [ticketSearch, setTicketSearch] = useState("");
 
+  // Mission Brief & Order Details Modal State
+  const [selectedTicketModal, setSelectedTicketModal] = useState(null);
+  const [copiedField, setCopiedField] = useState(null);
+  const [acceptingTicketId, setAcceptingTicketId] = useState(null);
+
+  const copyToClipboard = (text, fieldName) => {
+    if (!text) return;
+    navigator.clipboard.writeText(String(text));
+    setCopiedField(fieldName);
+    toast.success(`${fieldName} copied to clipboard`);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const formatWhatsAppUrl = (phone, ticket) => {
+    if (!phone) return null;
+    let clean = phone.replace(/[^0-9]/g, "");
+    if (clean.startsWith("0")) clean = "234" + clean.slice(1);
+    const msg = encodeURIComponent(
+      `Hello ${ticket?.entity_name || "Partner"}, this is Agri-Noria Logistics regarding your haulage dispatch #${ticket?.ticket_number} for ${ticket?.quantity_mt} MT ${ticket?.crop || "commodities"}.`
+    );
+    return `https://wa.me/${clean}?text=${msg}`;
+  };
+
   // Delivery Modal State
   const [deliveryModalTicket, setDeliveryModalTicket] = useState(null);
   const [podFile, setPodFile] = useState(null);
@@ -54,6 +87,7 @@ export default function LogisticsDashboard() {
   const [viewingMedia, setViewingMedia] = useState(null);
 
   const fetchData = async (showToast = false) => {
+    let fetchedSuccessfully = false;
     try {
       if (showToast) setIsRefreshing(true);
       const [statsRes, ticketsRes, sessRes] = await Promise.all([
@@ -61,31 +95,43 @@ export default function LogisticsDashboard() {
         fetch("/api/proxy/vendor/commodity-operations/logistics/tickets"),
         fetch("/api/auth/session").catch(() => null)
       ]);
-      const statsData = await statsRes.json();
-      const ticketsData = await ticketsRes.json();
+      const statsData = await statsRes.json().catch(() => ({}));
+      const ticketsData = await ticketsRes.json().catch(() => ({}));
       
-      if (statsData.success) setStats(statsData.data);
-      if (ticketsData.success) setTickets(ticketsData.data);
+      if (statsData.success) {
+        setStats(statsData.data);
+        fetchedSuccessfully = true;
+      }
+      if (ticketsData.success) {
+        setTickets(ticketsData.data);
+        fetchedSuccessfully = true;
+      }
+      if (statsRes.status === 401 || statsRes.status === 403) {
+        fetchedSuccessfully = true;
+      }
 
       if (sessRes && sessRes.ok) {
         const sessData = await sessRes.json().catch(() => null);
-        if (sessData?.authenticated) {
+        if (sessData?.authenticated && !sessData?.networkError) {
           setIsApproved(sessData.approval_status === "approved");
         }
       } else {
         const fallbackSess = await verifyVendorSession().catch(() => null);
-        if (fallbackSess?.authenticated) {
+        if (fallbackSess?.authenticated && !fallbackSess?.networkError) {
           setIsApproved(fallbackSess.approval_status === "approved");
         }
       }
 
-      if (showToast) toast.success("Logistics fleet metrics refreshed");
+      if (showToast && fetchedSuccessfully) toast.success("Logistics fleet metrics refreshed");
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to load logistics data");
+      console.warn("Retrying logistics data fetch:", error?.message);
     } finally {
-      setLoading(false);
       setIsRefreshing(false);
+      if (fetchedSuccessfully || showToast) {
+        setLoading(false);
+      } else {
+        setTimeout(() => fetchData(false), 2000);
+      }
     }
   };
 
@@ -152,19 +198,27 @@ export default function LogisticsDashboard() {
   };
 
   const acceptTicket = async (ticket_id) => {
+    setAcceptingTicketId(ticket_id);
     try {
       const res = await fetch(`/api/proxy/vendor/commodity-operations/logistics/tickets/${ticket_id}/accept`, {
         method: "POST"
       });
       const data = await res.json();
       if (data.success) {
-        toast.success("Fleet Dispatched & Fee Deducted!");
-        fetchData();
+        const netCredited = data.data?.net_credited;
+        if (netCredited) {
+          toast.success(`Fleet Dispatched! ₦${Number(netCredited).toLocaleString()} haulage fee secured & credited.`);
+        } else {
+          toast.success("Fleet Dispatched & Transit Activated!");
+        }
+        await fetchData();
       } else {
         toast.error(data.error || "Failed to dispatch fleet");
       }
     } catch (error) {
-      toast.error("Network error");
+      toast.error("Network error while dispatching fleet");
+    } finally {
+      setAcceptingTicketId(null);
     }
   };
 
@@ -526,13 +580,13 @@ export default function LogisticsDashboard() {
                   className="p-6 md:p-7 flex flex-col xl:flex-row xl:items-center justify-between gap-6 hover:bg-gray-50/60 dark:hover:bg-gray-800/40 transition-colors group"
                 >
                   {/* Left: Identification & Entity */}
-                  <div className="space-y-2 min-w-[240px]">
-                    <div className="flex items-center gap-2.5 flex-wrap">
+                  <div className="space-y-2 min-w-[260px]">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-mono font-black text-base text-gray-900 dark:text-white">
                         {ticket.ticket_number}
                       </span>
                       <span
-                        className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                        className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
                           isPending
                             ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60"
                             : isInTransit
@@ -542,49 +596,97 @@ export default function LogisticsDashboard() {
                       >
                         {ticket.status.replace("_", " ")}
                       </span>
+                      {ticket.farm_id && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-md font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          {ticket.farm_id}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                      <span className="font-semibold text-gray-700 dark:text-gray-300">
+                      <span className="font-bold text-gray-900 dark:text-white">
                         {ticket.entity_name}
                       </span>
                       <span>•</span>
-                      <span className="capitalize">{ticket.entity_role?.replace("_", " ")}</span>
+                      <span className="capitalize">{ticket.entity_role?.replace("_", " ") || "Farmer"}</span>
                     </div>
+
+                    {/* Quick Direct Contact Buttons */}
+                    {ticket.entity_phone && (
+                      <div className="flex items-center gap-2 pt-1">
+                        <a
+                          href={`tel:${ticket.entity_phone}`}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-bold text-[11px] transition shadow-xs"
+                          title="Call Requester"
+                        >
+                          <Phone size={11} className="text-emerald-600 shrink-0" />
+                          <span>{ticket.entity_phone}</span>
+                        </a>
+                        <a
+                          href={formatWhatsAppUrl(ticket.entity_phone, ticket)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 font-bold text-[11px] transition shadow-xs"
+                          title="Chat on WhatsApp"
+                        >
+                          <MessageSquare size={11} className="shrink-0" />
+                          <span>WhatsApp</span>
+                        </a>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Middle: Cargo, Route & Parameters */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 text-xs">
+                  {/* Middle: Cargo, Assigned Fleet & Route */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1 text-xs">
                     {/* Cargo Specs */}
-                    <div className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800 flex items-center justify-between">
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Cargo & Quantity</p>
-                        <p className="font-black text-gray-900 dark:text-white text-sm mt-0.5">
+                    <div className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800 flex flex-col justify-between">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Cargo & Batch</p>
+                        <span className="text-[10px] font-mono text-gray-400">{ticket.batch_number || "BATCH"}</span>
+                      </div>
+                      <div className="flex items-baseline justify-between mt-1">
+                        <span className="font-black text-gray-900 dark:text-white text-sm">
                           {ticket.crop}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
-                          {ticket.quantity_mt} <span className="text-xs font-bold text-gray-400">MT</span>
                         </span>
-                        <p className="text-[10px] text-gray-400 font-medium">Net Weight</p>
+                        <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+                          {ticket.quantity_mt} <span className="text-[10px] font-bold text-gray-400">MT</span>
+                        </span>
                       </div>
+                      <p className="text-[10px] text-gray-400 mt-0.5">~{Math.round(parseFloat(ticket.quantity_mt || 0) * 20)} Bags</p>
                     </div>
 
-                    {/* Route Specs */}
+                    {/* Assigned Haulage Fleet & Fee */}
+                    <div className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800 flex flex-col justify-between">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Assigned Fleet</p>
+                        <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                          ₦{Number(ticket.logistics_fee || 0).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="font-bold text-gray-800 dark:text-gray-200 text-xs mt-1 truncate flex items-center gap-1.5">
+                        <Truck size={13} className="text-emerald-600 shrink-0" />
+                        <span className="truncate">{ticket.vehicle_title || "Commercial Haulage Truck"}</span>
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-0.5">Haulage Fee Reserved</p>
+                    </div>
+
+                    {/* Transit Corridor */}
                     <div className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800 space-y-1">
                       <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Transit Corridor</p>
-                      <div className="flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300 truncate">
-                        <span className="truncate">{ticket.origin || "Origin Warehouse"}</span>
-                        <ArrowRight size={12} className="text-emerald-600 shrink-0" />
-                        <span className="text-emerald-600 dark:text-emerald-400 truncate">
-                          {ticket.destination || "Destination Hub"}
-                        </span>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-700 dark:text-gray-300 truncate">
+                          <MapPin size={11} className="text-amber-500 shrink-0" />
+                          <span className="truncate">Pickup: {ticket.pickup_location || ticket.origin || "Farm Hub"}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 truncate">
+                          <Building2 size={11} className="shrink-0 text-emerald-600" />
+                          <span className="truncate">Drop: {ticket.destination || "Storage Warehouse"}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   {/* Geospatial / POD Evidence */}
-                  <div className="shrink-0 min-w-[160px]">
+                  <div className="shrink-0 min-w-[140px]">
                     {ticket.delivery_proof_url ? (
                       <div className="flex items-center gap-2.5">
                         <button
@@ -639,15 +741,34 @@ export default function LogisticsDashboard() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex items-center gap-2.5 shrink-0 self-end xl:self-auto">
+                  <div className="flex items-center gap-2 shrink-0 self-end xl:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTicketModal(ticket)}
+                      className="px-3.5 py-2.5 rounded-2xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      title="View Full Waybill & Dispatch Brief"
+                    >
+                      <FileText size={13} />
+                      <span>Details</span>
+                    </button>
                     {isPending && (
                       <button
                         type="button"
                         onClick={() => acceptTicket(ticket.ticket_id)}
-                        className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs shadow-md shadow-purple-500/20 hover:from-purple-500 hover:to-indigo-500 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+                        disabled={acceptingTicketId === ticket.ticket_id}
+                        className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs shadow-md shadow-purple-500/20 hover:from-purple-500 hover:to-indigo-500 active:scale-95 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                        <Truck size={14} />
-                        Accept & Dispatch
+                        {acceptingTicketId === ticket.ticket_id ? (
+                          <>
+                            <FaSpinner className="animate-spin text-sm" />
+                            <span>Dispatching...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Truck size={14} />
+                            <span>Accept & Dispatch</span>
+                          </>
+                        )}
                       </button>
                     )}
                     {isInTransit && (
@@ -663,7 +784,7 @@ export default function LogisticsDashboard() {
                     {isDelivered && (
                       <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 px-3.5 py-2 rounded-2xl shadow-xs">
                         <CheckCircle size={14} className="text-emerald-600 dark:text-emerald-400" />
-                        Delivered & Verified
+                        Delivered
                       </span>
                     )}
                   </div>
@@ -857,6 +978,369 @@ export default function LogisticsDashboard() {
               {viewingMedia.notes && (
                 <p className="text-gray-500 italic max-w-xs truncate">"{viewingMedia.notes}"</p>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mission Brief & Dispatch Waybill Modal */}
+      {selectedTicketModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl flex flex-col">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between sticky top-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md z-10">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <FileText className="w-5 h-5" />
+                  </span>
+                  <h3 className="text-lg font-black text-gray-900 dark:text-white">
+                    Haulage Dispatch Waybill & Mission Brief
+                  </h3>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs font-mono font-black text-emerald-600 dark:text-emerald-400">
+                    #{selectedTicketModal.ticket_number}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(selectedTicketModal.ticket_number, "Ticket Number")}
+                    className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded transition"
+                    title="Copy Ticket Number"
+                  >
+                    {copiedField === "Ticket Number" ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
+                  </button>
+                  <span className="text-gray-300 dark:text-gray-700">•</span>
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                      selectedTicketModal.status === "pending"
+                        ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60"
+                        : selectedTicketModal.status === "in_transit"
+                        ? "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60"
+                        : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60"
+                    }`}
+                  >
+                    {selectedTicketModal.status.replace("_", " ")}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedTicketModal(null)}
+                className="p-2 rounded-2xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6 text-sm">
+              {/* Section 1: Consignor / Farmer Pickup Information */}
+              <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase font-black text-gray-400 tracking-wider flex items-center gap-1.5">
+                    <UserCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    Consignor & Origin Farm (Pickup Contact)
+                  </span>
+                  {selectedTicketModal.farm_id && (
+                    <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      Farm ID: {selectedTicketModal.farm_id}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
+                  <div>
+                    <h4 className="font-bold text-base text-gray-900 dark:text-white flex items-center gap-2">
+                      {selectedTicketModal.entity_name}
+                      <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 capitalize">
+                        ({selectedTicketModal.entity_role?.replace("_", " ") || "Farmer"})
+                      </span>
+                    </h4>
+                    {selectedTicketModal.cooperative_name && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        Cooperative: <span className="font-semibold text-gray-700 dark:text-gray-300">{selectedTicketModal.cooperative_name}</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Pickup Address */}
+                <div className="p-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800/80 flex items-start gap-2.5 text-xs">
+                  <MapPin className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase">Pickup Facility / Farm Address</p>
+                    <p className="font-semibold text-gray-800 dark:text-gray-200 mt-0.5">
+                      {selectedTicketModal.pickup_location || selectedTicketModal.origin || "Pickup Farm Coordinates"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Direct Farmer Contact Channels */}
+                <div className="pt-2 border-t border-gray-100 dark:border-gray-800/80 flex flex-wrap items-center gap-2">
+                  {selectedTicketModal.entity_phone ? (
+                    <>
+                      <a
+                        href={`tel:${selectedTicketModal.entity_phone}`}
+                        className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs cursor-pointer"
+                      >
+                        <Phone size={13} />
+                        <span>Call Farmer ({selectedTicketModal.entity_phone})</span>
+                      </a>
+                      <a
+                        href={formatWhatsAppUrl(selectedTicketModal.entity_phone, selectedTicketModal)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white font-bold text-xs transition shadow-xs cursor-pointer"
+                      >
+                        <MessageSquare size={13} />
+                        <span>WhatsApp Farmer</span>
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(selectedTicketModal.entity_phone, "Farmer Phone")}
+                        className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs transition"
+                        title="Copy Phone Number"
+                      >
+                        {copiedField === "Farmer Phone" ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                      </button>
+                    </>
+                  ) : (
+                    <span className="text-xs text-gray-400 italic">No phone contact listed</span>
+                  )}
+
+                  {selectedTicketModal.entity_email && (
+                    <a
+                      href={`mailto:${selectedTicketModal.entity_email}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-xs transition"
+                    >
+                      <Mail size={13} />
+                      <span>{selectedTicketModal.entity_email}</span>
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Section 2: Consignee / Certified Storage Warehouse Destination */}
+              <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase font-black text-gray-400 tracking-wider flex items-center gap-1.5">
+                    <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    Consignee & Destination Warehouse
+                  </span>
+                  {selectedTicketModal.storage_ticket_number && (
+                    <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                      Storage Intake #{selectedTicketModal.storage_ticket_number}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h4 className="font-bold text-base text-gray-900 dark:text-white">
+                      {selectedTicketModal.destination || "Certified Storage Facility"}
+                    </h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      Warehouse Ops / Manager: <span className="font-semibold text-gray-700 dark:text-gray-300">{selectedTicketModal.warehouse_manager || "Certified Operations Desk"}</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Direct Warehouse Contact Channels */}
+                <div className="pt-2 border-t border-gray-100 dark:border-gray-800/80 flex flex-wrap items-center gap-2">
+                  {selectedTicketModal.warehouse_phone ? (
+                    <>
+                      <a
+                        href={`tel:${selectedTicketModal.warehouse_phone}`}
+                        className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition shadow-xs cursor-pointer"
+                      >
+                        <Phone size={13} />
+                        <span>Call Warehouse Desk ({selectedTicketModal.warehouse_phone})</span>
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(selectedTicketModal.warehouse_phone, "Warehouse Phone")}
+                        className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs transition"
+                        title="Copy Warehouse Phone"
+                      >
+                        {copiedField === "Warehouse Phone" ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                      </button>
+                    </>
+                  ) : (
+                    <span className="text-xs text-gray-400 italic">No warehouse phone registered</span>
+                  )}
+
+                  {selectedTicketModal.warehouse_email && (
+                    <a
+                      href={`mailto:${selectedTicketModal.warehouse_email}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-xs transition"
+                    >
+                      <Mail size={13} />
+                      <span>{selectedTicketModal.warehouse_email}</span>
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Section 3: Cargo Manifest & Assigned Haulage Fleet */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
+                  <p className="text-[10px] uppercase font-bold text-gray-400">Commodity</p>
+                  <p className="font-black text-gray-900 dark:text-white text-sm mt-1">{selectedTicketModal.crop}</p>
+                  <p className="text-[10px] font-mono text-gray-400 mt-0.5">#{selectedTicketModal.batch_number}</p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
+                  <p className="text-[10px] uppercase font-bold text-gray-400">Total Net Weight</p>
+                  <p className="font-black text-emerald-600 dark:text-emerald-400 text-sm mt-1">
+                    {selectedTicketModal.quantity_mt} MT
+                  </p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">
+                    ~{Math.round(parseFloat(selectedTicketModal.quantity_mt || 0) * 20)} Bags (50kg)
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
+                  <p className="text-[10px] uppercase font-bold text-gray-400">Assigned Fleet</p>
+                  <p className="font-bold text-gray-800 dark:text-gray-200 text-xs mt-1 truncate">
+                    {selectedTicketModal.vehicle_title || "Haulage Truck"}
+                  </p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">
+                    {selectedTicketModal.estimated_distance_km ? `${selectedTicketModal.estimated_distance_km} km` : "GPS Corridor"}
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800">
+                  <p className="text-[10px] uppercase font-bold text-gray-400">Haulage Fee</p>
+                  <p className="font-black text-emerald-600 dark:text-emerald-400 text-sm mt-1">
+                    ₦{Number(selectedTicketModal.logistics_fee || 0).toLocaleString()}
+                  </p>
+                  <p className="text-[10px] text-emerald-500 font-bold mt-0.5">Escrow Reserved</p>
+                </div>
+              </div>
+
+              {/* Delivery Proof Details (Delivered Phase) */}
+              {selectedTicketModal.status === "delivered" && selectedTicketModal.delivery_proof_url && (
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs uppercase font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4" />
+                      Audited Proof of Delivery (POD)
+                    </span>
+                    {selectedTicketModal.delivered_at && (
+                      <span className="text-[11px] text-gray-400">
+                        {new Date(selectedTicketModal.delivered_at).toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setViewingMedia({
+                          url: selectedTicketModal.delivery_proof_url,
+                          lat: selectedTicketModal.delivery_latitude,
+                          lng: selectedTicketModal.delivery_longitude,
+                          notes: selectedTicketModal.delivery_notes,
+                          delivered_at: selectedTicketModal.delivered_at
+                        })
+                      }
+                      className="relative w-16 h-16 rounded-xl overflow-hidden border border-emerald-300 dark:border-emerald-700 shrink-0 group cursor-pointer"
+                    >
+                      <img
+                        src={selectedTicketModal.delivery_proof_url}
+                        alt="POD"
+                        className="w-full h-full object-cover group-hover:scale-110 transition"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                        <Eye className="w-4 h-4 text-white" />
+                      </div>
+                    </button>
+                    <div className="space-y-1 text-xs">
+                      {selectedTicketModal.delivery_latitude && selectedTicketModal.delivery_longitude && (
+                        <a
+                          href={`https://www.google.com/maps?q=${selectedTicketModal.delivery_latitude},${selectedTicketModal.delivery_longitude}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-mono font-bold text-emerald-600 hover:underline flex items-center gap-1"
+                        >
+                          <MapPin size={12} />
+                          {Number(selectedTicketModal.delivery_latitude).toFixed(6)}, {Number(selectedTicketModal.delivery_longitude).toFixed(6)}
+                        </a>
+                      )}
+                      {selectedTicketModal.delivery_notes && (
+                        <p className="text-gray-600 dark:text-gray-300 italic">"{selectedTicketModal.delivery_notes}"</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Traceability Notice */}
+              <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 text-[11px] text-gray-500 dark:text-gray-400 flex items-start gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <p>
+                  <strong className="text-gray-800 dark:text-gray-200">Anti-Fraud Traceability:</strong> Haulage fees are locked in platform escrow and automatically released upon electronic weighbridge intake confirmation by the receiving certified warehouse and verified Proof of Delivery (POD).
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-900/50 sticky bottom-0">
+              <button
+                type="button"
+                onClick={() => setSelectedTicketModal(null)}
+                className="px-5 py-2.5 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-xs hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+              >
+                Close Waybill
+              </button>
+
+              <div className="flex items-center gap-2">
+                {selectedTicketModal.status === "pending" && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const id = selectedTicketModal.ticket_id;
+                      await acceptTicket(id);
+                      setSelectedTicketModal(null);
+                    }}
+                    disabled={acceptingTicketId === selectedTicketModal.ticket_id}
+                    className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xs shadow-md shadow-purple-500/20 hover:from-purple-500 hover:to-indigo-500 active:scale-95 transition flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {acceptingTicketId === selectedTicketModal.ticket_id ? (
+                      <>
+                        <FaSpinner className="animate-spin text-sm" />
+                        <span>Dispatching Fleet...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Truck size={14} />
+                        <span>Accept & Dispatch Fleet</span>
+                      </>
+                    )}
+                  </button>
+                )}
+                {selectedTicketModal.status === "in_transit" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const t = selectedTicketModal;
+                      setSelectedTicketModal(null);
+                      openDeliveryModal(t);
+                    }}
+                    className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-xs shadow-md shadow-emerald-500/20 hover:from-emerald-500 hover:to-teal-500 active:scale-95 transition flex items-center gap-2 cursor-pointer"
+                  >
+                    <Camera size={14} />
+                    <span>Proceed to Delivery & POD</span>
+                  </button>
+                )}
+                {selectedTicketModal.status === "delivered" && (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 px-4 py-2 rounded-2xl shadow-xs">
+                    <CheckCircle size={14} className="text-emerald-600 dark:text-emerald-400" />
+                    Delivery Completed & Audited
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>

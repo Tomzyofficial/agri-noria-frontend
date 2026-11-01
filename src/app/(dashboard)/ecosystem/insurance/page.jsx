@@ -197,7 +197,7 @@ export default function InsuranceDashboard() {
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 font-bold uppercase">Risk Type</p>
-                          <p className="font-medium text-sm text-red-600">{req.riskType}</p>
+                          <p className="font-medium text-sm text-red-600">{req.riskType || req.risk_type || "Storage & Transit Protection"}</p>
                         </div>
                       </div>
                     </div>

@@ -5,19 +5,35 @@ import { toast } from "react-toastify";
 
 const FarmerDataContext = createContext();
 
-const fetcher = (url) => fetch(url).then((res) => res.json());
+const fetcher = async (url) => {
+   const res = await fetch(url);
+   if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      const err = new Error(errBody.error || errBody.message || `Request failed (${res.status})`);
+      err.status = res.status;
+      throw err;
+   }
+   return res.json();
+};
+
+const swrOptions = {
+   revalidateOnFocus: true,
+   revalidateOnReconnect: true,
+   shouldRetryOnError: true,
+   errorRetryInterval: 2000,
+};
 
 export function FarmerDataProvider({ children }) {
    const [enrollingProgramId, setEnrollingProgramId] = useState(null);
 
-   const { data: profileRes, isLoading: l1, mutate: mutateProfile } = useSWR("/api/proxy/pipeline/farmer-profile/me", fetcher, { revalidateOnFocus: true });
-   const { data: walletRes, isLoading: l2, mutate: mutateWallet } = useSWR("/api/proxy/pipeline/wallet?type=farmer", fetcher, { revalidateOnFocus: true });
-   const { data: inputsRes, isLoading: l3, mutate: mutateInputs } = useSWR("/api/proxy/pipeline/inputs/mine", fetcher, { revalidateOnFocus: true });
-   const { data: plantingRes, isLoading: l4, mutate: mutatePlanting } = useSWR("/api/proxy/pipeline/planting/mine", fetcher);
-   const { data: statsRes, isLoading: l5, mutate: mutateStats } = useSWR("/api/proxy/pipeline/stats", fetcher);
-   const { data: programsRes, isLoading: l6, mutate: mutatePrograms } = useSWR("/api/proxy/programs", fetcher, { revalidateOnFocus: true });
-   const { data: trainingRes, mutate: mutateTraining } = useSWR("/api/proxy/pipeline/training", fetcher);
-   const { data: clusterRes, isLoading: l8, mutate: mutateCluster } = useSWR("/api/proxy/pipeline/clusters/mine", fetcher, { revalidateOnFocus: true });
+   const { data: profileRes, error: e1, isLoading: l1, mutate: mutateProfile } = useSWR("/api/proxy/pipeline/farmer-profile/me", fetcher, swrOptions);
+   const { data: walletRes, error: e2, isLoading: l2, mutate: mutateWallet } = useSWR("/api/proxy/pipeline/wallet?type=farmer", fetcher, swrOptions);
+   const { data: inputsRes, isLoading: l3, mutate: mutateInputs } = useSWR("/api/proxy/pipeline/inputs/mine", fetcher, swrOptions);
+   const { data: plantingRes, isLoading: l4, mutate: mutatePlanting } = useSWR("/api/proxy/pipeline/planting/mine", fetcher, swrOptions);
+   const { data: statsRes, isLoading: l5, mutate: mutateStats } = useSWR("/api/proxy/pipeline/stats", fetcher, swrOptions);
+   const { data: programsRes, error: e6, isLoading: l6, mutate: mutatePrograms } = useSWR("/api/proxy/programs", fetcher, swrOptions);
+   const { data: trainingRes, mutate: mutateTraining } = useSWR("/api/proxy/pipeline/training", fetcher, swrOptions);
+   const { data: clusterRes, isLoading: l8, mutate: mutateCluster } = useSWR("/api/proxy/pipeline/clusters/mine", fetcher, swrOptions);
 
    const profile = profileRes?.data || null;
    const wallet = walletRes?.data?.wallet || null;
@@ -29,10 +45,11 @@ export function FarmerDataProvider({ children }) {
    const trainingData = trainingRes?.data || { modules: [], progress: [] };
    const myCluster = clusterRes?.data || null;
 
-   const { data: clusterTrainingsRes, mutate: mutateClusterTrainings } = useSWR(myCluster?.id ? `/api/proxy/pipeline/clusters/${myCluster.id}/training` : null, fetcher, { refreshInterval: 15000 });
+   const { data: clusterTrainingsRes, mutate: mutateClusterTrainings } = useSWR(myCluster?.id ? `/api/proxy/pipeline/clusters/${myCluster.id}/training` : null, fetcher, { ...swrOptions, refreshInterval: 15000 });
    const clusterTrainings = clusterTrainingsRes?.data || [];
 
-   const loading = l1 || l2 || l6;
+   const isUnauthenticated = e1?.status === 401 || e2?.status === 401 || e6?.status === 401;
+   const loading = !isUnauthenticated && (l1 || l2 || l6 || !profileRes || !walletRes || !programsRes);
 
    const refreshData = async () => {
       await Promise.all([mutateProfile(), mutateWallet(), mutateInputs(), mutatePlanting(), mutateStats(), mutatePrograms(), mutateTraining(), mutateCluster(), mutateClusterTrainings()]);

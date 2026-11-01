@@ -29,7 +29,7 @@ export function ViewListingPage({ listing }) {
 
    // Handle delete
    const handleDelete = async () => {
-      if (!confirm("Are you sure you want to delete this storage facility? This action cannot be undone.")) {
+      if (!confirm("Are you sure you want to delete this drone service listing? This action cannot be undone.")) {
          return;
       }
 

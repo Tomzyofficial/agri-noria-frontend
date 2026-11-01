@@ -119,6 +119,7 @@ export function JobForm() {
                <div className="space-y-2">
                   <Label htmlFor="country">Country</Label>
                   <select disabled={loading} className="disabled:opacity-50" id="country" {...register("country")}>
+                     <option value="">Select country</option>
                      {Country.getAllCountries().map((country) => (
                         <option key={country.isoCode} value={country.isoCode}>
                            {country.name}
@@ -129,7 +130,8 @@ export function JobForm() {
                <div className="space-y-2">
                   <Label htmlFor="state">State</Label>
                   <select disabled={loading} className="disabled:opacity-50" id="state" {...register("state")}>
-                     {State.getStatesOfCountry(selectedCountry).map((state) => (
+                     <option value="">Select state / province</option>
+                     {selectedCountry && State.getStatesOfCountry(selectedCountry).map((state) => (
                         <option key={state.isoCode} value={state.isoCode}>
                            {state.name}
                         </option>

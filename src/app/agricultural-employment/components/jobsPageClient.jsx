@@ -9,6 +9,30 @@ import { useState } from "react";
 import { NoJobsAvailable } from "./NoJobsAvailable";
 import { useSearchParams } from "next/navigation";
 import { formatLabel } from "@/utils/otherUtils";
+import { formatPrice } from "@/utils/formatPrice";
+
+function formatJobSalary(job) {
+   const min = parseFloat(job.salary_min);
+   const max = parseFloat(job.salary_max);
+   const hasMin = !isNaN(min) && min > 0;
+   const hasMax = !isNaN(max) && max > 0;
+
+   if (!hasMin && !hasMax) return "Salary not disclosed";
+
+   const country = job.country_code || job.country || "NG";
+   const currency = job.currency || "NGN";
+
+   let range = "";
+   if (hasMin && hasMax) {
+      range = `${formatPrice(min, country, currency)} - ${formatPrice(max, country, currency)}`;
+   } else if (hasMin) {
+      range = `From ${formatPrice(min, country, currency)}`;
+   } else {
+      range = `Up to ${formatPrice(max, country, currency)}`;
+   }
+
+   return job.salary_type ? `${range} / ${formatLabel(job.salary_type)}` : range;
+}
 import { FaBriefcase } from "react-icons/fa";
 import { Landmark, Share2 } from "lucide-react";
 import { NoSearchResults } from "./NoSearchResult";
@@ -83,7 +107,7 @@ export function JobsPageClient({ jobs }) {
                               <FaLocationDot /> {formatLabel(job.location_type)}
                            </p>
                            <p className="bg-gray-400 dark:bg-gray-900 p-1 md:p-2 rounded flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                              <Landmark /> {job.salary_min && job.salary_max ? `$${job.salary_min} - $${job.salary_max}` : "Salary not disclosed"}
+                              <Landmark /> {formatJobSalary(job)}
                            </p>
                         </div>
 

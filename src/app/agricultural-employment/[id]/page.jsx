@@ -36,12 +36,21 @@ function formatDate(value) {
 }
 
 function formatSalary(job) {
-   const hasMinimum = job.salary_min !== null && job.salary_min !== undefined && job.salary_min !== "";
-   const hasMaximum = job.salary_max !== null && job.salary_max !== undefined && job.salary_max !== "";
+   const min = parseFloat(job.salary_min);
+   const max = parseFloat(job.salary_max);
+   const hasMinimum = !isNaN(min) && min > 0;
+   const hasMaximum = !isNaN(max) && max > 0;
 
    if (!hasMinimum && !hasMaximum) return "Salary not disclosed";
 
-   const range = hasMinimum && hasMaximum ? `${formatPrice(job.salary_min, job.country_code, job.currency)} - ${formatPrice(job.salary_max, job.country_code, job.currency)}` : hasMinimum ? `From ${formatPrice(job.salary_min, job.country_code, job.currency)}` : `Up to ${formatPrice(job.salary_max, job.country_code, job.currency)}`;
+   const country = job.country_code || job.country || "NG";
+   const currency = job.currency || "NGN";
+
+   const range = hasMinimum && hasMaximum 
+      ? `${formatPrice(min, country, currency)} - ${formatPrice(max, country, currency)}` 
+      : hasMinimum 
+      ? `From ${formatPrice(min, country, currency)}` 
+      : `Up to ${formatPrice(max, country, currency)}`;
 
    return job.salary_type ? `${range} / ${formatLabel(job.salary_type)}` : range;
 }

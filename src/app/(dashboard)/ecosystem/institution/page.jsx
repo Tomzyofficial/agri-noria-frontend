@@ -323,10 +323,8 @@ const ProducerAssociationDashboard = ({ stats }) => (
             <h4 className="text-lg font-black text-(--foreground)">Producer Group Management</h4>
             <p className="text-xs text-gray-400 font-semibold mt-1">Coordinate regional commodity cohorts and assign programmes</p>
           </div>
-          <Link href="/ecosystem/institution/producer-groups">
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs">
-              Manage Groups
-            </Button>
+          <Link href="/ecosystem/institution/producer-groups" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs px-4 py-2.5 inline-flex items-center justify-center transition-colors">
+            Manage Groups
           </Link>
         </div>
       </Card>
@@ -337,10 +335,8 @@ const ProducerAssociationDashboard = ({ stats }) => (
             <h4 className="text-lg font-black text-(--foreground)">Member Cooperatives Network</h4>
             <p className="text-xs text-gray-400 font-semibold mt-1">Affiliate independent cooperatives to your association</p>
           </div>
-          <Link href="/ecosystem/institution/cooperatives">
-            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs">
-              View Network
-            </Button>
+          <Link href="/ecosystem/institution/cooperatives" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs px-4 py-2.5 inline-flex items-center justify-center transition-colors">
+            View Network
           </Link>
         </div>
       </Card>
@@ -405,10 +401,8 @@ const CooperativeDashboard = ({ stats }) => (
             <h4 className="text-lg font-black text-(--foreground)">Member Clusters</h4>
             <p className="text-xs text-gray-400 font-semibold mt-1">Organize cooperative members and request programme inputs</p>
           </div>
-          <Link href="/ecosystem/institution/member-clusters">
-            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs">
-              Manage Clusters
-            </Button>
+          <Link href="/ecosystem/institution/member-clusters" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs px-4 py-2.5 inline-flex items-center justify-center transition-colors">
+            Manage Clusters
           </Link>
         </div>
       </Card>
@@ -419,10 +413,8 @@ const CooperativeDashboard = ({ stats }) => (
             <h4 className="text-lg font-black text-(--foreground)">Farmer Members Directory</h4>
             <p className="text-xs text-gray-400 font-semibold mt-1">Add or link verified farmers with single digital identity</p>
           </div>
-          <Link href="/ecosystem/institution/farmers">
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs">
-              View Members
-            </Button>
+          <Link href="/ecosystem/institution/farmers" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs px-4 py-2.5 inline-flex items-center justify-center transition-colors">
+            View Members
           </Link>
         </div>
       </Card>
@@ -487,10 +479,8 @@ const ResearchInstitutionDashboard = ({ stats }) => (
             <h4 className="text-lg font-black text-(--foreground)">Research Programme Workspace</h4>
             <p className="text-xs text-gray-400 font-semibold mt-1">Manage experimental cohorts, observations, and grant proposals</p>
           </div>
-          <Link href="/ecosystem/institution/research-projects">
-            <Button className="bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs">
-              Manage Research
-            </Button>
+          <Link href="/ecosystem/institution/research-projects" className="bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs px-4 py-2.5 inline-flex items-center justify-center transition-colors">
+            Manage Research
           </Link>
         </div>
       </Card>
@@ -501,10 +491,8 @@ const ResearchInstitutionDashboard = ({ stats }) => (
             <h4 className="text-lg font-black text-(--foreground)">Trial Plots & Field Trials</h4>
             <p className="text-xs text-gray-400 font-semibold mt-1">Map geographic trial plots and cultivar performance</p>
           </div>
-          <Link href="/ecosystem/institution/trial-plots">
-            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs">
-              View Plots
-            </Button>
+          <Link href="/ecosystem/institution/trial-plots" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs px-4 py-2.5 inline-flex items-center justify-center transition-colors">
+            View Plots
           </Link>
         </div>
       </Card>

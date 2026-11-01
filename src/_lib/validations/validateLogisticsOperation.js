@@ -17,7 +17,7 @@ const vehicleUploadSchema = z.object({
    license_plate: z.string().min(2, { message: "Invalid license plate length." }).max(50, { message: "License plate cannot exceed 50 characters." }).trim().toUpperCase(),
 
    // Matches the cargo_enclosure_type ENUM
-   cargo_type: z.enum(["enclosed_box", "open_bed", "refrigerated"], {
+   cargo_type: z.enum(["enclosed_box", "open_bed", "refrigerated", "tipper", "tanker"], {
       errorMap: () => ({
          message: "Please select a valid cargo enclosure type.",
       }),

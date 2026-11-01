@@ -393,26 +393,26 @@ export default function AuditLogsPage() {
           </div>
 
           {/* Quick Date Presets */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-bold text-gray-400 mr-1">Quick Date:</span>
+          <div className="flex items-center gap-1.5 overflow-x-auto custom-horizontal-scrollbar pb-1 max-w-full">
+            <span className="text-[11px] font-bold text-gray-400 mr-1 shrink-0 whitespace-nowrap">Quick Date:</span>
             <button
               type="button"
               onClick={() => handleQuickDate(0)}
-              className="px-2.5 py-1 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-800 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/40 text-gray-600 dark:text-gray-300 transition"
+              className="px-2.5 py-1 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-800 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/40 text-gray-600 dark:text-gray-300 transition shrink-0 whitespace-nowrap cursor-pointer"
             >
               Today
             </button>
             <button
               type="button"
               onClick={() => handleQuickDate(7)}
-              className="px-2.5 py-1 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-800 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/40 text-gray-600 dark:text-gray-300 transition"
+              className="px-2.5 py-1 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-800 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/40 text-gray-600 dark:text-gray-300 transition shrink-0 whitespace-nowrap cursor-pointer"
             >
               7 Days
             </button>
             <button
               type="button"
               onClick={() => handleQuickDate(30)}
-              className="px-2.5 py-1 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-800 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/40 text-gray-600 dark:text-gray-300 transition"
+              className="px-2.5 py-1 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-800 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/40 text-gray-600 dark:text-gray-300 transition shrink-0 whitespace-nowrap cursor-pointer"
             >
               30 Days
             </button>
@@ -420,7 +420,7 @@ export default function AuditLogsPage() {
               <button
                 type="button"
                 onClick={resetAllFilters}
-                className="px-2.5 py-1 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition flex items-center gap-1 ml-2"
+                className="px-2.5 py-1 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition flex items-center gap-1 ml-2 shrink-0 whitespace-nowrap cursor-pointer"
               >
                 <X size={12} /> Reset
               </button>
@@ -563,7 +563,7 @@ export default function AuditLogsPage() {
         ) : (
           <div>
             {/* Desktop Table View */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto custom-horizontal-scrollbar">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-gray-50/80 dark:bg-gray-850/60 border-b border-gray-200/80 dark:border-gray-800 text-[11px] font-black uppercase tracking-wider text-gray-400">

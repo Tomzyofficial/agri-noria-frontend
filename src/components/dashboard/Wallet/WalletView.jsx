@@ -215,8 +215,8 @@ export default function WalletView({ role, walletType = "personal" }) {
                   filteredTransactions.map(tx => (
                      <div key={tx.id} className="flex items-center justify-between p-4 bg-white dark:bg-gray-950 border border-gray-50 dark:border-gray-900 rounded-2xl hover:shadow-md transition-shadow">
                         <div className="flex items-center gap-4">
-                           <div className={`p-3 rounded-xl ${tx.amount > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
-                              {tx.amount > 0 ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
+                           <div className={`p-3 rounded-xl ${String(tx.type || '').toLowerCase() === 'credit' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                              {String(tx.type || '').toLowerCase() === 'credit' ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
                            </div>
                            <div>
                               <p className="font-bold">{tx.description}</p>
@@ -224,8 +224,8 @@ export default function WalletView({ role, walletType = "personal" }) {
                            </div>
                         </div>
                         <div className="text-right">
-                           <p className={`font-black ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                              {tx.amount > 0 ? '+' : ''}{formatCurrency(tx.amount)}
+                           <p className={`font-black ${String(tx.type || '').toLowerCase() === 'credit' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              {String(tx.type || '').toLowerCase() === 'credit' ? '+' : '-'}{formatCurrency(Math.abs(tx.amount))}
                            </p>
                            <p className="text-[10px] uppercase font-black text-gray-400 tracking-widest">{tx.status}</p>
                         </div>

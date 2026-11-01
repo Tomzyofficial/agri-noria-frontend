@@ -114,7 +114,7 @@ function OrdersContent() {
             <CardHeader className="p-10 border-b border-gray-50 dark:border-gray-900">
                <CardTitle className="text-xl font-black flex items-center gap-3">
                   <ShoppingCart className={activeTab === "marketplace" ? "text-indigo-600" : "text-amber-600"} /> 
-                  {activeTab === "marketplace" ? "Marketplace Orders" : "Forward Contracts"} 
+                  {activeTab === "marketplace" ? "Ecosystem Procurement Orders" : "Forward Contracts"} 
                   ({activeTab === "marketplace" ? filteredOrders.length : filteredContracts.length})
                </CardTitle>
             </CardHeader>
@@ -131,7 +131,7 @@ function OrdersContent() {
                   ) : (
                      <div className="text-center py-20 bg-gray-50 dark:bg-gray-900 rounded-3xl border-2 border-dashed border-gray-100 dark:border-gray-900">
                         <Package className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-                        <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No marketplace orders found</p>
+                        <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No ecosystem procurement orders found</p>
                      </div>
                   )
                ) : (

@@ -36,20 +36,31 @@ export default function RiskReportsPage() {
                     </div>
                     
                     <div className="py-12 flex flex-col items-center">
-                        <div className="relative w-64 h-64 flex items-center justify-center">
-                            <div className="absolute inset-0 rounded-full border-[16px] border-gray-50 dark:border-gray-700" />
-                            <div className="absolute inset-0 rounded-full border-[16px] border-purple-500 border-t-transparent border-l-transparent rotate-[45deg]" />
-                            <div className="text-center">
-                                <p className="text-6xl font-black text-slate-900 dark:text-white">68</p>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2">Moderate Risk</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4 mt-8 pt-8 border-t border-gray-50 dark:border-gray-700">
-                        <RiskMetric label="Health" value="82%" color="text-emerald-500" />
-                        <RiskMetric label="Safety" value="95%" color="text-purple-500" />
-                        <RiskMetric label="Market" value="45%" color="text-amber-500" />
+                        {(() => {
+                            const activeCount = risks.length;
+                            const highCount = risks.filter(r => r.severity === 'High').length;
+                            // A047: Traceable score computed dynamically from monitored hazards & inspections
+                            const calculatedScore = activeCount > 0 ? Math.min(100, Math.round(20 + (highCount * 25) + (activeCount * 8))) : 18;
+                            const riskLabel = calculatedScore > 65 ? "High Risk" : calculatedScore > 35 ? "Moderate Risk" : "Low Risk";
+                            return (
+                                <>
+                                    <div className="relative w-64 h-64 flex items-center justify-center">
+                                        <div className="absolute inset-0 rounded-full border-[16px] border-gray-50 dark:border-gray-700" />
+                                        <div className={`absolute inset-0 rounded-full border-[16px] ${calculatedScore > 65 ? 'border-red-500' : calculatedScore > 35 ? 'border-purple-500' : 'border-emerald-500'} border-t-transparent border-l-transparent rotate-[45deg]`} />
+                                        <div className="text-center">
+                                            <p className="text-6xl font-black text-slate-900 dark:text-white">{calculatedScore}</p>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-2">{riskLabel}</p>
+                                            <p className="text-[9px] font-medium text-purple-600 dark:text-purple-400 mt-1">Based on {activeCount} telemetry data points</p>
+                                        </div>
+                                    </div>
+                                    <div className="w-full grid grid-cols-3 gap-4 mt-8 pt-8 border-t border-gray-50 dark:border-gray-700">
+                                        <RiskMetric label="Active Hazards" value={`${activeCount} verified`} color="text-purple-500" />
+                                        <RiskMetric label="Critical Severity" value={`${highCount} flagged`} color="text-red-500" />
+                                        <RiskMetric label="Satellite Oracles" value="Active (Sentinel-2)" color="text-emerald-500" />
+                                    </div>
+                                </>
+                            );
+                        })()}
                     </div>
                 </Card>
 

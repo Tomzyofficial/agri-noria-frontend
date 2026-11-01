@@ -54,16 +54,23 @@ function LogisticsLayoutInner({ children }) {
   // Verify Session & Approval Status
   useEffect(() => {
     const checkSession = async () => {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        setIsLoadingSession(false);
+        return;
+      }
       try {
         let session;
         try {
           const res = await fetch("/api/auth/session");
-          session = await res.json();
+          if (res.ok) {
+            session = await res.json();
+          } else {
+            session = await verifyVendorSession();
+          }
         } catch {
           session = await verifyVendorSession();
         }
-        if (session?.authenticated === false) {
-          await handleSignout();
+        if (!session || session?.networkError || session?.authenticated === false) {
           return;
         }
         setSessionData(session);
@@ -84,7 +91,7 @@ function LogisticsLayoutInner({ children }) {
           return;
         }
       } catch (e) {
-        console.error("Session check error in logistics layout:", e);
+        console.warn("Session check skipped in logistics layout:", e?.message);
       } finally {
         setIsLoadingSession(false);
       }

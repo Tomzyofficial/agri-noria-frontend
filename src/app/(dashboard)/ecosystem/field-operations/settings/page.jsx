@@ -25,11 +25,33 @@ export default function FieldOfficerSettings() {
    useEffect(() => {
       const fetchSettings = async () => {
          try {
+            // A044: Always load authenticated user profile identity so fields are populated
+            const authRes = await fetch("/api/proxy/auth/verify-vendor");
+            if (authRes.ok) {
+               const authData = await authRes.json();
+               if (authData.authenticated) {
+                  setSettings(prev => ({
+                     ...prev,
+                     firstName: authData.fname || prev.firstName,
+                     lastName: authData.lname || prev.lastName,
+                     email: authData.email || prev.email,
+                     phone: authData.phone || prev.phone,
+                     displayName: `${authData.fname || ''} ${authData.lname || ''}`.trim() || authData.role || "Field Officer",
+                  }));
+               }
+            }
             const res = await fetch("/api/proxy/field-operations/settings");
             if (res.ok) {
                const json = await res.json();
                if (json.success && json.data) {
-                  setSettings(prev => ({ ...prev, ...json.data }));
+                  setSettings(prev => ({ 
+                     ...prev, 
+                     ...json.data,
+                     firstName: json.data.firstName || prev.firstName,
+                     lastName: json.data.lastName || prev.lastName,
+                     email: json.data.email || prev.email,
+                     phone: json.data.phone || prev.phone,
+                  }));
                }
             }
          } catch (err) {

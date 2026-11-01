@@ -65,24 +65,21 @@ function InstitutionLayoutInner({ children }) {
   // Auto-verify session and fetch notifications
   useEffect(() => {
     const checkExistingUser = async () => {
+      if (typeof navigator !== "undefined" && !navigator.onLine) return;
       try {
         const [response, notifRes] = await Promise.all([
-          fetch("/api/proxy/auth/verify-vendor"),
+          fetch("/api/proxy/auth/verify-vendor").catch(() => null),
           fetch("/api/proxy/programs/notifications").catch(() => null)
         ]);
-        if (response.ok) {
-          const data = await response.json();
+        if (response && response.ok) {
+          const data = await response.json().catch(() => null);
           if (data?.authenticated) {
             const role = data.role?.toLowerCase() || "";
             setAccountType(role);
             if (typeof window !== "undefined" && role) {
               localStorage.setItem("institution_account_type", role);
             }
-          } else {
-            await handleSignout();
           }
-        } else if (response.status !== 500) {
-          await handleSignout();
         }
 
         if (notifRes && notifRes.ok) {
@@ -264,7 +261,7 @@ function InstitutionLayoutInner({ children }) {
         )}
 
         <div
-          className={`${menuOpen ? "left-0 w-64 h-full bg-white shadow-xl" : "-left-64"} transition-all duration-300 fixed z-40 top-0 lg:left-0 lg:w-64 lg:h-screen dark:bg-gray-950 dark:text-(--foreground) lg:bg-white lg:shadow-md p-4 flex flex-col border-r border-gray-100 dark:border-gray-800`}
+          className={`${menuOpen ? "left-0 w-64 h-full bg-white shadow-xl" : "-left-64 hidden lg:flex"} transition-all duration-300 fixed z-40 top-0 lg:left-0 lg:w-64 lg:h-screen dark:bg-gray-950 dark:text-(--foreground) lg:bg-white lg:shadow-md p-4 flex flex-col border-r border-gray-100 dark:border-gray-800`} aria-hidden={!menuOpen}
         >
           <div className="mb-8 px-2">
             <h2 className="text-2xl font-black text-blue-600 tracking-tighter uppercase">
@@ -310,10 +307,10 @@ function InstitutionLayoutInner({ children }) {
       </aside>
       <div className="lg:ml-64 flex-1 flex flex-col min-h-screen min-w-0">
         <EcosystemHeader
+          onMenuToggle={handleMenuClick}
           title={`${accountType ? accountType.charAt(0).toUpperCase() + accountType.slice(1) : "Institutional"} Gateway`}
           portalName="Institution"
           role={accountType || "institution"}
-          onMenuToggle={handleMenuClick}
         />
         <main className="w-full flex-1 lg:p-8 p-4 bg-gray-50 dark:bg-(--background) transition-all duration-200">
           {notifications.length > 0 && (

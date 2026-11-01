@@ -3,17 +3,26 @@ import { useState } from "react";
 import useSWR from "swr";
 import { toast } from "react-toastify";
 
-const fetcher = (url) => fetch(url).then((res) => res.json());
+const fetcher = async (url) => {
+   const res = await fetch(url);
+   if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      const err = new Error(errBody.error || errBody.message || `Request failed (${res.status})`);
+      err.status = res.status;
+      throw err;
+   }
+   return res.json();
+};
 
 export function useProgramData() {
    const [eligibleFarmers, setEligibleFarmers] = useState([]);
    const [clusterMembers, setClusterMembers] = useState([]);
 
-   const { data: clustersRes, isLoading: l1, mutate: mutateClusters } = useSWR("/api/proxy/pipeline/clusters", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
-   const { data: statsRes, isLoading: l2, mutate: mutateStats } = useSWR("/api/proxy/pipeline/stats", fetcher, { refreshInterval: 10000 });
-   const { data: pendingRes, isLoading: l3, mutate: mutatePending } = useSWR("/api/proxy/pipeline/inputs/pending", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
-   const { data: programsRes, isLoading: l4, mutate: mutatePrograms } = useSWR("/api/proxy/programs", fetcher, { refreshInterval: 5000, revalidateOnFocus: true });
-   const { data: sessionRes, isLoading: l5 } = useSWR("/api/proxy/auth/verify-vendor", fetcher, { revalidateOnFocus: false });
+   const { data: clustersRes, error: e1, isLoading: l1, mutate: mutateClusters } = useSWR("/api/proxy/pipeline/clusters", fetcher, { refreshInterval: 5000, revalidateOnFocus: true, shouldRetryOnError: true, errorRetryInterval: 2000 });
+   const { data: statsRes, isLoading: l2, mutate: mutateStats } = useSWR("/api/proxy/pipeline/stats", fetcher, { refreshInterval: 10000, shouldRetryOnError: true, errorRetryInterval: 2000 });
+   const { data: pendingRes, isLoading: l3, mutate: mutatePending } = useSWR("/api/proxy/pipeline/inputs/pending", fetcher, { refreshInterval: 5000, revalidateOnFocus: true, shouldRetryOnError: true, errorRetryInterval: 2000 });
+   const { data: programsRes, error: e4, isLoading: l4, mutate: mutatePrograms } = useSWR("/api/proxy/programs", fetcher, { refreshInterval: 5000, revalidateOnFocus: true, shouldRetryOnError: true, errorRetryInterval: 2000 });
+   const { data: sessionRes, error: e5, isLoading: l5 } = useSWR("/api/proxy/auth/verify-vendor", fetcher, { revalidateOnFocus: false, shouldRetryOnError: true, errorRetryInterval: 2000 });
 
    const clusters = clustersRes?.data || [];
    const stats = statsRes?.data || {};
@@ -40,7 +49,8 @@ export function useProgramData() {
       ? rawPrograms.filter(p => p.program_director_id === currentUserId)
       : rawPrograms;
 
-   const loading = l1 || l4 || l5;
+   const isUnauthenticated = e1?.status === 401 || e4?.status === 401 || e5?.status === 401;
+   const loading = !isUnauthenticated && (l1 || l4 || l5 || !clustersRes || !programsRes || !sessionRes);
 
    const fetchData = async () => {
       await Promise.all([

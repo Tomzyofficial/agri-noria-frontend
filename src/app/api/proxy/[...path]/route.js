@@ -6,6 +6,37 @@ if (!BACKEND_URL) {
    throw new Error("BACKEND_URL is not defined");
 }
 
+const HOP_BY_HOP_HEADERS = new Set([
+   "host",
+   "connection",
+   "keep-alive",
+   "transfer-encoding",
+   "content-length",
+   "upgrade",
+   "proxy-authenticate",
+   "proxy-authorization",
+   "te",
+   "trailer",
+]);
+
+function isTransientFetchError(err) {
+   if (!err) return false;
+   const msg = String(err.message || "");
+   const code = err.code || err.cause?.code || "";
+   return (
+      msg.includes("fetch failed") ||
+      msg.includes("ECONNRESET") ||
+      msg.includes("ECONNREFUSED") ||
+      msg.includes("ETIMEDOUT") ||
+      msg.includes("socket hang up") ||
+      code === "ECONNRESET" ||
+      code === "ECONNREFUSED" ||
+      code === "ETIMEDOUT" ||
+      code === "EPIPE" ||
+      code === "UND_ERR_SOCKET"
+   );
+}
+
 async function handler(req, { params }) {
    try {
       const cookieStore = await cookies();
@@ -33,29 +64,65 @@ async function handler(req, { params }) {
       const queryString = req.nextUrl.search;
       const constructedUrl = `${BACKEND_URL}/api/${pathStr}${queryString}`;
 
-      const headers = new Headers(req.headers);
-      headers.set("Cookie", cookieHeader);
-      headers.set("x-active-workspace", activeWorkspace);
+      // Build clean headers without hop-by-hop headers that cause ECONNRESET in Node undici
+      const forwardedHeaders = {};
+      for (const [key, value] of req.headers.entries()) {
+         if (!HOP_BY_HOP_HEADERS.has(key.toLowerCase())) {
+            forwardedHeaders[key] = value;
+         }
+      }
+      forwardedHeaders["Cookie"] = cookieHeader;
+      forwardedHeaders["x-active-workspace"] = activeWorkspace;
 
-      const backendRes = await fetch(constructedUrl, {
-         method: req.method,
-         headers: Object.fromEntries(headers.entries()),
-         body: req.method !== "GET" && req.method !== "HEAD" ? await req.body : undefined,
-         cache: "no-store",
-         duplex: "half",
-      });
+      // Buffer body once for non-GET/HEAD so retries can replay it safely
+      const hasBody = req.method !== "GET" && req.method !== "HEAD";
+      const bodyBuffer = hasBody ? await req.arrayBuffer() : undefined;
 
-      const contentType = backendRes.headers.get("content-type");
+      const retryDelays = [250, 500, 1000, 1500];
+      let lastError = null;
 
-      return new Response(backendRes.body, {
-         status: backendRes.status,
-         headers: {
-            "Content-Type": contentType || "application/json",
-         },
-      });
+      for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
+         try {
+            const backendRes = await fetch(constructedUrl, {
+               method: req.method,
+               headers: forwardedHeaders,
+               body: hasBody && bodyBuffer && bodyBuffer.byteLength > 0 ? bodyBuffer : undefined,
+               cache: "no-store",
+            });
+
+            const contentType = backendRes.headers.get("content-type");
+
+            return new Response(backendRes.body, {
+               status: backendRes.status,
+               headers: {
+                  "Content-Type": contentType || "application/json",
+               },
+            });
+         } catch (fetchErr) {
+            lastError = fetchErr;
+            if (attempt < retryDelays.length && isTransientFetchError(fetchErr)) {
+               await new Promise((r) => setTimeout(r, retryDelays[attempt]));
+               continue;
+            }
+            throw fetchErr;
+         }
+      }
+
+      throw lastError;
    } catch (error) {
-      console.error("Proxy error:", error);
-      return new Response(JSON.stringify({ message: "Proxy error", error: error.message }), { status: 500 });
+      console.warn("Proxy transient connection error:", error?.cause?.code || error?.message);
+      return new Response(
+         JSON.stringify({
+            success: false,
+            proxyNetworkError: true,
+            message: "Proxy error",
+            error: error?.message || "Backend temporarily unreachable",
+         }),
+         {
+            status: 503,
+            headers: { "Content-Type": "application/json" },
+         }
+      );
    }
 }
 

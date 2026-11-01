@@ -375,7 +375,7 @@ export default function EcosystemBuyersPage() {
          )}
 
          {/* Segmented Navigation Tabs with Counts */}
-         <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100/80 dark:bg-gray-900 rounded-2xl w-fit">
+         <div className="flex items-center gap-2 p-1.5 bg-slate-100/80 dark:bg-gray-900 rounded-2xl overflow-x-auto custom-horizontal-scrollbar max-w-full">
             {[
                { id: "agreements", label: "Procurement Agreements", count: agreements.length, icon: <Calendar className="w-3.5 h-3.5" /> },
                { id: "aggregators", label: "Aggregator Network", count: aggregators.length, icon: <Building2 className="w-3.5 h-3.5" /> },
@@ -384,7 +384,7 @@ export default function EcosystemBuyersPage() {
                <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                      activeTab === tab.id 
                         ? "bg-white dark:bg-gray-800 shadow-sm text-emerald-700 dark:text-emerald-300" 
                         : "text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white"

@@ -113,7 +113,7 @@ export default function DistributorDashboard() {
          </div>
 
          {/* Premium Nav Tabs */}
-         <div className="flex bg-gray-100 dark:bg-gray-800/80 p-1.5 rounded-2xl max-w-lg border border-gray-200 dark:border-gray-700/50 shadow-inner">
+         <div className="flex bg-gray-100 dark:bg-gray-800/80 p-1.5 rounded-2xl max-w-lg border border-gray-200 dark:border-gray-700/50 shadow-inner overflow-x-auto custom-horizontal-scrollbar">
             <button
                onClick={() => setActiveTab("deliveries")}
                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 cursor-pointer ${
