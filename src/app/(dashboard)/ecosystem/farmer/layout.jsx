@@ -165,7 +165,7 @@ function FarmerLayoutInner({ children }) {
          : "hover:bg-gray-100 dark:hover:bg-gray-800 p-3 rounded-xl transition-colors duration-75 ml-1 text-gray-500 dark:text-gray-400";
    };
 
-   if (pathname === "/ecosystem/farmer/onboarding") {
+   if (pathname?.includes("/onboarding")) {
       return (
          <FarmerDataProvider>
             <div className="min-h-screen bg-(--background)">{children}</div>

@@ -45,6 +45,11 @@ export default function BuyerPartnerLayout({ children }) {
     }
   };
 
+    // If on onboarding route, render cleanly full width (matching storage & logistics)
+  if (pathname?.includes("/onboarding")) {
+    return <div className="min-h-screen bg-(--background)">{children}</div>;
+  }
+
   const navMenu = [
     {
       label: "Overview",

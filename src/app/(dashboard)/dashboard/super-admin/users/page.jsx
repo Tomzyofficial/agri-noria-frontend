@@ -1410,38 +1410,82 @@ function UserManagementContent() {
                               </div>
                            </div>
                         </>
-                     ) : (
-                        <div className="space-y-4">
-                           <div className="flex items-center justify-between border-b border-slate-100 dark:border-gray-800 pb-2">
-                              <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 dark:text-white flex items-center gap-2">
-                                 <FaBuilding className="text-emerald-600" />
-                                 <span>Enterprise & Facility Specifications</span>
-                              </h3>
-                           </div>
-                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-800/50 border border-slate-100 dark:border-gray-800">
-                                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Business Name</p>
-                                 <p className="font-bold text-gray-900 dark:text-white mt-0.5">{selectedFarmerModal.business_name || selectedFarmerModal.company_name || "—"}</p>
+                     ) : (() => {
+                        let draft = {};
+                        try {
+                           draft = typeof selectedFarmerModal.onboarding_draft === "string" 
+                              ? JSON.parse(selectedFarmerModal.onboarding_draft || "{}") 
+                              : (selectedFarmerModal.onboarding_draft || {});
+                        } catch (e) {
+                           draft = {};
+                        }
+                        const effectiveBusinessName = draft.business_name || draft.company_name || draft.cluster_name || draft.institution_name || selectedFarmerModal.business_name || selectedFarmerModal.company_name || "—";
+                        const effectiveLocation = draft.address || draft.location || (draft.assigned_state ? `${draft.assigned_state} (${draft.assigned_lga || ''})` : null) || selectedFarmerModal.business_address || selectedFarmerModal.location || "—";
+                        const effectiveRegNo = draft.cac_number || draft.rc_number || draft.naicom_license_no || draft.registration_number || null;
+                        const effectiveScope = draft.primary_commodities || draft.primary_commodity || draft.target_commodities || draft.product_categories || draft.key_commodities || draft.specialization || null;
+                        const effectiveCapacity = draft.aggregation_capacity_mt || draft.offtake_capacity_mt || draft.storage_capacity_mt || selectedFarmerModal.total_capacity_mt || null;
+                        const effectiveNetwork = draft.outgrower_farmer_count || draft.farmer_members_count || draft.target_enrolled_farmers || draft.retail_outlets_supplied || null;
+
+                        return (
+                           <div className="space-y-4">
+                              <div className="flex items-center justify-between border-b border-slate-100 dark:border-gray-800 pb-2">
+                                 <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 dark:text-white flex items-center gap-2">
+                                    <FaBuilding className="text-emerald-600" />
+                                    <span>Enterprise & Operational Specifications</span>
+                                 </h3>
                               </div>
-                              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-800/50 border border-slate-100 dark:border-gray-800">
-                                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Depot / Base</p>
-                                 <p className="font-semibold text-slate-700 dark:text-gray-300 mt-0.5 text-xs">{selectedFarmerModal.business_address || selectedFarmerModal.location || "—"}</p>
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-800/50 border border-slate-100 dark:border-gray-800">
+                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Enterprise / Org</p>
+                                    <p className="font-bold text-gray-900 dark:text-white mt-0.5 text-xs truncate" title={effectiveBusinessName}>{effectiveBusinessName}</p>
+                                 </div>
+                                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-800/50 border border-slate-100 dark:border-gray-800">
+                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Operating Base</p>
+                                    <p className="font-semibold text-slate-700 dark:text-gray-300 mt-0.5 text-xs truncate" title={effectiveLocation}>{effectiveLocation}</p>
+                                 </div>
+                                 {effectiveRegNo && (
+                                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-800/50 border border-slate-100 dark:border-gray-800">
+                                       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">RC / Registration</p>
+                                       <p className="font-bold text-blue-600 mt-0.5 text-xs truncate">{effectiveRegNo}</p>
+                                    </div>
+                                 )}
+                                 {effectiveScope && (
+                                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-800/50 border border-slate-100 dark:border-gray-800">
+                                       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Commodity / Focus</p>
+                                       <p className="font-bold text-emerald-600 mt-0.5 text-xs truncate">{effectiveScope}</p>
+                                    </div>
+                                 )}
+                                 {effectiveCapacity && (
+                                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-800/50 border border-slate-100 dark:border-gray-800">
+                                       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Capacity / Target</p>
+                                       <p className="font-bold text-teal-600 mt-0.5 text-xs">{effectiveCapacity} MT</p>
+                                    </div>
+                                 )}
+                                 {effectiveNetwork && (
+                                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-800/50 border border-slate-100 dark:border-gray-800">
+                                       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Enrolled Network</p>
+                                       <p className="font-bold text-purple-600 mt-0.5 text-xs">{effectiveNetwork} Farmers / Units</p>
+                                    </div>
+                                 )}
+                                 {selectedFarmerModal.active_vehicles ? (
+                                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-800/50 border border-slate-100 dark:border-gray-800">
+                                       <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Fleet Size</p>
+                                       <p className="font-bold text-teal-600 mt-0.5 text-xs">{selectedFarmerModal.active_vehicles} Vehicles</p>
+                                    </div>
+                                 ) : null}
                               </div>
-                              {selectedFarmerModal.total_capacity_mt ? (
-                                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-800/50 border border-slate-100 dark:border-gray-800">
-                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Warehouse Capacity</p>
-                                    <p className="font-bold text-emerald-600 mt-0.5">{selectedFarmerModal.total_capacity_mt} MT</p>
+
+                              {(draft.description || draft.supervisor_notes || draft.field_notes || selectedFarmerModal.business_desc) && (
+                                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-gray-800/30 border border-slate-100 dark:border-gray-800 text-xs">
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Operational Scope & Notes</p>
+                                    <p className="text-slate-600 dark:text-gray-300 leading-relaxed text-xs">
+                                       {draft.description || draft.supervisor_notes || draft.field_notes || selectedFarmerModal.business_desc}
+                                    </p>
                                  </div>
-                              ) : null}
-                              {selectedFarmerModal.active_vehicles ? (
-                                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-800/50 border border-slate-100 dark:border-gray-800">
-                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Fleet Size</p>
-                                    <p className="font-bold text-teal-600 mt-0.5">{selectedFarmerModal.active_vehicles} Vehicles</p>
-                                 </div>
-                              ) : null}
+                              )}
                            </div>
-                        </div>
-                     )}
+                        );
+                     })()}
 
                      {/* 5. KYC Evidence */}
                      <div className="space-y-3">
@@ -1507,26 +1551,38 @@ function UserManagementContent() {
                               </div>
                            </div>
 
-                           {/* Trade License */}
-                           <div className="border border-slate-200 dark:border-gray-800 rounded-2xl overflow-hidden bg-slate-50 dark:bg-gray-800/40">
-                              <div className="p-2 bg-slate-100 dark:bg-gray-800 text-[11px] font-bold text-center text-slate-600 dark:text-gray-400">Trade License</div>
-                              <div className="h-28 flex items-center justify-center bg-black/5 dark:bg-black/20">
-                                 {selectedFarmerModal.license_url ? (
-                                    <button
-                                       type="button"
-                                       onClick={() => setEnlargedImage({ url: selectedFarmerModal.license_url, title: `License - ${selectedFarmerModal.fname}` })}
-                                       className="w-full h-full block cursor-pointer"
-                                    >
-                                       <img src={selectedFarmerModal.license_url} alt="License" className="w-full h-full object-cover" />
-                                    </button>
-                                 ) : (
-                                    <span className="text-xs text-slate-400 italic">None</span>
-                                 )}
-                              </div>
-                           </div>
-                        </div>
-                     </div>
-                  </div>
+                            {/* Official License / Credential */} 
+                            <div className="border border-slate-200 dark:border-gray-800 rounded-2xl overflow-hidden bg-slate-50 dark:bg-gray-800/40">
+                               <div className="p-2 bg-slate-100 dark:bg-gray-800 text-[11px] font-bold text-center text-slate-600 dark:text-gray-400">Official Credential / License</div>
+                               <div className="h-28 flex items-center justify-center bg-black/5 dark:bg-black/20">
+                                  {selectedFarmerModal.license_url ? (
+                                     selectedFarmerModal.license_url.toLowerCase().includes(".pdf") ? (
+                                        <a
+                                           href={selectedFarmerModal.license_url}
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           className="flex flex-col items-center justify-center p-2 text-emerald-600 hover:text-emerald-700 transition"
+                                        >
+                                           <FileText className="w-8 h-8 mb-1 text-emerald-600" />
+                                           <span className="text-[10px] font-bold underline">Open PDF Document</span>
+                                        </a>
+                                     ) : (
+                                         <button
+                                            type="button"
+                                            onClick={() => setEnlargedImage({ url: selectedFarmerModal.license_url, title: `Official License / Credential - ${selectedFarmerModal.fname}` })}
+                                            className="w-full h-full block cursor-pointer"
+                                         >
+                                            <img src={selectedFarmerModal.license_url} alt="License" className="w-full h-full object-cover" />
+                                         </button>
+                                     )
+                                  ) : (
+                                     <span className="text-xs text-slate-400 italic">None</span>
+                                  )}
+                               </div>
+                            </div>
+                         </div>
+                      </div>
+                   </div>
 
                   {/* Modal Footer / Decision Bar */}
                   <div className="p-5 sm:p-6 border-t border-slate-100 dark:border-gray-800 flex items-center justify-between gap-3 bg-slate-50/80 dark:bg-gray-900/80 shrink-0">

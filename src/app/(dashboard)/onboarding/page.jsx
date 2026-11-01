@@ -313,13 +313,59 @@ export default function OnboardingPage() {
                return;
             }
 
-            if (normalizedRole === "farmer") {
-               if (session.onboarding_level >= 3 || session.onboarding_status === "completed" || session.onboarding_status === "verified") {
+            if (session.workspace?.toLowerCase() === "ecosystem") {
+               if (session.onboarding_status === "completed" || session.onboarding_status === "verified") {
                   router.replace(resolveRedirectPath(session.role, session.workspace));
-               } else {
-                  router.replace("/ecosystem/farmer/onboarding");
+                  return;
                }
-               return;
+               if (normalizedRole === "farmer") {
+                  router.replace("/ecosystem/farmer/onboarding");
+                  return;
+               }
+               if (["storage", "storage facility", "storage_facility", "storage supplier"].includes(normalizedRole)) {
+                  router.replace("/ecosystem/storage/onboarding");
+                  return;
+               }
+               if (["logistics", "logistics partner", "logistic", "logistics supplier"].includes(normalizedRole)) {
+                  router.replace("/ecosystem/logistics/onboarding");
+                  return;
+               }
+               if (["cluster supervisor", "cluster_supervisor"].includes(normalizedRole)) {
+                  router.replace("/ecosystem/program-management/onboarding");
+                  return;
+               }
+               if (["field officer", "agronomist", "inspector", "enumerator", "field operations supervisor"].includes(normalizedRole)) {
+                  router.replace("/ecosystem/field-operations/onboarding");
+                  return;
+               }
+               if (normalizedRole === "aggregator") {
+                  router.replace("/ecosystem/aggregator/onboarding");
+                  return;
+               }
+               if (normalizedRole === "distributor") {
+                  router.replace("/ecosystem/distributor/onboarding");
+                  return;
+               }
+               if (["exporter", "off-taker", "warehouse buyer", "processor"].includes(normalizedRole)) {
+                  router.replace("/ecosystem/buyer-partner/onboarding");
+                  return;
+               }
+               if (["sales manager", "logistics coordinator", "warehouse supervisor"].includes(normalizedRole)) {
+                  router.replace("/ecosystem/sales-&-distribution/onboarding");
+                  return;
+               }
+               if (["data analyst", "satellite monitor", "field auditor"].includes(normalizedRole)) {
+                  router.replace("/ecosystem/intelligence-&-monitoring/onboarding");
+                  return;
+               }
+               if (["insurance", "insurance firm"].includes(normalizedRole)) {
+                  router.replace("/ecosystem/insurance/onboarding");
+                  return;
+               }
+               if (["producer association", "cooperative", "research institution", "ngo"].includes(normalizedRole)) {
+                  router.replace("/ecosystem/institution/onboarding");
+                  return;
+               }
             }
 
             if (session.onboarding_status === "completed") {

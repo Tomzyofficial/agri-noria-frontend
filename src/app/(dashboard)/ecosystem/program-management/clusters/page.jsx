@@ -10,7 +10,7 @@ import ClusterChat from "../../components/ClusterChat";
 
 export default function ClusterOperationsPage() {
    const {
-      loading, clusters, currentUserId, userRole, eligibleFarmers, clusterMembers, programs,
+      loading, clusters, currentUserId, currentUser, userRole, eligibleFarmers, clusterMembers, programs,
       fetchClusters, fetchClusterMembers, fetchEligibleFarmers, setClusters
    } = useProgramData();
 
@@ -61,6 +61,10 @@ export default function ClusterOperationsPage() {
 
    const handleCreateCluster = async (e) => {
       e.preventDefault();
+      if (userRole === "cluster supervisor" && currentUser?.approval_status !== "approved") {
+         toast.warning("Your supervisor account is pending SuperAdmin verification. Full operational management unlocks once approved.");
+         return;
+      }
       if (!clusterForm.name) { toast.error("Cluster name required"); return; }
       setIsSubmitting(true);
       try {

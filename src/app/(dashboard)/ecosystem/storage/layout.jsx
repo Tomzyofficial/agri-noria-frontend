@@ -103,7 +103,7 @@ function StorageLayoutInner({ children }) {
   }, [pathname, router]);
 
   // If on onboarding route, render cleanly full width
-  if (pathname === "/ecosystem/storage/onboarding") {
+  if (pathname?.includes("/onboarding")) {
     return <div className="min-h-screen bg-(--background)">{children}</div>;
   }
 

@@ -330,13 +330,35 @@ export function RegisterForm() {
 
          if (session.authenticated) {
             const { workspace, role } = session;
-            const normRole = role?.toLowerCase();
-            if (workspace?.toLowerCase() === "ecosystem" && normRole === "farmer") {
-               router.push("/ecosystem/farmer/onboarding");
-            } else if (workspace?.toLowerCase() === "ecosystem" && ["storage", "storage facility", "storage_facility"].includes(normRole)) {
-               router.push("/ecosystem/storage/onboarding");
-            } else if (workspace?.toLowerCase() === "ecosystem" && ["logistics", "logistics partner", "logistic"].includes(normRole)) {
-               router.push("/ecosystem/logistics/onboarding");
+            const normRole = role?.toLowerCase().trim();
+            if (workspace?.toLowerCase() === "ecosystem") {
+               if (normRole === "farmer") {
+                  router.push("/ecosystem/farmer/onboarding");
+               } else if (["storage", "storage facility", "storage_facility", "storage supplier"].includes(normRole)) {
+                  router.push("/ecosystem/storage/onboarding");
+               } else if (["logistics", "logistics partner", "logistic", "logistics supplier"].includes(normRole)) {
+                  router.push("/ecosystem/logistics/onboarding");
+               } else if (["cluster supervisor", "cluster_supervisor"].includes(normRole)) {
+                  router.push("/ecosystem/program-management/onboarding");
+               } else if (["field officer", "agronomist", "inspector", "enumerator", "field operations supervisor"].includes(normRole)) {
+                  router.push("/ecosystem/field-operations/onboarding");
+               } else if (normRole === "aggregator") {
+                  router.push("/ecosystem/aggregator/onboarding");
+               } else if (normRole === "distributor") {
+                  router.push("/ecosystem/distributor/onboarding");
+               } else if (["exporter", "off-taker", "warehouse buyer", "processor"].includes(normRole)) {
+                  router.push("/ecosystem/buyer-partner/onboarding");
+               } else if (["sales manager", "logistics coordinator", "warehouse supervisor"].includes(normRole)) {
+                  router.push("/ecosystem/sales-&-distribution/onboarding");
+               } else if (["data analyst", "satellite monitor", "field auditor"].includes(normRole)) {
+                  router.push("/ecosystem/intelligence-&-monitoring/onboarding");
+               } else if (["insurance", "insurance firm"].includes(normRole)) {
+                  router.push("/ecosystem/insurance/onboarding");
+               } else if (["producer association", "cooperative", "research institution", "ngo"].includes(normRole)) {
+                  router.push("/ecosystem/institution/onboarding");
+               } else {
+                  router.push(resolveRedirectPath(role, workspace));
+               }
             } else {
                router.push(resolveRedirectPath(role, workspace));
             }

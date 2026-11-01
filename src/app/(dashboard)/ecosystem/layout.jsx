@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { io } from "socket.io-client";
 import { toast } from "react-toastify";
 import {
@@ -43,6 +43,8 @@ export const useEcosystemSettings = () => useContext(EcosystemSettingsContext);
 
 export default function EcosystemEnforcementLayout({ children }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isOnboarding = pathname?.includes("/onboarding");
     useEffect(() => {
     if (typeof document !== "undefined") {
       document.title = "Ecosystem Workspace | Agri-Noria";
@@ -570,7 +572,7 @@ export default function EcosystemEnforcementLayout({ children }) {
       }}
     >
       {/* Menu 2 Enforcement Banner: Email Verification Required (Left-to-Right Marquee Ticker) */}
-      {settings.emailVerificationRequired && emailStatus.checked && !emailStatus.email_verified && (
+      {settings.emailVerificationRequired && emailStatus.checked && !emailStatus.email_verified && !isOnboarding && (
         <div className="lg:ml-64 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-b border-amber-500/30 px-4 py-2 text-xs flex items-center justify-between gap-4 relative z-30 overflow-hidden backdrop-blur-md">
           <style>{`
             @keyframes agriMarqueeLTR {
@@ -634,7 +636,7 @@ export default function EcosystemEnforcementLayout({ children }) {
         </div>
       )}
 
-      {reconnectingNetwork && (
+      {reconnectingNetwork && !isOnboarding && (
         <div className="lg:ml-64 bg-emerald-950/90 text-emerald-200 border-b border-emerald-700/40 px-4 py-1.5 text-xs flex items-center justify-center gap-2 relative z-30 backdrop-blur-md">
           <RefreshCw size={13} className="animate-spin text-emerald-400 shrink-0" />
           <span className="font-bold">

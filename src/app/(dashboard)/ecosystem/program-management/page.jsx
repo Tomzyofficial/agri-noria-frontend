@@ -1,19 +1,88 @@
 "use client";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { FaSeedling, FaTasks, FaWallet, FaMapMarkedAlt } from "react-icons/fa";
+import { ShieldAlert, CheckCircle2, ArrowRight } from "lucide-react";
 import { useProgramData } from "./useProgramData";
 
 export default function ProgramManagementOverview() {
-   const { loading, clusters, stats, clusterWallet, pendingInputs } = useProgramData();
+   const { loading, clusters, stats, clusterWallet, pendingInputs, currentUser, userRole } = useProgramData();
 
    if (loading) return <div className="p-8 text-center animate-pulse font-bold text-gray-400">Loading Dashboard...</div>;
 
+   const isSupervisor = userRole === "cluster supervisor";
+   const approvalStatus = currentUser?.approval_status || "pending_approval";
+   const onboardingStatus = currentUser?.onboarding_status || "pending";
+   const isApproved = approvalStatus === "approved";
+   const hasSubmittedKyc = onboardingStatus === "unverified" || Boolean(currentUser?.onboarding_draft);
+
    return (
       <div className="space-y-6">
-         <div>
-            <h1 className="text-3xl font-black text-(--foreground) tracking-tight">Overview</h1>
-            <p className="text-sm text-gray-500 font-bold uppercase tracking-widest mt-1">Real-time status of your agricultural ecosystem</p>
+         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-gray-100 dark:border-gray-800">
+            <div>
+               <h1 className="text-3xl font-black text-(--foreground) tracking-tight">Overview</h1>
+               <p className="text-sm text-gray-500 font-bold uppercase tracking-widest mt-1">Real-time status of your agricultural ecosystem</p>
+            </div>
+
+            {isSupervisor && isApproved && (
+               <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/60 shadow-xs">
+                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                     Verified Cluster Supervisor • Node Active
+                  </span>
+               </div>
+            )}
          </div>
+
+         {/* Supervisor KYC / Verification Status Banners */}
+         {isSupervisor && !isApproved && hasSubmittedKyc && (
+            <div className="p-5 rounded-3xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+               <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-2xl bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+                     <ShieldAlert className="w-6 h-6" />
+                  </div>
+                  <div>
+                     <span className="text-xs font-black uppercase tracking-wider text-amber-900 dark:text-amber-200 block">
+                        Verification Pending • SuperAdmin Review in Progress
+                     </span>
+                     <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5 leading-relaxed">
+                        Your Cluster Supervisor credentials, appointment letter, and biometric KYC have been received and are awaiting SuperAdmin approval.
+                     </p>
+                  </div>
+               </div>
+               <Link
+                  href="/ecosystem/program-management/onboarding"
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition shrink-0"
+               >
+                  Update KYC Dossier
+               </Link>
+            </div>
+         )}
+
+         {isSupervisor && !isApproved && !hasSubmittedKyc && (
+            <div className="p-5 rounded-3xl bg-red-50/80 dark:bg-red-950/30 border border-red-200 dark:border-red-800/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+               <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-2xl bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 flex items-center justify-center shrink-0">
+                     <ShieldAlert className="w-6 h-6" />
+                  </div>
+                  <div>
+                     <span className="text-xs font-black uppercase tracking-wider text-red-900 dark:text-red-200 block">
+                        Cluster Supervisor KYC Required
+                     </span>
+                     <p className="text-xs text-red-700 dark:text-red-400 mt-0.5 leading-relaxed">
+                        Please complete your supervisory onboarding with your appointment letter, cluster jurisdiction, and biometric selfie to unlock full platform operations.
+                     </p>
+                  </div>
+               </div>
+               <Link
+                  href="/ecosystem/program-management/onboarding"
+                  className="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 transition shrink-0 flex items-center gap-2"
+               >
+                  <span>Complete Supervisor KYC</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+               </Link>
+            </div>
+         )}
 
          {/* Stats Grid */}
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
