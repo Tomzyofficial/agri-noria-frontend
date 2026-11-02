@@ -25,7 +25,24 @@ export default function ProgrammeMonitoringPage() {
    const { data: sessionRes } = useSWR("/api/proxy/auth/verify-vendor", fetcher, { revalidateOnFocus: false });
    const currentUserId = sessionRes?.userId || sessionRes?.id || null;
    const userRole = (sessionRes?.role || "").toLowerCase();
-   const isDirector = userRole === 'program director' || userRole === 'director' || userRole.includes('director');
+   const isDirector = userRole === 'program director' || userRole === 'director' || userRole.includes('director') || userRole === 'super admin' || userRole === 'admin';
+   const router = useRouter();
+
+   // Strict role-based guard: Cluster Supervisors cannot access Programme Monitoring
+   useEffect(() => {
+      if (userRole && (userRole.includes("supervisor") || userRole === "cluster supervisor")) {
+         toast.error("Access restricted: Programme Monitoring is reserved for Program Directors.");
+         router.replace("/ecosystem/program-management");
+      }
+   }, [userRole, router]);
+
+   if (userRole && (userRole.includes("supervisor") || userRole === "cluster supervisor")) {
+      return (
+         <div className="p-8 text-center text-sm font-bold text-gray-500">
+            Access restricted. Redirecting to your dashboard...
+         </div>
+      );
+   }
 
    // 1. Fetch programs (strictly filter for program director)
    const { data: programsRes, isLoading: loadingPrograms, mutate: mutatePrograms } = useSWR(

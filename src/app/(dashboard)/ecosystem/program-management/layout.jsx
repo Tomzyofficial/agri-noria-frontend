@@ -85,6 +85,16 @@ function ProgramManagementLayoutInner({ children }) {
         setIsApproved(approved);
         setIsLoadingSession(false);
 
+        const roleStr = (session?.role || "").toLowerCase();
+        const isSuperv = roleStr.includes("supervisor");
+
+        // Block Cluster Supervisors from Programme Monitoring (strictly reserved for Program Directors)
+        if (isSuperv && pathname.startsWith("/ecosystem/program-management/monitoring")) {
+          toast.error("Access restricted: Programme Monitoring is reserved for Program Directors.");
+          router.replace("/ecosystem/program-management");
+          return;
+        }
+
         // Block restricted operational sub-routes if unapproved
         const operationalRestrictedRoutes = [
           "/ecosystem/program-management/clusters",
@@ -175,6 +185,13 @@ function ProgramManagementLayoutInner({ children }) {
   ];
 
   const userRole = (sessionData?.role || "").toLowerCase();
+  const isSupervisorRole = userRole.includes("supervisor");
+  const visibleNavMenu = navMenu.filter((item) => {
+    if (item.href === "/ecosystem/program-management/monitoring") {
+      return !isSupervisorRole;
+    }
+    return true;
+  });
   const isSupervisor = userRole.includes("supervisor");
   const isPendingKyc =
     (!sessionData?.onboarding_status ||
@@ -215,7 +232,7 @@ function ProgramManagementLayoutInner({ children }) {
             </div>
 
             <nav className="flex flex-col space-y-1.5">
-              {navMenu.map((item) => {
+              {visibleNavMenu.map((item) => {
                 const isLocked = item.restricted && !isApproved;
                 const isActive = (optimisticPath === item.href) || (item.href !== "/ecosystem/program-management" && optimisticPath.startsWith(item.href));
 

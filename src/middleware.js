@@ -284,7 +284,11 @@ export default async function middleware(request) {
                   if (pathname === "/ecosystem" || pathname === "/ecosystem/") {
                      return NextResponse.redirect(new URL(allowedBaseRoute, request.url));
                   }
-                  // Block access to other ecosystem routes
+                  // Block Cluster Supervisors from accessing Programme Monitoring (browser search bar / direct URL)
+                   if ((userRole === "cluster supervisor" || userRole?.includes("supervisor")) && pathname.startsWith("/ecosystem/program-management/monitoring")) {
+                      return NextResponse.redirect(new URL("/ecosystem/program-management", request.url));
+                   }
+                   // Block access to other ecosystem routes
                   else if (!pathname.startsWith(allowedBaseRoute)) {
                      return NextResponse.redirect(new URL(allowedBaseRoute, request.url));
                   }
