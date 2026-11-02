@@ -6,7 +6,7 @@ import { ShieldAlert, CheckCircle2, ArrowRight } from "lucide-react";
 import { useProgramData } from "./useProgramData";
 
 export default function ProgramManagementOverview() {
-   const { loading, clusters, stats, clusterWallet, pendingInputs, currentUser, userRole } = useProgramData();
+   const { loading, clusters, stats, clusterWallet, clusterTransactions = [], pendingInputs = [], currentUser, userRole } = useProgramData();
 
    if (loading) return <div className="p-8 text-center animate-pulse font-bold text-gray-400">Loading Dashboard...</div>;
 
@@ -125,8 +125,9 @@ export default function ProgramManagementOverview() {
                   {(() => {
                      // Synthesize real activity events from cluster transactions and pending requisitions
                      const activities = [];
-                     if (Array.isArray(clusterTransactions)) {
-                        clusterTransactions.slice(0, 5).forEach((tx) => {
+                     const safeTransactions = Array.isArray(clusterTransactions) ? clusterTransactions : [];
+                      if (safeTransactions.length > 0) {
+                        safeTransactions.slice(0, 5).forEach((tx) => {
                            activities.push({
                               id: `tx-${tx.id}`,
                               title: tx.description || "Cluster Wallet Transaction",
