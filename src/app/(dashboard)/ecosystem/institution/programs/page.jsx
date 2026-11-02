@@ -6,7 +6,8 @@ import {
    Landmark, Plus, Calendar, User, MapPin,
    Search, Filter, ChevronRight, Edit3, Loader2,
    CheckCircle2, Clock, AlertCircle, Coins, Wallet, ArrowUpRight,
-   Users, Check, X, ShieldCheck, UserCheck, Key, Copy, Mail, Eye, EyeOff
+   Users, Check, X, ShieldCheck, UserCheck, Key, Copy, Mail, Eye, EyeOff,
+   RefreshCw
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -18,6 +19,7 @@ import Link from "next/link";
 
 export default function ProgramsPage() {
    const [searchTerm, setSearchTerm] = useState("");
+   const [statusFilter, setStatusFilter] = useState("all"); // "all" | "active" | "configuring"
    const [isModalOpen, setIsModalOpen] = useState(false);
    const [isEditing, setIsEditing] = useState(false);
    const [selectedProgram, setSelectedProgram] = useState(null);
@@ -81,7 +83,7 @@ export default function ProgramsPage() {
       }
    };
 
-   const { data: progData, isLoading: loading, mutate: mutatePrograms } = useSWR("/api/proxy/programs/mine", fetcher, { revalidateOnFocus: true });
+   const { data: progData, isLoading: loading, error: progError, mutate: mutatePrograms } = useSWR("/api/proxy/programs/mine", fetcher, { revalidateOnFocus: true });
    const { data: userData } = useSWR("/api/proxy/auth/verify-vendor", fetcher, { revalidateOnFocus: false });
    const { data: enrollData, mutate: mutateEnrollments } = useSWR("/api/proxy/programs/institution/enrollments", fetcher, { revalidateOnFocus: true });
 
@@ -270,11 +272,15 @@ export default function ProgramsPage() {
       }
    };
 
-   const filteredPrograms = programs.filter(p =>
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.commodity.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.region.toLowerCase().includes(searchTerm.toLowerCase())
-   );
+   const filteredPrograms = programs.filter(p => {
+      const name = (p.name || "").toLowerCase();
+      const commodity = (p.commodity || "").toLowerCase();
+      const region = (p.region || "").toLowerCase();
+      const term = searchTerm.toLowerCase();
+      const matchesSearch = name.includes(term) || commodity.includes(term) || region.includes(term);
+      const matchesStatus = statusFilter === "all" || (p.status || "").toLowerCase() === statusFilter.toLowerCase();
+      return matchesSearch && matchesStatus;
+   });
 
    if (loading && !progData) {
       return (
@@ -345,7 +351,10 @@ export default function ProgramsPage() {
                   <Card className="border-none shadow-sm bg-blue-50 dark:bg-blue-900/20">
                      <CardContent className="p-6">
                         <p className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Active Programs</p>
-                        <p className="text-3xl font-black mt-1 text-blue-900 dark:text-blue-100">{programs.length}</p>
+                        <p className="text-3xl font-black mt-1 text-blue-900 dark:text-blue-100">
+                           {programs.filter(p => (p.status || "").toLowerCase() === "active").length}
+                           <span className="text-xs font-normal text-blue-700/70 dark:text-blue-300/70 ml-2">/ {programs.length} Total</span>
+                        </p>
                      </CardContent>
                   </Card>
                   <Card className="border-none shadow-sm bg-emerald-50 dark:bg-emerald-900/20">
@@ -376,18 +385,91 @@ export default function ProgramsPage() {
 
                {/* List */}
                <Card className="border-none shadow-sm overflow-hidden bg-white dark:bg-gray-950">
-                  <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex flex-col md:flex-row justify-between items-md-center gap-4">
-                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <Input
-                           placeholder="Search programs..."
-                           className="pl-9 h-11 w-80 rounded-xl"
-                           value={searchTerm}
-                           onChange={(e) => setSearchTerm(e.target.value)}
-                        />
+                  {/* Error & Warning Banners */}
+                  {progError && (
+                     <div className="mx-6 mt-6 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 flex items-center justify-between text-xs font-semibold text-rose-800 dark:text-rose-200">
+                        <div className="flex items-center gap-2">
+                           <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                           <span>Network connection issue while retrieving programmes.</span>
+                        </div>
+                        <Button size="sm" variant="outline" onClick={() => mutatePrograms()} className="text-xs cursor-pointer">
+                           Retry
+                        </Button>
                      </div>
-                     <div className="flex gap-2 items-center">
-                        <Link href="/ecosystem/institution/wallet" className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-xl">
+                  )}
+                  {progData && !progData.success && (
+                     <div className="mx-6 mt-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex items-center justify-between text-xs font-semibold text-amber-800 dark:text-amber-200">
+                        <div className="flex items-center gap-2">
+                           <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                           <span>{progData.error || "Failed to load programmes. Please check your session or contact administration."}</span>
+                        </div>
+                        <Button size="sm" variant="outline" onClick={() => mutatePrograms()} className="text-xs cursor-pointer">
+                           Retry
+                        </Button>
+                     </div>
+                  )}
+
+                  <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex flex-col md:flex-row justify-between items-md-center gap-4">
+                     <div className="flex flex-wrap items-center gap-3 flex-1">
+                        <div className="relative min-w-[240px] flex-1 sm:flex-initial">
+                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                           <Input
+                              placeholder="Search programs..."
+                              className="pl-9 h-11 w-full sm:w-72 rounded-xl"
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                           />
+                        </div>
+                        <div className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-900 p-1 rounded-xl">
+                           <button
+                              type="button"
+                              onClick={() => setStatusFilter("all")}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                 statusFilter === "all"
+                                    ? "bg-white dark:bg-gray-800 text-blue-600 shadow-xs"
+                                    : "text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
+                              }`}
+                           >
+                              All ({programs.length})
+                           </button>
+                           <button
+                              type="button"
+                              onClick={() => setStatusFilter("active")}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                 statusFilter === "active"
+                                    ? "bg-white dark:bg-gray-800 text-emerald-600 shadow-xs"
+                                    : "text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
+                              }`}
+                           >
+                              Active ({programs.filter(p => (p.status || "").toLowerCase() === "active").length})
+                           </button>
+                           <button
+                              type="button"
+                              onClick={() => setStatusFilter("configuring")}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                 statusFilter === "configuring"
+                                    ? "bg-white dark:bg-gray-800 text-amber-600 shadow-xs"
+                                    : "text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
+                              }`}
+                           >
+                              Configuring ({programs.filter(p => (p.status || "").toLowerCase() !== "active").length})
+                           </button>
+                        </div>
+                     </div>
+                     <div className="flex gap-2 items-center shrink-0">
+                        <Button
+                           type="button"
+                           variant="outline"
+                           size="sm"
+                           onClick={() => mutatePrograms()}
+                           disabled={loading}
+                           className="h-11 px-3 rounded-xl border-gray-200 dark:border-gray-800 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900 flex items-center gap-1.5 cursor-pointer"
+                           title="Refresh program list"
+                        >
+                           <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+                           <span className="hidden sm:inline">Refresh</span>
+                        </Button>
+                        <Link href="/ecosystem/institution/wallet" className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 px-4 h-11 rounded-xl">
                            <Wallet className="w-4 h-4" /> Go to Institutional Wallet <ArrowUpRight className="w-3 h-3" />
                         </Link>
                      </div>
@@ -406,7 +488,45 @@ export default function ProgramsPage() {
                            </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                           {filteredPrograms.map((program) => (
+                           {filteredPrograms.length === 0 ? (
+                              <tr>
+                                 <td colSpan={7} className="text-center py-16 px-4">
+                                    <div className="flex flex-col items-center justify-center max-w-md mx-auto text-center space-y-3">
+                                       <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-xs">
+                                          <Landmark className="w-7 h-7" />
+                                       </div>
+                                       <div>
+                                          <h3 className="font-black text-gray-900 dark:text-gray-100 text-base">
+                                             {searchTerm || statusFilter !== "all" ? "No matching programmes found" : "No institutional programmes found"}
+                                          </h3>
+                                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                             {searchTerm || statusFilter !== "all"
+                                                ? "We couldn't find any programmes matching your filter criteria. Try resetting filters."
+                                                : "No agricultural intervention programmes are currently active in this workspace. Launch a new program to start enrolling farmers and allocating input packages."}
+                                          </p>
+                                       </div>
+                                       {searchTerm || statusFilter !== "all" ? (
+                                          <Button
+                                             onClick={() => { setSearchTerm(""); setStatusFilter("all"); }}
+                                             variant="outline"
+                                             size="sm"
+                                             className="text-xs font-bold rounded-xl mt-2 cursor-pointer"
+                                          >
+                                             Reset Filters
+                                          </Button>
+                                       ) : (
+                                          <Button
+                                             onClick={handleOpenCreate}
+                                             className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 mt-2 shadow-sm cursor-pointer"
+                                          >
+                                             <Plus className="w-4 h-4" /> Launch New Program
+                                          </Button>
+                                       )}
+                                    </div>
+                                 </td>
+                              </tr>
+                           ) : (
+                              filteredPrograms.map((program) => (
                               <tr key={program.id} className="group hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
                                  <td className="px-6 py-5">
                                     <div className="flex items-center gap-3">
@@ -540,7 +660,8 @@ export default function ProgramsPage() {
                                     </div>
                                  </td>
                               </tr>
-                           ))}
+                           ))
+                           )}
                         </tbody>
                      </table>
                   </div>
