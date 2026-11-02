@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { 
    Briefcase, Globe, Users, CheckCircle2, DollarSign, Package, X, Plus, Check, Loader2,
    Sliders, Settings, MapPin, Target, ShieldCheck, FileText, AlertTriangle, Layers,
-   Rocket, PauseCircle, Eye, EyeOff
+   Rocket, PauseCircle, Eye, EyeOff, Clock, AlertCircle
 } from "lucide-react";
 import { useProgramData } from "../useProgramData";
 import Link from "next/link";
