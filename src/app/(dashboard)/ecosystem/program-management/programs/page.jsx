@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { 
    Briefcase, Globe, Users, CheckCircle2, DollarSign, Package, X, Plus, Check, Loader2,
    Sliders, Settings, MapPin, Target, ShieldCheck, FileText, AlertTriangle, Layers,
-   Rocket, PauseCircle, Eye, EyeOff, Clock, AlertCircle
+   Rocket, PauseCircle, Eye, EyeOff, Clock, AlertCircle, CalendarPlus, Calendar, Sparkles
 } from "lucide-react";
 import { useProgramData } from "../useProgramData";
 import Link from "next/link";
@@ -16,6 +16,100 @@ export default function EcosystemProgramsPage() {
    const isDirector = (userRole || "").toLowerCase().includes("director") || (!isSupervisor && ((userRole || "").toLowerCase() === "program director" || (userRole || "").toLowerCase() === "director"));
    const [enrollingId, setEnrollingId] = useState(null);
    const [isTogglingStatus, setIsTogglingStatus] = useState(null);
+
+   // Program Season Extension Modal state
+   const [extendingProgram, setExtendingProgram] = useState(null);
+   const [isExtending, setIsExtending] = useState(false);
+   const [extendForm, setExtendForm] = useState({
+      start_date: "",
+      end_date: "",
+      make_active: false
+   });
+
+   const isProgramExpired = (prog) => {
+      if (!prog?.end_date) return false;
+      const today = new Date();
+      const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endDate = new Date(prog.end_date);
+      const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+      return todayDateOnly > endDateOnly;
+   };
+
+   const openExtendModal = (prog) => {
+      setExtendingProgram(prog);
+      const sDate = prog.start_date ? prog.start_date.split("T")[0] : "";
+      const eDate = prog.end_date ? prog.end_date.split("T")[0] : "";
+      setExtendForm({
+         start_date: sDate,
+         end_date: eDate,
+         make_active: prog.status !== "active"
+      });
+   };
+
+   const applyDatePreset = (monthsToAdd) => {
+      const base = new Date();
+      base.setMonth(base.getMonth() + monthsToAdd);
+      const yyyy = base.getFullYear();
+      const mm = String(base.getMonth() + 1).padStart(2, "0");
+      const dd = String(base.getDate()).padStart(2, "0");
+      setExtendForm(prev => ({
+         ...prev,
+         end_date: `${yyyy}-${mm}-${dd}`
+      }));
+   };
+
+   const handleExtendProgram = async (e) => {
+      if (e) e.preventDefault();
+      if (!extendForm.end_date) {
+         toast.error("Please specify a valid program end date.");
+         return;
+      }
+      if (extendForm.start_date && extendForm.end_date && extendForm.end_date < extendForm.start_date) {
+         toast.error("Program end date cannot be earlier than start date.");
+         return;
+      }
+
+      const today = new Date();
+      const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const newEndDate = new Date(extendForm.end_date);
+      const newEndDateOnly = new Date(newEndDate.getFullYear(), newEndDate.getMonth(), newEndDate.getDate());
+      if (todayDateOnly > newEndDateOnly) {
+         toast.error("End date must be in the future to keep the program active.");
+         return;
+      }
+
+      setIsExtending(true);
+      try {
+         const payload = {
+            start_date: extendForm.start_date || undefined,
+            end_date: extendForm.end_date,
+            ...(extendForm.make_active ? { status: "active" } : {})
+         };
+
+         const res = await fetch(`/api/proxy/programs/${extendingProgram.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+         });
+         const data = await res.json();
+         if (res.ok && data.success) {
+            toast.success(
+               extendForm.make_active
+                  ? `Program season extended to ${new Date(extendForm.end_date).toLocaleDateString("en-GB")} and published LIVE!`
+                  : `Program season successfully extended to ${new Date(extendForm.end_date).toLocaleDateString("en-GB")}!`
+            );
+            setExtendingProgram(null);
+            fetchData();
+         } else {
+            toast.error(data.error || "Failed to extend program dates");
+         }
+      } catch (err) {
+         console.error("Error extending program dates:", err);
+         toast.error("Network error while extending program dates");
+      } finally {
+         setIsExtending(false);
+      }
+   };
 
    // Input packages modal state
    const [selectedProgramForPackages, setSelectedProgramForPackages] = useState(null);
@@ -127,6 +221,10 @@ export default function EcosystemProgramsPage() {
 
    const handleSaveConfiguration = async (e, makeActive = false) => {
       if (e) e.preventDefault();
+      if (makeActive && isProgramExpired(selectedConfigProgram)) {
+         toast.error(`Cannot activate program: the program end date (${new Date(selectedConfigProgram.end_date).toLocaleDateString("en-GB")}) has passed. Please extend the dates first.`);
+         return;
+      }
       setIsSavingConfig(true);
       try {
          const res = await fetch(`/api/proxy/programs/${selectedConfigProgram.id}/configuration`, {
@@ -232,7 +330,7 @@ export default function EcosystemProgramsPage() {
          });
          const data = await res.json();
          if (res.ok && data.success) {
-            toast.success("Cluster successfully enrolled in program!");
+            toast.success("Cluster enrollment submitted! Awaiting Program Director approval.");
             fetchData();
          } else {
             toast.error(data.error || "Failed to enroll cluster");
@@ -293,20 +391,26 @@ export default function EcosystemProgramsPage() {
                   const hasConfiguration = prog.configuration && Object.keys(prog.configuration).length > 0;
                   const isConfiguring = prog.status === "configuring" || prog.status === "draft";
                   const isActive = prog.status === "active";
+                  const isExpired = isProgramExpired(prog);
 
                   return (
                      <Card key={i} className={`w-full border-none shadow-xl bg-white dark:bg-gray-950 rounded-3xl overflow-hidden transition-all ${isEnrolled ? "ring-2 ring-emerald-500 shadow-emerald-500/10" : "hover:shadow-2xl"}`}>
-                        <div className={`h-1.5 w-full ${isActive ? "bg-emerald-500" : "bg-amber-500"}`} />
+                        <div className={`h-1.5 w-full ${isExpired ? "bg-rose-500" : isActive ? "bg-emerald-500" : "bg-amber-500"}`} />
                         <CardHeader className="p-6 md:p-8 pb-4">
                            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                               <div className="flex items-start gap-4">
-                                 <div className={`p-3.5 rounded-2xl shrink-0 ${isActive ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600" : "bg-amber-100 dark:bg-amber-900/30 text-amber-600"}`}>
+                                 <div className={`p-3.5 rounded-2xl shrink-0 ${isExpired ? "bg-rose-100 dark:bg-rose-900/30 text-rose-600" : isActive ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600" : "bg-amber-100 dark:bg-amber-900/30 text-amber-600"}`}>
                                     <Briefcase size={28} />
                                  </div>
                                  <div>
                                     <div className="flex flex-wrap items-center gap-2.5">
                                        <h3 className="text-2xl font-black text-(--foreground) tracking-tight">{prog.name}</h3>
-                                       {isActive ? (
+                                       {isExpired ? (
+                                          <span className="px-3.5 py-1 text-[10px] rounded-full font-black uppercase tracking-widest bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800 flex items-center gap-1.5 shadow-xs">
+                                             <Clock className="w-3.5 h-3.5 text-rose-600" />
+                                             Season Expired
+                                          </span>
+                                       ) : isActive ? (
                                           <span className="px-3.5 py-1 text-[10px] rounded-full font-black uppercase tracking-widest bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1.5 shadow-xs">
                                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                                              Active & Live
@@ -318,10 +422,17 @@ export default function EcosystemProgramsPage() {
                                           </span>
                                        )}
                                        {isEnrolled && (
-                                          <span className="px-3.5 py-1 text-[10px] rounded-full font-black uppercase tracking-widest bg-emerald-600 text-white flex items-center gap-1 shadow-xs">
-                                             <CheckCircle2 className="w-3.5 h-3.5" />
-                                             Your Cluster Enrolled
-                                          </span>
+                                          activeCluster?.program_enrollment_status === 'pending_verification' ? (
+                                             <span className="px-3.5 py-1 text-[10px] rounded-full font-black uppercase tracking-widest bg-amber-500 text-white flex items-center gap-1 shadow-xs animate-pulse">
+                                                <Clock className="w-3.5 h-3.5" />
+                                                Enrollment Pending Approval
+                                             </span>
+                                          ) : (
+                                             <span className="px-3.5 py-1 text-[10px] rounded-full font-black uppercase tracking-widest bg-emerald-600 text-white flex items-center gap-1 shadow-xs">
+                                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                                Your Cluster Enrolled
+                                             </span>
+                                          )
                                        )}
                                     </div>
                                     <div className="flex flex-wrap items-center gap-3 mt-2 text-xs font-bold text-gray-500">
@@ -341,11 +452,16 @@ export default function EcosystemProgramsPage() {
                                        {(prog.start_date || prog.end_date) && (
                                           <>
                                              <span className="text-gray-300 dark:text-gray-700">•</span>
-                                             <span className="text-gray-500 dark:text-gray-400 text-[11px] inline-flex items-center gap-1 font-semibold">
+                                             <span className={`text-[11px] inline-flex items-center gap-1 font-semibold ${isExpired ? "text-rose-600 dark:text-rose-400 font-bold" : "text-gray-500 dark:text-gray-400"}`}>
                                                 <Clock className="w-3 h-3 text-gray-400" />
                                                 {prog.start_date ? new Date(prog.start_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "Immediate"}
                                                 {" — "}
                                                 {prog.end_date ? new Date(prog.end_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "Ongoing"}
+                                                {isExpired && (
+                                                   <span className="ml-1 px-1.5 py-0.2 rounded text-[9px] uppercase font-black bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                                                      Expired
+                                                   </span>
+                                                )}
                                              </span>
                                           </>
                                        )}
@@ -355,7 +471,15 @@ export default function EcosystemProgramsPage() {
 
                               {/* Visibility Status Badge */}
                               <div className="shrink-0">
-                                 {isConfiguring ? (
+                                 {isExpired ? (
+                                    <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/60 text-rose-800 dark:text-rose-300">
+                                       <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                                       <div className="text-left">
+                                          <p className="font-black text-[11px] uppercase tracking-wide">Season Ended ({new Date(prog.end_date).toLocaleDateString("en-GB")})</p>
+                                          <p className="text-[10px] text-rose-700 dark:text-rose-400">Extend end date to publish and accept enrollments.</p>
+                                       </div>
+                                    </div>
+                                 ) : isConfiguring ? (
                                     <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300">
                                        <EyeOff className="w-4 h-4 text-amber-600 shrink-0" />
                                        <div className="text-left">
@@ -443,12 +567,24 @@ export default function EcosystemProgramsPage() {
                                  <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
                                     {isConfiguring ? (
                                        <button
-                                          onClick={() => handleToggleProgramStatus(prog, "active")}
-                                          disabled={isTogglingStatus === prog.id}
-                                          className="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition active:scale-98 disabled:opacity-50 cursor-pointer"
+                                          onClick={() => {
+                                             if (isExpired) {
+                                                toast.warning(`Cannot activate program: the program end date (${new Date(prog.end_date).toLocaleDateString("en-GB")}) has passed. Please extend the dates first.`);
+                                                openExtendModal(prog);
+                                                return;
+                                             }
+                                             handleToggleProgramStatus(prog, "active");
+                                          }}
+                                          disabled={isTogglingStatus === prog.id || isExpired}
+                                          title={isExpired ? "Program season end date has passed. Please extend the program end date first." : "Make program live for farmers & clusters"}
+                                          className={`py-2.5 px-5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition active:scale-98 ${
+                                             isExpired
+                                                ? "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700 cursor-not-allowed opacity-60"
+                                                : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 cursor-pointer disabled:opacity-50"
+                                          }`}
                                        >
                                           {isTogglingStatus === prog.id ? <Loader2 size={14} className="animate-spin" /> : <Rocket size={14} />}
-                                          Make Active (Publish)
+                                          {isExpired ? "Activation Disabled (Expired)" : "Make Active (Publish)"}
                                        </button>
                                     ) : (
                                        <button
@@ -460,6 +596,19 @@ export default function EcosystemProgramsPage() {
                                           Pause Program
                                        </button>
                                     )}
+
+                                    {/* Dedicated Extend Program Dates Action */}
+                                    <button
+                                       onClick={() => openExtendModal(prog)}
+                                       className={`py-2.5 px-5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition active:scale-98 cursor-pointer ${
+                                          isExpired
+                                             ? "bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-600/20 ring-2 ring-purple-400/50"
+                                             : "bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800"
+                                       }`}
+                                    >
+                                       <CalendarPlus size={14} />
+                                       {isExpired ? "Extend Program End Date" : "Extend Season / Dates"}
+                                    </button>
 
                                     <button
                                        onClick={() => openConfigModal(prog)}
@@ -488,9 +637,15 @@ export default function EcosystemProgramsPage() {
                               {isSupervisor && (
                                  <div className="w-full sm:w-auto">
                                     {isEnrolled ? (
-                                       <button disabled className="py-2.5 px-6 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-xl font-black text-xs uppercase tracking-widest cursor-default flex items-center justify-center gap-2 shadow-inner">
-                                          <CheckCircle2 size={16} /> Cluster Enrolled in Program
-                                       </button>
+                                       activeCluster?.program_enrollment_status === 'pending_verification' ? (
+                                          <button disabled className="py-2.5 px-6 bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 rounded-xl font-black text-xs uppercase tracking-widest cursor-default flex items-center justify-center gap-2 shadow-inner">
+                                             <Clock size={16} className="animate-pulse" /> Enrollment Pending Director Approval
+                                          </button>
+                                       ) : (
+                                          <button disabled className="py-2.5 px-6 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-xl font-black text-xs uppercase tracking-widest cursor-default flex items-center justify-center gap-2 shadow-inner">
+                                             <CheckCircle2 size={16} /> Cluster Enrolled in Program
+                                          </button>
+                                       )
                                     ) : isConfiguring ? (
                                        <button disabled className="py-2.5 px-6 bg-gray-100 dark:bg-gray-900 text-gray-400 rounded-xl font-black text-xs uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2">
                                           <EyeOff size={14} /> Program In Configuration (Cannot Enroll)
@@ -967,12 +1122,17 @@ export default function EcosystemProgramsPage() {
                         <button
                            type="button"
                            onClick={(e) => handleSaveConfiguration(e, true)}
-                           disabled={isSavingConfig}
-                           className="flex-1 h-12 rounded-2xl font-black bg-emerald-600 hover:bg-emerald-700 text-white text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer"
+                           disabled={isSavingConfig || isProgramExpired(selectedConfigProgram)}
+                           title={isProgramExpired(selectedConfigProgram) ? "Program season has expired. Please extend the dates first before activating." : "Save and make live"}
+                           className={`flex-1 h-12 rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 transition ${
+                              isProgramExpired(selectedConfigProgram)
+                                 ? "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700 cursor-not-allowed opacity-60"
+                                 : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20 cursor-pointer"
+                           }`}
                         >
                            {isSavingConfig ? <Loader2 className="w-4 h-4 animate-spin" /> : (
                               <>
-                                 <Rocket className="w-4 h-4" /> Save & Make Active (Live)
+                                 <Rocket className="w-4 h-4" /> {isProgramExpired(selectedConfigProgram) ? "Cannot Activate (Season Expired)" : "Save & Make Active (Live)"}
                               </>
                            )}
                         </button>
@@ -1063,6 +1223,150 @@ export default function EcosystemProgramsPage() {
                         )}
                      </div>
                   </div>
+               </div>
+            </div>
+         )}
+
+         {/* Program Season Extension Modal */}
+         {extendingProgram && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+               <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800">
+                  <div className="p-6 bg-gradient-to-r from-purple-700 to-indigo-700 text-white flex justify-between items-center">
+                     <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-2xl bg-white/20 text-white">
+                           <CalendarPlus className="w-6 h-6" />
+                        </div>
+                        <div>
+                           <h3 className="text-xl font-black">Extend Program Season</h3>
+                           <p className="text-xs text-purple-100 font-medium mt-0.5">{extendingProgram.name}</p>
+                        </div>
+                     </div>
+                     <button 
+                        onClick={() => setExtendingProgram(null)} 
+                        className="text-white hover:bg-white/20 h-9 w-9 p-0 rounded-full flex items-center justify-center cursor-pointer"
+                     >
+                        <X size={18} />
+                     </button>
+                  </div>
+
+                  <form onSubmit={handleExtendProgram} className="p-6 space-y-6">
+                     {isProgramExpired(extendingProgram) ? (
+                        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/60 text-xs text-rose-800 dark:text-rose-300 flex items-start gap-3">
+                           <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                           <div>
+                              <p className="font-black text-sm">Season Expired on {new Date(extendingProgram.end_date).toLocaleDateString("en-GB")}</p>
+                              <p className="mt-0.5 text-rose-700 dark:text-rose-400 font-medium">
+                                 The scheduled end date for this program has passed. Set a new future end date below to re-enable activation and allow clusters and farmers to enroll.
+                              </p>
+                           </div>
+                        </div>
+                     ) : (
+                        <div className="p-4 rounded-2xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/60 text-xs text-purple-900 dark:text-purple-200 flex items-start gap-3">
+                           <Calendar className="w-5 h-5 text-purple-600 shrink-0 mt-0.5" />
+                           <div>
+                              <p className="font-bold">Current Season Schedule</p>
+                              <p className="text-gray-500 dark:text-gray-400 mt-0.5">
+                                 {extendingProgram.start_date ? new Date(extendingProgram.start_date).toLocaleDateString("en-GB") : "Immediate"} — {extendingProgram.end_date ? new Date(extendingProgram.end_date).toLocaleDateString("en-GB") : "Ongoing"}
+                              </p>
+                           </div>
+                        </div>
+                     )}
+
+                     {/* Quick Extension Presets */}
+                     <div className="space-y-2">
+                        <label className="text-xs font-black text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                           <Sparkles size={14} className="text-purple-600" />
+                           Quick Extension Presets (From Today)
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                           <button
+                              type="button"
+                              onClick={() => applyDatePreset(3)}
+                              className="py-2.5 px-3 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-black border border-purple-200 dark:border-purple-800 transition text-center cursor-pointer active:scale-95"
+                           >
+                              +3 Months
+                           </button>
+                           <button
+                              type="button"
+                              onClick={() => applyDatePreset(6)}
+                              className="py-2.5 px-3 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-black border border-purple-200 dark:border-purple-800 transition text-center cursor-pointer active:scale-95"
+                           >
+                              +6 Months
+                           </button>
+                           <button
+                              type="button"
+                              onClick={() => applyDatePreset(12)}
+                              className="py-2.5 px-3 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-black border border-purple-200 dark:border-purple-800 transition text-center cursor-pointer active:scale-95"
+                           >
+                              +1 Year
+                           </button>
+                        </div>
+                     </div>
+
+                     {/* Date Pickers */}
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                           <label className="text-xs font-bold text-gray-700 dark:text-gray-300">Start Date</label>
+                           <input
+                              type="date"
+                              value={extendForm.start_date}
+                              onChange={(e) => setExtendForm({ ...extendForm, start_date: e.target.value })}
+                              className="w-full h-11 px-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 font-bold text-xs"
+                           />
+                        </div>
+                        <div className="space-y-1.5">
+                           <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                              New End Date <span className="text-rose-500">*</span>
+                           </label>
+                           <input
+                              type="date"
+                              required
+                              value={extendForm.end_date}
+                              min={new Date().toISOString().split("T")[0]}
+                              onChange={(e) => setExtendForm({ ...extendForm, end_date: e.target.value })}
+                              className="w-full h-11 px-3 rounded-xl border-2 border-purple-300 dark:border-purple-800 bg-white dark:bg-gray-950 font-bold text-xs focus:border-purple-600 focus:outline-hidden"
+                           />
+                        </div>
+                     </div>
+
+                     {/* Auto-Activate Checkbox */}
+                     {extendingProgram.status !== "active" && (
+                        <label className="flex items-center gap-3 p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-800 cursor-pointer">
+                           <input
+                              type="checkbox"
+                              checked={extendForm.make_active}
+                              onChange={(e) => setExtendForm({ ...extendForm, make_active: e.target.checked })}
+                              className="w-4 h-4 rounded text-purple-600 cursor-pointer"
+                           />
+                           <div className="text-xs">
+                              <p className="font-bold text-(--foreground)">Publish & Make Active Immediately</p>
+                              <p className="text-gray-500 text-[11px]">Automatically activate this program upon saving so farmers and clusters can enroll immediately.</p>
+                           </div>
+                        </label>
+                     )}
+
+                     <div className="pt-2 flex gap-3">
+                        <button
+                           type="button"
+                           onClick={() => setExtendingProgram(null)}
+                           disabled={isExtending}
+                           className="px-5 h-12 rounded-2xl font-bold border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800 text-xs uppercase tracking-wider cursor-pointer"
+                        >
+                           Cancel
+                        </button>
+                        <button
+                           type="submit"
+                           disabled={isExtending}
+                           className="flex-1 h-12 rounded-2xl font-black bg-purple-600 hover:bg-purple-700 text-white text-xs uppercase tracking-wider shadow-lg shadow-purple-600/20 flex items-center justify-center gap-2 cursor-pointer transition active:scale-98"
+                        >
+                           {isExtending ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                              <>
+                                 <Check className="w-4 h-4" /> Save Extension & Update
+                              </>
+                           )}
+                        </button>
+                     </div>
+                  </form>
                </div>
             </div>
          )}
