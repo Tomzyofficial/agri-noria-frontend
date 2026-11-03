@@ -11,7 +11,9 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 
 export default function EcosystemProgramsPage() {
-   const { loading, programs, currentUserId, clusters, fetchData } = useProgramData();
+   const { loading, programs, currentUserId, userRole, clusters, fetchData } = useProgramData();
+   const isSupervisor = (userRole || "").toLowerCase().includes("supervisor");
+   const isDirector = (userRole || "").toLowerCase().includes("director") || (!isSupervisor && ((userRole || "").toLowerCase() === "program director" || (userRole || "").toLowerCase() === "director"));
    const [enrollingId, setEnrollingId] = useState(null);
    const [isTogglingStatus, setIsTogglingStatus] = useState(null);
 
@@ -251,7 +253,7 @@ export default function EcosystemProgramsPage() {
                <h1 className="text-3xl font-black text-(--foreground) tracking-tight">Ecosystem Programs</h1>
                <p className="text-sm text-gray-500 font-bold uppercase tracking-widest mt-1">Operational agricultural programs & rules configuration</p>
             </div>
-            {activeCluster ? (
+            {isSupervisor && activeCluster ? (
                <div className="px-5 py-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
                   <div>
@@ -259,20 +261,28 @@ export default function EcosystemProgramsPage() {
                      <p className="text-sm font-black text-emerald-900 dark:text-emerald-200">{activeCluster.name} ({activeCluster.total_hectares || 0} HA)</p>
                   </div>
                </div>
-            ) : (
+            ) : isSupervisor ? (
                <div className="px-5 py-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-2xl flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full bg-amber-500 shrink-0" />
                   <div>
-                     <p className="text-[10px] font-black text-amber-800 dark:text-amber-300 uppercase tracking-widest">Program Operations Mode</p>
-                     <p className="text-xs font-bold text-amber-900 dark:text-amber-200">Configure rules, eligibility, and input packages below.</p>
+                     <p className="text-[10px] font-black text-amber-800 dark:text-amber-300 uppercase tracking-widest">Cluster Enrollment Mode</p>
+                     <p className="text-xs font-bold text-amber-900 dark:text-amber-200">Select an active program below to enroll your cluster.</p>
+                  </div>
+               </div>
+            ) : (
+               <div className="px-5 py-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-emerald-500 shrink-0" />
+                  <div>
+                     <p className="text-[10px] font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-widest">Director Governance Mode</p>
+                     <p className="text-xs font-bold text-emerald-900 dark:text-emerald-200">Configure program rules, input packages, and monitoring officers.</p>
                   </div>
                </div>
             )}
          </div>
 
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+         <div className="w-full space-y-6">
             {programs.length === 0 ? (
-               <Card className="col-span-full border-none shadow-xl bg-white dark:bg-gray-950 p-12 text-center">
+               <Card className="w-full border-none shadow-xl bg-white dark:bg-gray-950 p-12 text-center rounded-3xl">
                   <Briefcase className="w-16 h-16 text-gray-200 mx-auto mb-4" />
                   <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">No active programs found</p>
                </Card>
@@ -285,169 +295,228 @@ export default function EcosystemProgramsPage() {
                   const isActive = prog.status === "active";
 
                   return (
-                     <Card key={i} className={`border-none shadow-xl bg-white dark:bg-gray-950 overflow-hidden transition-all ${isEnrolled ? "ring-2 ring-emerald-500 shadow-emerald-500/10" : "hover:scale-[1.01]"}`}>
-                        <div className={`p-1 ${isActive ? "bg-emerald-500" : "bg-amber-500"}`} />
-                        <CardHeader className="p-6">
-                           <div className="flex justify-between items-start gap-2">
-                              <div className={`p-3 rounded-2xl ${isActive ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600" : "bg-amber-100 dark:bg-amber-900/30 text-amber-600"}`}>
-                                 <Briefcase size={24} />
-                              </div>
-                              {isActive ? (
-                                 <span className="px-3.5 py-1.5 text-[10px] rounded-full font-black uppercase tracking-widest bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5 shadow-xs">
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                    Active & Live
-                                 </span>
-                              ) : (
-                                 <span className="px-3.5 py-1.5 text-[10px] rounded-full font-black uppercase tracking-widest bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1.5 shadow-xs">
-                                    <Sliders className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-                                    In Configuration
-                                 </span>
-                              )}
-                           </div>
-                           <div className="mt-4">
-                              <h3 className="text-xl font-black text-(--foreground)">{prog.name}</h3>
-                              <div className="flex items-center gap-2 mt-1">
-                                 <Globe className="w-3 h-3 text-gray-400" />
-                                 <p className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">{prog.region} • {prog.commodity}</p>
-                              </div>
-                              {prog.director_name && (
-                                 <div className="mt-2 text-xs bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 px-2.5 py-1 rounded-lg border border-amber-200/60 font-bold inline-flex items-center gap-1.5">
-                                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                                    Director: {prog.director_name}
+                     <Card key={i} className={`w-full border-none shadow-xl bg-white dark:bg-gray-950 rounded-3xl overflow-hidden transition-all ${isEnrolled ? "ring-2 ring-emerald-500 shadow-emerald-500/10" : "hover:shadow-2xl"}`}>
+                        <div className={`h-1.5 w-full ${isActive ? "bg-emerald-500" : "bg-amber-500"}`} />
+                        <CardHeader className="p-6 md:p-8 pb-4">
+                           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                              <div className="flex items-start gap-4">
+                                 <div className={`p-3.5 rounded-2xl shrink-0 ${isActive ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600" : "bg-amber-100 dark:bg-amber-900/30 text-amber-600"}`}>
+                                    <Briefcase size={28} />
                                  </div>
-                              )}
+                                 <div>
+                                    <div className="flex flex-wrap items-center gap-2.5">
+                                       <h3 className="text-2xl font-black text-(--foreground) tracking-tight">{prog.name}</h3>
+                                       {isActive ? (
+                                          <span className="px-3.5 py-1 text-[10px] rounded-full font-black uppercase tracking-widest bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1.5 shadow-xs">
+                                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                             Active & Live
+                                          </span>
+                                       ) : (
+                                          <span className="px-3.5 py-1 text-[10px] rounded-full font-black uppercase tracking-widest bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 flex items-center gap-1.5 shadow-xs">
+                                             <Sliders className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+                                             In Configuration
+                                          </span>
+                                       )}
+                                       {isEnrolled && (
+                                          <span className="px-3.5 py-1 text-[10px] rounded-full font-black uppercase tracking-widest bg-emerald-600 text-white flex items-center gap-1 shadow-xs">
+                                             <CheckCircle2 className="w-3.5 h-3.5" />
+                                             Your Cluster Enrolled
+                                          </span>
+                                       )}
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-3 mt-2 text-xs font-bold text-gray-500">
+                                       <span className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 uppercase tracking-wider text-[11px] font-black">
+                                          <Globe className="w-3.5 h-3.5 text-gray-400" />
+                                          {prog.region} • {prog.commodity}
+                                       </span>
+                                       {prog.director_name && (
+                                          <>
+                                             <span className="text-gray-300 dark:text-gray-700">•</span>
+                                             <span className="bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 px-2.5 py-0.5 rounded-lg border border-amber-200/60 text-[11px] font-bold inline-flex items-center gap-1.5">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                                Director: {prog.director_name}
+                                             </span>
+                                          </>
+                                       )}
+                                       {(prog.start_date || prog.end_date) && (
+                                          <>
+                                             <span className="text-gray-300 dark:text-gray-700">•</span>
+                                             <span className="text-gray-500 dark:text-gray-400 text-[11px] inline-flex items-center gap-1 font-semibold">
+                                                <Clock className="w-3 h-3 text-gray-400" />
+                                                {prog.start_date ? new Date(prog.start_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "Immediate"}
+                                                {" — "}
+                                                {prog.end_date ? new Date(prog.end_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "Ongoing"}
+                                             </span>
+                                          </>
+                                       )}
+                                    </div>
+                                 </div>
+                              </div>
+
+                              {/* Visibility Status Badge */}
+                              <div className="shrink-0">
+                                 {isConfiguring ? (
+                                    <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300">
+                                       <EyeOff className="w-4 h-4 text-amber-600 shrink-0" />
+                                       <div className="text-left">
+                                          <p className="font-black text-[11px] uppercase tracking-wide">Hidden from Farmers & Clusters</p>
+                                          <p className="text-[10px] text-amber-700 dark:text-amber-400">Configure rules, then click Make Active when ready.</p>
+                                       </div>
+                                    </div>
+                                 ) : (
+                                    <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300">
+                                       <Eye className="w-4 h-4 text-emerald-600 shrink-0" />
+                                       <div className="text-left">
+                                          <p className="font-black text-[11px] uppercase tracking-wide">Live in Ecosystem</p>
+                                          <p className="text-[10px] text-emerald-700 dark:text-emerald-400">Published and accepting eligible enrollments.</p>
+                                       </div>
+                                    </div>
+                                 )}
+                              </div>
                            </div>
                         </CardHeader>
-                        <CardContent className="p-6 pt-0 space-y-4">
-                           {/* Visibility Alert Banner */}
-                           {isConfiguring ? (
-                              <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-xs flex items-start gap-2.5">
-                                 <EyeOff className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                                 <div>
-                                    <p className="font-black text-amber-900 dark:text-amber-200 text-[11px] uppercase tracking-wide">Hidden from Farmers & Clusters</p>
-                                    <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5 leading-relaxed">
-                                       Participants cannot see or join this program yet. Configure rules below and click <strong>Make Active</strong> when ready.
-                                    </p>
+
+                        <CardContent className="p-6 md:p-8 pt-2 space-y-6">
+                           {/* 4-5 Column Horizontal Metrics Dashboard */}
+                           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                              {/* 1. Available Fund */}
+                              <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-800/50 flex flex-col justify-between">
+                                 <div className="flex justify-between items-center mb-1">
+                                    <p className="text-[10px] font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-widest">Available Fund</p>
+                                    <span className="text-[9px] font-black bg-white dark:bg-gray-900 px-2 py-0.5 rounded-md text-emerald-600 border border-emerald-100 dark:border-emerald-800">
+                                       Allocated
+                                    </span>
                                  </div>
+                                 <p className="text-xl md:text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                                    ₦{parseFloat(prog.wallet_balance || 0).toLocaleString()}
+                                 </p>
+                                 <p className="text-[10px] font-bold text-gray-400 mt-1">Disbursement pool</p>
                               </div>
-                           ) : (
-                              <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 text-xs flex items-start gap-2.5">
-                                 <Eye className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+
+                              {/* 2. Target Farmers */}
+                              <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 flex flex-col justify-between">
+                                 <p className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest mb-1">Target Farmers</p>
+                                 <p className="text-xl md:text-2xl font-black text-gray-900 dark:text-white">
+                                    {parseInt(prog.target_farmers || 0).toLocaleString()}
+                                 </p>
+                                 <p className="text-[10px] font-bold text-gray-400 mt-1">Program capacity</p>
+                              </div>
+
+                              {/* 3. Enrolled Farmers */}
+                              <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 flex flex-col justify-between">
+                                 <p className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest mb-1">Enrolled Farmers</p>
+                                 <p className="text-xl md:text-2xl font-black text-gray-900 dark:text-white">
+                                    {parseInt(prog.enrolled_farmers || 0).toLocaleString()}
+                                 </p>
+                                 <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+                                    {prog.target_farmers > 0 ? `${Math.round(((prog.enrolled_farmers || 0) / prog.target_farmers) * 100)}% filled` : "0% filled"}
+                                 </p>
+                              </div>
+
+                              {/* 4. Target Hectares */}
+                              <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 flex flex-col justify-between">
+                                 <p className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest mb-1">Target Hectares</p>
+                                 <p className="text-xl md:text-2xl font-black text-gray-900 dark:text-white">
+                                    {parseFloat(prog.target_hectares || 0).toLocaleString()} <span className="text-xs font-bold text-gray-400">Ha</span>
+                                 </p>
+                                 <p className="text-[10px] font-bold text-gray-400 mt-1">Farmland reach</p>
+                              </div>
+
+                              {/* 5. Operational Rules */}
+                              <div className="col-span-2 md:col-span-4 lg:col-span-1 p-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 flex flex-col justify-between">
+                                 <p className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest mb-1">Operational Rules</p>
                                  <div>
-                                    <p className="font-black text-emerald-900 dark:text-emerald-200 text-[11px] uppercase tracking-wide">Live in Ecosystem</p>
-                                    <p className="text-[11px] text-emerald-700 dark:text-emerald-300 mt-0.5 leading-relaxed">
-                                       Visible to farmers & clusters. Eligible participants can now discover and enroll.
-                                    </p>
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${hasConfiguration ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"}`}>
+                                       {hasConfiguration ? "Configured" : "Default Rules"}
+                                    </span>
                                  </div>
-                              </div>
-                           )}
-
-                           <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-100 dark:border-emerald-800/50 flex justify-between items-center">
-                              <div>
-                                 <p className="text-[10px] font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-widest">Available Program Fund</p>
-                                 <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">₦{parseFloat(prog.wallet_balance || 0).toLocaleString()}</p>
-                              </div>
-                              <span className="text-[10px] font-black bg-white dark:bg-gray-900 px-2.5 py-1 rounded-xl text-emerald-600 shadow-sm border border-emerald-100 dark:border-emerald-800">
-                                 Allocated
-                              </span>
-                           </div>
-                           <div className="grid grid-cols-3 gap-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-2xl">
-                              <div>
-                                 <p className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Target</p>
-                                 <p className="font-bold text-sm">{prog.target_farmers} Farmers</p>
-                              </div>
-                              <div>
-                                 <p className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Enrolled</p>
-                                 <p className="font-bold text-sm">{prog.enrolled_farmers || 0}</p>
-                              </div>
-                              <div>
-                                 <p className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Hectares</p>
-                                 <p className="font-bold text-sm">{prog.target_hectares || 0} Ha</p>
+                                 <p className="text-[10px] font-bold text-gray-400 mt-1">
+                                    {hasConfiguration ? "Customized criteria" : "Standard baseline"}
+                                 </p>
                               </div>
                            </div>
 
-                           {/* Operational Configuration Status */}
-                           <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-xs flex justify-between items-center">
-                              <span className="text-gray-500 font-bold">Operational Rules:</span>
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${hasConfiguration ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                                 {hasConfiguration ? "Configured" : "Default Rules"}
-                              </span>
-                           </div>
+                           {/* Horizontal Action Controls Bar */}
+                           <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex flex-wrap items-center justify-between gap-3">
+                              {/* Program Director Governance Controls */}
+                              {!isSupervisor && (
+                                 <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                                    {isConfiguring ? (
+                                       <button
+                                          onClick={() => handleToggleProgramStatus(prog, "active")}
+                                          disabled={isTogglingStatus === prog.id}
+                                          className="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition active:scale-98 disabled:opacity-50 cursor-pointer"
+                                       >
+                                          {isTogglingStatus === prog.id ? <Loader2 size={14} className="animate-spin" /> : <Rocket size={14} />}
+                                          Make Active (Publish)
+                                       </button>
+                                    ) : (
+                                       <button
+                                          onClick={() => handleToggleProgramStatus(prog, "configuring")}
+                                          disabled={isTogglingStatus === prog.id}
+                                          className="py-2.5 px-5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer"
+                                       >
+                                          {isTogglingStatus === prog.id ? <Loader2 size={14} className="animate-spin" /> : <PauseCircle size={14} />}
+                                          Pause Program
+                                       </button>
+                                    )}
 
-                           <div className="pt-2 space-y-2">
-                              {/* Primary Activation Toggle */}
-                              {isConfiguring ? (
-                                 <button
-                                    onClick={() => handleToggleProgramStatus(prog, "active")}
-                                    disabled={isTogglingStatus === prog.id}
-                                    className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition active:scale-98 disabled:opacity-50 cursor-pointer"
-                                 >
-                                    {isTogglingStatus === prog.id ? <Loader2 size={14} className="animate-spin" /> : <Rocket size={14} />}
-                                    Make Active (Publish for Farmers & Clusters)
-                                 </button>
-                              ) : (
-                                 <button
-                                    onClick={() => handleToggleProgramStatus(prog, "configuring")}
-                                    disabled={isTogglingStatus === prog.id}
-                                    className="w-full py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer"
-                                 >
-                                    {isTogglingStatus === prog.id ? <Loader2 size={14} className="animate-spin" /> : <PauseCircle size={14} />}
-                                    Pause Program (Set to Configuring)
-                                 </button>
+                                    <button
+                                       onClick={() => openConfigModal(prog)}
+                                       className="py-2.5 px-5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition active:scale-98 cursor-pointer"
+                                    >
+                                       <Sliders size={14} /> Configure Program Rules
+                                    </button>
+
+                                    <button
+                                       onClick={() => openPackagesModal(prog)}
+                                       className="py-2.5 px-5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer"
+                                    >
+                                       <Package size={14} /> Manage Input Packages
+                                    </button>
+
+                                    <Link
+                                       href={`/ecosystem/program-management/monitoring?programId=${prog.id}`}
+                                       className="py-2.5 px-5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer"
+                                    >
+                                       <Users size={14} /> Assign Field Officers
+                                    </Link>
+                                 </div>
                               )}
 
-                              {/* Configure Rules (Director Feature) */}
-                              <button
-                                 onClick={() => openConfigModal(prog)}
-                                 className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition active:scale-98 cursor-pointer"
-                              >
-                                 <Sliders size={14} /> Configure Program Rules
-                              </button>
-
-                              {/* Input Packages */}
-                              <button
-                                 onClick={() => openPackagesModal(prog)}
-                                 className="w-full py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer"
-                              >
-                                 <Package size={14} /> Manage Input Packages
-                              </button>
-
-                              {/* Field Monitoring & Officers */}
-                              <Link
-                                 href={`/ecosystem/program-management/monitoring?programId=${prog.id}`}
-                                 className="w-full py-2.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer"
-                              >
-                                 <Users size={14} /> Assign & Monitor Field Officers
-                              </Link>
-
-                              {isEnrolled ? (
-                                 <button disabled className="w-full py-3 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-2xl font-black text-xs uppercase tracking-widest cursor-default flex items-center justify-center gap-2 shadow-inner">
-                                    <CheckCircle2 size={16} /> Cluster Enrolled in Program
-                                 </button>
-                              ) : isConfiguring ? (
-                                 <button disabled className="w-full py-3 bg-gray-100 dark:bg-gray-900 text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2">
-                                    <EyeOff size={14} /> Program In Configuration (Cannot Enroll)
-                                 </button>
-                              ) : (prog.end_date && new Date() > new Date(new Date(prog.end_date).getFullYear(), new Date(prog.end_date).getMonth(), new Date(prog.end_date).getDate(), 23, 59, 59)) ? (
-                                 <button disabled className="w-full py-3 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-2xl font-black text-xs uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2">
-                                    <Clock size={14} /> Program Ended ({new Date(prog.end_date).toLocaleDateString("en-GB")})
-                                 </button>
-                              ) : (prog.start_date && new Date() < new Date(new Date(prog.start_date).getFullYear(), new Date(prog.start_date).getMonth(), new Date(prog.start_date).getDate())) ? (
-                                 <button disabled className="w-full py-3 bg-blue-50 dark:bg-blue-950/40 text-blue-500 rounded-2xl font-black text-xs uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2">
-                                    <Clock size={14} /> Enrollment Starts {new Date(prog.start_date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-                                 </button>
-                              ) : (parseInt(prog.target_farmers) > 0 && parseInt(prog.enrolled_farmers) >= parseInt(prog.target_farmers)) ? (
-                                 <button disabled className="w-full py-3 bg-rose-50 dark:bg-rose-950/40 text-rose-500 rounded-2xl font-black text-xs uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2">
-                                    <AlertCircle size={14} /> Target Capacity Reached ({prog.enrolled_farmers}/{prog.target_farmers})
-                                 </button>
-                              ) : (
-                                 <button 
-                                    onClick={() => handleEnrollCluster(prog.id)}
-                                    disabled={enrollingId === prog.id || !canEnroll}
-                                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-md shadow-emerald-500/20 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-                                 >
-                                    {enrollingId === prog.id ? "Enrolling Cluster..." : (!activeCluster) ? "Register Cluster to Enroll" : (activeCluster && activeCluster.program_id) ? "Cluster Enrolled in Another Program" : "Enroll Cluster in Program"}
-                                 </button>
+                              {/* Cluster Supervisor Enrollment Actions */}
+                              {isSupervisor && (
+                                 <div className="w-full sm:w-auto">
+                                    {isEnrolled ? (
+                                       <button disabled className="py-2.5 px-6 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-xl font-black text-xs uppercase tracking-widest cursor-default flex items-center justify-center gap-2 shadow-inner">
+                                          <CheckCircle2 size={16} /> Cluster Enrolled in Program
+                                       </button>
+                                    ) : isConfiguring ? (
+                                       <button disabled className="py-2.5 px-6 bg-gray-100 dark:bg-gray-900 text-gray-400 rounded-xl font-black text-xs uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2">
+                                          <EyeOff size={14} /> Program In Configuration (Cannot Enroll)
+                                       </button>
+                                    ) : (prog.end_date && new Date() > new Date(new Date(prog.end_date).getFullYear(), new Date(prog.end_date).getMonth(), new Date(prog.end_date).getDate(), 23, 59, 59)) ? (
+                                       <button disabled className="py-2.5 px-6 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-xl font-black text-xs uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2">
+                                          <Clock size={14} /> Program Ended ({new Date(prog.end_date).toLocaleDateString("en-GB")})
+                                       </button>
+                                    ) : (prog.start_date && new Date() < new Date(new Date(prog.start_date).getFullYear(), new Date(prog.start_date).getMonth(), new Date(prog.start_date).getDate())) ? (
+                                       <button disabled className="py-2.5 px-6 bg-blue-50 dark:bg-blue-950/40 text-blue-500 rounded-xl font-black text-xs uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2">
+                                          <Clock size={14} /> Enrollment Starts {new Date(prog.start_date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                                       </button>
+                                    ) : (parseInt(prog.target_farmers) > 0 && parseInt(prog.enrolled_farmers) >= parseInt(prog.target_farmers)) ? (
+                                       <button disabled className="py-2.5 px-6 bg-rose-50 dark:bg-rose-950/40 text-rose-500 rounded-xl font-black text-xs uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2">
+                                          <AlertCircle size={14} /> Target Capacity Reached ({prog.enrolled_farmers}/{prog.target_farmers})
+                                       </button>
+                                    ) : (
+                                       <button 
+                                          onClick={() => handleEnrollCluster(prog.id)}
+                                          disabled={enrollingId === prog.id || !canEnroll}
+                                          className="py-2.5 px-6 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-md shadow-emerald-500/20 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                                       >
+                                          {enrollingId === prog.id ? "Enrolling Cluster..." : (!activeCluster) ? "Register Cluster to Enroll" : (activeCluster && activeCluster.program_id) ? "Cluster Enrolled in Another Program" : "Enroll Cluster in Program"}
+                                       </button>
+                                    )}
+                                 </div>
                               )}
                            </div>
                         </CardContent>

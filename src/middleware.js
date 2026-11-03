@@ -284,11 +284,23 @@ export default async function middleware(request) {
                   if (pathname === "/ecosystem" || pathname === "/ecosystem/") {
                      return NextResponse.redirect(new URL(allowedBaseRoute, request.url));
                   }
-                  // Block Cluster Supervisors from accessing Programme Monitoring (browser search bar / direct URL)
-                   if ((userRole === "cluster supervisor" || userRole?.includes("supervisor")) && pathname.startsWith("/ecosystem/program-management/monitoring")) {
-                      return NextResponse.redirect(new URL("/ecosystem/program-management", request.url));
-                   }
-                   // Block access to other ecosystem routes
+                  // Block Cluster Supervisors from accessing Programme Monitoring & Directorate routes (browser search bar / direct URL)
+                  if ((userRole === "cluster supervisor" || userRole?.includes("supervisor")) && (
+                     pathname.startsWith("/ecosystem/program-management/monitoring") ||
+                     pathname.startsWith("/ecosystem/program-management/approvals") ||
+                     pathname.startsWith("/ecosystem/program-management/loop") ||
+                     pathname.startsWith("/ecosystem/program-management/harvest")
+                  )) {
+                     return NextResponse.redirect(new URL("/ecosystem/program-management", request.url));
+                  }
+                  // Program Directors do not manage field clusters directly (field supervisors do)
+                  if ((userRole === "program director" || (userRole?.includes("director") && !userRole?.includes("supervisor"))) && (
+                     pathname === "/ecosystem/program-management/clusters" ||
+                     pathname.startsWith("/ecosystem/program-management/clusters/")
+                  )) {
+                     return NextResponse.redirect(new URL("/ecosystem/program-management/programs", request.url));
+                  }
+                  // Block access to other ecosystem routes
                   else if (!pathname.startsWith(allowedBaseRoute)) {
                      return NextResponse.redirect(new URL(allowedBaseRoute, request.url));
                   }

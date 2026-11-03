@@ -1,8 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import useSWR from "swr";
 import { Card, CardContent } from "@/components/ui/Card";
-const fetcher = (url) => fetch(url).then((res) => res.json());
 import {
   CheckCircle2,
   XCircle,
@@ -14,11 +13,22 @@ import {
   ChevronRight,
   AlertCircle,
   Wallet,
+  Edit3,
+  RotateCcw,
+  Check,
+  RefreshCw,
+  ShieldCheck,
+  ArrowRight,
+  Coins,
+  FileText,
+  BadgeAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs";
+
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 const INPUT_CATALOG = {
   Mechanical: { price: 150000, unit: "unit", qty: 1, icon: "🚜" },
@@ -36,52 +46,57 @@ function getItemLabel(item) {
 }
 
 function RequesterCard({ req }) {
-  const initials =
-    `${(req.fname || "?")[0]}${(req.lname || "?")[0]}`.toUpperCase();
+  const initials = `${(req.fname || "?")[0]}${(req.lname || "?")[0]}`.toUpperCase();
   const role = req.requester_type || "farmer";
   const roleColors = {
-    farmer: "bg-emerald-500",
-    aggregator: "bg-blue-500",
-    cluster_manager: "bg-purple-500",
+    farmer: "bg-emerald-600 text-white",
+    aggregator: "bg-blue-600 text-white",
+    cluster_manager: "bg-purple-600 text-white",
+    cluster_supervisor: "bg-purple-600 text-white",
   };
+
+  const roleDisplay = role.replace(/_/g, " ").toUpperCase();
+
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-start gap-3.5">
       <div
-        className={`w-12 h-12 rounded-2xl ${roleColors[role] || "bg-gray-500"} flex items-center justify-center text-white font-black text-lg shadow-lg flex-shrink-0`}
+        className={`w-12 h-12 rounded-2xl ${roleColors[role] || "bg-slate-700 text-white"} flex items-center justify-center font-black text-sm tracking-wider shadow-sm shrink-0`}
       >
         {initials}
       </div>
-      <div>
-        <div className="flex items-center gap-2">
-          <p className="font-black text-base">
+      <div className="space-y-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="font-black text-base text-slate-900 dark:text-white truncate">
             {req.fname} {req.lname}
           </p>
-          {req.onboarding_status === "verified" && (
-            <span className="text-[9px] font-black px-1.5 py-0.5 bg-emerald-100 text-emerald-600 rounded-full uppercase tracking-wider">
+          {req.onboarding_status === "verified" ? (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-full">
+              <ShieldCheck className="w-3 h-3" />
               Verified
+            </span>
+          ) : (
+            <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-full">
+              Pending KYC
             </span>
           )}
         </div>
-        <p className="text-xs text-gray-500">{req.email}</p>
-        <div className="flex items-center gap-3 mt-0.5 text-[10px] text-gray-400 font-bold uppercase">
-          <span>{role.replace("_", " ")}</span>
-          {req.farm_size_hectares && (
-            <>
-              <span>·</span>
-              <span>{parseFloat(req.farm_size_hectares).toFixed(1)} Ha</span>
-            </>
-          )}
+        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{req.email}</p>
+        <div className="flex items-center gap-2 flex-wrap text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
+          <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-300">
+            {roleDisplay}
+          </span>
           {req.cluster_name && (
-            <>
-              <span>·</span>
-              <span>{req.cluster_name}</span>
-            </>
+            <span className="text-purple-600 dark:text-purple-400 font-bold">
+              • {req.cluster_name}
+            </span>
+          )}
+          {req.farm_size_hectares && (
+            <span>• {parseFloat(req.farm_size_hectares).toFixed(1)} Ha</span>
           )}
           {req.program_name && (
-            <>
-              <span>·</span>
-              <span>{req.program_name}</span>
-            </>
+            <span className="text-slate-400 truncate max-w-[200px]">
+              • {req.program_name}
+            </span>
           )}
         </div>
       </div>
@@ -93,12 +108,12 @@ function ItemBadge({ item }) {
   const label = getItemLabel(item);
   const meta = INPUT_CATALOG[label] || {};
   return (
-    <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
-      <span className="text-lg">{meta.icon || "📦"}</span>
+    <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-slate-900/80 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300">
+      <span className="text-base">{meta.icon || "📦"}</span>
       <div>
-        <p className="text-xs font-black">{label}</p>
+        <p className="text-xs font-bold">{label}</p>
         {meta.unit && (
-          <p className="text-[10px] text-gray-400 font-bold">
+          <p className="text-[10px] text-slate-400">
             {meta.unit} · ₦{(meta.price || 0).toLocaleString()}
           </p>
         )}
@@ -108,10 +123,14 @@ function ItemBadge({ item }) {
 }
 
 export default function FinanceApprovalsPage() {
+  const router = useRouter();
+  const [processingId, setProcessingId] = useState(null);
   const [assigning, setAssigning] = useState(null);
   const [selectedDistributor, setSelectedDistributor] = useState("");
-  const [processingId, setProcessingId] = useState(null);
-  const router = useRouter();
+  const [editableAmounts, setEditableAmounts] = useState({});
+  const [rejectModalReq, setRejectModalReq] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [isRejecting, setIsRejecting] = useState(false);
 
   const { data: authData } = useSWR("/api/proxy/auth/verify-vendor", fetcher, { revalidateOnFocus: false });
 
@@ -166,13 +185,93 @@ export default function FinanceApprovalsPage() {
     await Promise.all([m1(), m2(), m3(), m4(), m5(), m6(), m7()]);
   };
 
+  const handleAmountChange = (requestId, value) => {
+    const num = Number(value);
+    setEditableAmounts((prev) => ({
+      ...prev,
+      [requestId]: isNaN(num) ? "" : num,
+    }));
+  };
+
+  const handleResetAmount = (requestId) => {
+    setEditableAmounts((prev) => {
+      const next = { ...prev };
+      delete next[requestId];
+      return next;
+    });
+  };
+
+  const handleApproveFunds = async (req) => {
+    const originalAmount = parseFloat(req.total_amount || req.total_value || 0);
+    const customAmount = editableAmounts[req.id];
+    const amountToAuthorize = (customAmount !== undefined && customAmount !== "" && Number(customAmount) > 0)
+      ? Number(customAmount)
+      : originalAmount;
+
+    if (!amountToAuthorize || amountToAuthorize <= 0) {
+      toast.error("Please enter a valid disbursement amount greater than ₦0");
+      return;
+    }
+
+    setProcessingId(req.id);
+    try {
+      const res = await fetch("/api/proxy/admin/institution/approve-funds", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requestId: req.id,
+          approved_amount: amountToAuthorize,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(`✅ Funds authorized for ${req.fname} ${req.lname} (₦${amountToAuthorize.toLocaleString()})`);
+        fetchData();
+      } else {
+        toast.error(json.error || "Failed to authorize funds");
+      }
+    } catch {
+      toast.error("Network connection error");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleRejectFunds = async () => {
+    if (!rejectModalReq) return;
+    setIsRejecting(true);
+    try {
+      const res = await fetch("/api/proxy/admin/institution/reject-funds", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requestId: rejectModalReq.id,
+          reason: rejectReason.trim() || "Declined by Finance Department",
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.info("Financing request declined");
+        setRejectModalReq(null);
+        setRejectReason("");
+        fetchData();
+      } else {
+        toast.error(json.error || "Failed to decline request");
+      }
+    } catch {
+      toast.error("Network connection error");
+    } finally {
+      setIsRejecting(false);
+    }
+  };
+
   const handleConfirmOrderPayment = async (orderId) => {
     setProcessingId(`order-${orderId}`);
     try {
       const res = await fetch(`/api/proxy/pipeline/buyer-orders/${orderId}/payment/finance-confirm`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ finance_note: "Confirmed via Finance Dashboard" }),
+        body: JSON.stringify({ finance_note: "Confirmed via Finance Approval Center" }),
       });
       const json = await res.json();
       if (json.success) {
@@ -188,46 +287,21 @@ export default function FinanceApprovalsPage() {
     }
   };
 
-  const handleApproveFunds = async (req) => {
-    setProcessingId(req.id);
-    try {
-      const res = await fetch("/api/proxy/admin/institution/approve-funds", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requestId: req.id }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        toast.success(`✅ Funds authorized for ${req.fname} ${req.lname}`);
-        fetchData();
-      } else {
-        toast.error(json.error || "Failed to authorize funds");
-      }
-    } catch {
-      toast.error("Network error");
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
   const handleAssign = async () => {
     if (!selectedDistributor) {
-      toast.warning("Select a distributor first");
+      toast.warning("Please choose a delivery partner");
       return;
     }
     setProcessingId(assigning.id);
     try {
-      const res = await fetch(
-        "/api/proxy/admin/institution/assign-distributor",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            requestId: assigning.id,
-            distributorId: selectedDistributor,
-          }),
-        },
-      );
+      const res = await fetch("/api/proxy/admin/institution/assign-distributor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requestId: assigning.id,
+          distributorId: selectedDistributor,
+        }),
+      });
       const json = await res.json();
       if (json.success) {
         toast.success("✅ Input request approved & distributor assigned!");
@@ -235,7 +309,7 @@ export default function FinanceApprovalsPage() {
         setSelectedDistributor("");
         fetchData();
       } else {
-        toast.error(json.error || "Failed to assign");
+        toast.error(json.error || "Failed to assign distributor");
       }
     } catch {
       toast.error("Network error");
@@ -266,800 +340,800 @@ export default function FinanceApprovalsPage() {
     }
   };
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-10 w-64 bg-gray-200 dark:bg-gray-800 rounded-xl" />
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="h-28 bg-gray-100 dark:bg-gray-900 rounded-2xl"
-            />
+      <div className="space-y-6 animate-pulse p-2">
+        <div className="h-10 w-72 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-28 bg-slate-100 dark:bg-slate-900 rounded-3xl" />
           ))}
         </div>
-        {[1, 2].map((i) => (
-          <div
-            key={i}
-            className="h-48 bg-gray-100 dark:bg-gray-900 rounded-2xl"
-          />
-        ))}
+        <div className="h-64 bg-slate-100 dark:bg-slate-900 rounded-3xl" />
       </div>
     );
+  }
 
   const statCards = [
     {
-      label: "Awaiting Stage 1",
-      value: stage1.length,
-      sub: "Fund Authorization",
-      icon: <Clock className="w-5 h-5" />,
-      color: "amber",
+      label: "Global Treasury",
+      value: `₦${ecosystemTreasury.toLocaleString()}`,
+      sub: "Platform Liquidity",
+      icon: <Wallet className="w-5 h-5 text-emerald-500" />,
+      accent: "border-emerald-500/30 bg-emerald-500/5",
     },
     {
-      label: "Awaiting Stage 2",
+      label: "Stage 1: Fund Release",
+      value: stage1.length,
+      sub: "Pending Review",
+      icon: <Clock className="w-5 h-5 text-amber-500" />,
+      accent: "border-amber-500/30 bg-amber-500/5",
+    },
+    {
+      label: "Stage 2: Distributors",
       value: stage2.length,
-      sub: "Distributor Assignment",
-      icon: <Package className="w-5 h-5" />,
-      color: "blue",
+      sub: "Awaiting Assignment",
+      icon: <Package className="w-5 h-5 text-blue-500" />,
+      accent: "border-blue-500/30 bg-blue-500/5",
+    },
+    {
+      label: "Stage 3: Payouts",
+      value: stage3.length,
+      sub: "Awaiting Release",
+      icon: <Truck className="w-5 h-5 text-purple-500" />,
+      accent: "border-purple-500/30 bg-purple-500/5",
     },
     {
       label: "Total Disbursed",
       value: `₦${(stats.totalDisbursed || 0).toLocaleString()}`,
-      sub: "Since inception",
-      icon: <CheckCircle2 className="w-5 h-5" />,
-      color: "emerald",
-    },
-    {
-      label: "Rejected",
-      value: stats.rejectedCount,
-      sub: `₦${(stats.rejectedValue || 0).toLocaleString()}`,
-      icon: <XCircle className="w-5 h-5" />,
-      color: "rose",
+      sub: "Since Inception",
+      icon: <CheckCircle2 className="w-5 h-5 text-teal-500" />,
+      accent: "border-teal-500/30 bg-teal-500/5",
     },
   ];
 
-  const treasuryCard = {
-    label: "Ecosystem Treasury",
-    value: `₦${ecosystemTreasury.toLocaleString()}`,
-    sub: "Total Global Funds",
-    icon: <Wallet className="w-5 h-5" />,
-    color: "emerald",
-  };
-
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-black tracking-tight text-(--foreground)">
-          Finance Approval Center
-        </h1>
-        <p className="text-gray-500 mt-1">
-          Three-stage authorization: Fund release → Input & Distributor Assignment → Payout Authorization
-        </p>
+    <div className="space-y-6 max-w-7xl mx-auto pb-16 animate-in fade-in duration-300">
+      {/* Modern Simplified Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+            <span>Institutional Portal</span>
+            <span>/</span>
+            <span className="text-emerald-600 dark:text-emerald-400">Finance Gateway</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            Finance & Disbursement Approvals
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Authorize agricultural funding, adjust approved disbursement amounts, assign delivery partners, and confirm payouts.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={fetchData}
+            className="rounded-xl px-3.5 py-2 text-xs font-bold gap-2 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+            Refresh
+          </Button>
+          <div className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-400 text-xs font-black flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Treasury Active
+          </div>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        {[treasuryCard, ...statCards].map((s, i) => (
-          <Card key={i} className="border-none shadow-sm">
-            <CardContent className="p-5">
-              <div
-                className={`w-9 h-9 rounded-xl bg-${s.color}-50 dark:bg-${s.color}-900/20 text-${s.color}-600 flex items-center justify-center mb-3`}
-              >
+      {/* Top Metrics Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
+        {statCards.map((s, idx) => (
+          <div
+            key={idx}
+            className={`p-4 rounded-2xl border ${s.accent} bg-white dark:bg-slate-900/90 shadow-sm transition-all hover:shadow-md`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+                {s.label}
+              </span>
+              <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 shrink-0">
                 {s.icon}
               </div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                {s.label}
-              </p>
-              <p className="text-2xl font-black mt-0.5">{s.value}</p>
-              <p className="text-[10px] text-gray-400 mt-0.5">{s.sub}</p>
-            </CardContent>
-          </Card>
+            </div>
+            <p className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              {s.value}
+            </p>
+            <p className="text-[10px] font-semibold text-slate-400 mt-0.5 truncate">
+              {s.sub}
+            </p>
+          </div>
         ))}
       </div>
 
-      <Tabs defaultValue="program_approvals" className="w-full mt-4">
-        <TabsList className="mb-6 grid w-full grid-cols-4 max-w-3xl bg-gray-100 dark:bg-gray-900 rounded-xl p-1">
-          <TabsTrigger value="program_approvals" className="rounded-lg font-bold text-xs">Program Approvals</TabsTrigger>
-          <TabsTrigger value="active_programs" className="rounded-lg font-bold text-xs">Active Programme Funds</TabsTrigger>
-          <TabsTrigger value="marketplace_orders" className="rounded-lg font-bold text-xs">Marketplace Orders</TabsTrigger>
-          <TabsTrigger value="history" className="rounded-lg font-bold text-xs">Approval History</TabsTrigger>
+      {/* Quick Programme Treasuries Bar */}
+      {programs.length > 0 && (
+        <div className="p-3.5 rounded-2xl bg-slate-100/80 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <Coins className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div>
+              <span className="font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                Programme Treasuries Available:
+              </span>
+              <span className="text-slate-500 dark:text-slate-400 ml-1.5 text-[11px]">
+                Disbursements deduct directly from enrolled program balances
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto py-0.5 max-w-full">
+            {programs.slice(0, 4).map((p) => (
+              <div
+                key={p.id}
+                className="px-2.5 py-1 bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-1.5 shrink-0"
+              >
+                <span className="font-bold text-slate-700 dark:text-slate-300 max-w-[110px] truncate">
+                  {p.name}:
+                </span>
+                <span className="font-black text-emerald-600 dark:text-emerald-400">
+                  ₦{parseFloat(p.wallet_balance || 0).toLocaleString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Main Tabbed Interface */}
+      <Tabs defaultValue="program_approvals" className="w-full">
+        <TabsList className="mb-6 grid w-full grid-cols-2 sm:grid-cols-4 max-w-2xl bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200 dark:border-slate-800">
+          <TabsTrigger value="program_approvals" className="rounded-xl font-bold text-xs py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm">
+            Financing ({stage1.length + stage2.length + stage3.length})
+          </TabsTrigger>
+          <TabsTrigger value="active_programs" className="rounded-xl font-bold text-xs py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm">
+            Program Funds ({programs.length})
+          </TabsTrigger>
+          <TabsTrigger value="marketplace_orders" className="rounded-xl font-bold text-xs py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm">
+            Marketplace ({marketplaceOrders.length})
+          </TabsTrigger>
+          <TabsTrigger value="history" className="rounded-xl font-bold text-xs py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm">
+            History ({history.length})
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="active_programs" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-black">Active Programme Fund Balances</h2>
-              <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">
-                Real-time programme treasury balances monitored for Stage 1 Fund Authorizations
-              </p>
+        {/* 1. PROGRAM FINANCING TAB */}
+        <TabsContent value="program_approvals" className="space-y-8">
+          {/* ========================================================= */}
+          {/* STAGE 1 — FUND AUTHORIZATION (WITH EDITABLE AMOUNT)       */}
+          {/* ========================================================= */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center font-black text-xs">
+                  1
+                </div>
+                <h2 className="text-lg font-black text-slate-900 dark:text-white">
+                  Stage 1 — Fund Authorization & Amount Adjustment
+                </h2>
+                {stage1.length > 0 && (
+                  <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 text-[11px] font-black rounded-full border border-amber-200 dark:border-amber-800">
+                    {stage1.length} Awaiting Authorization
+                  </span>
+                )}
+              </div>
             </div>
-            <span className="px-4 py-2 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-black text-xs rounded-xl uppercase tracking-widest">
-              {programs.length} Active Programmes
-            </span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {programs.map((prog) => (
-              <Card key={prog.id} className="border-none shadow-lg bg-white dark:bg-gray-950 rounded-3xl overflow-hidden relative border-t-4 border-t-emerald-500">
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex justify-between items-start gap-3">
-                    <div>
-                      <h3 className="font-black text-lg text-(--foreground) line-clamp-1">{prog.name}</h3>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
-                        {prog.region || "National"} • {prog.commodity || "Multi-crop"}
-                      </p>
+
+            {stage1.length === 0 ? (
+              <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800/80">
+                <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+                <p className="font-bold text-slate-700 dark:text-slate-300 text-sm">
+                  All Stage 1 financing requests are authorized
+                </p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  New cluster supervisor and outgrower funding applications will appear here.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {stage1.map((req) => {
+                  const originalAmount = parseFloat(req.total_amount || req.total_value || 0);
+                  const customAmount = editableAmounts[req.id];
+                  const currentAmount = (customAmount !== undefined && customAmount !== "")
+                    ? Number(customAmount)
+                    : originalAmount;
+                  const isModified = customAmount !== undefined && Number(customAmount) !== originalAmount;
+
+                  // Find matched program
+                  const prog = programs.find((p) => p.id === req.program_id) || programs[0];
+                  const progBalance = parseFloat(prog?.wallet_balance || 0);
+                  const isOverBudget = prog ? currentAmount > progBalance : false;
+
+                  return (
+                    <div
+                      key={req.id}
+                      className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden p-5 sm:p-6 transition-all hover:border-slate-300 dark:hover:border-slate-700"
+                    >
+                      <div className="flex flex-col lg:flex-row gap-6 justify-between items-start">
+                        {/* Left: Requester & Items Details */}
+                        <div className="space-y-4 flex-1 min-w-0">
+                          <RequesterCard req={req} />
+
+                          {/* Requested Items preview */}
+                          {req.input_items && Array.isArray(req.input_items) && req.input_items.length > 0 && (
+                            <div className="pt-2">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                                Requested Package Allocation:
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {req.input_items.map((item, i) => (
+                                  <ItemBadge key={i} item={item} />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Associated Program Information */}
+                          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800/80">
+                            <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
+                            <span>Program:</span>
+                            <span className="font-bold text-slate-800 dark:text-slate-200 truncate">
+                              {prog?.name || req.program_name || "General Agriculture Program"}
+                            </span>
+                            {prog && (
+                              <span className="ml-auto text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
+                                Treasury: ₦{progBalance.toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Right: Editable Amount & Authorization Action */}
+                        <div className="w-full lg:w-96 p-4 rounded-2xl bg-slate-900 dark:bg-black/60 border border-slate-800 text-white space-y-3.5">
+                          <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                              <Edit3 className="w-3.5 h-3.5" />
+                              Editable Disbursement Amount
+                            </span>
+                            {isModified && (
+                              <button
+                                type="button"
+                                onClick={() => handleResetAmount(req.id)}
+                                className="text-[10px] font-bold text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer transition"
+                                title="Reset to original requested amount"
+                              >
+                                <RotateCcw className="w-3 h-3" />
+                                Reset (₦{originalAmount.toLocaleString()})
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Editable Input Field */}
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="text-[11px] font-bold text-slate-400">
+                                Approved Amount (₦)
+                              </label>
+                              <span className="text-[10px] text-slate-400">
+                                Requested: ₦{originalAmount.toLocaleString()}
+                              </span>
+                            </div>
+
+                            <div className="relative">
+                              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base font-black text-amber-400">
+                                ₦
+                              </span>
+                              <input
+                                type="number"
+                                min="1"
+                                step="1000"
+                                value={customAmount !== undefined ? customAmount : originalAmount}
+                                onChange={(e) => handleAmountChange(req.id, e.target.value)}
+                                className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl pl-8 pr-4 py-2.5 text-lg font-black text-white outline-none transition"
+                                placeholder="0"
+                              />
+                            </div>
+
+                            {/* Validation message */}
+                            {isOverBudget ? (
+                              <p className="text-[10px] font-bold text-red-400 mt-1.5 flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3 shrink-0" />
+                                Exceeds program treasury balance (₦{progBalance.toLocaleString()} available)
+                              </p>
+                            ) : isModified ? (
+                              <p className="text-[10px] font-bold text-emerald-400 mt-1.5 flex items-center gap-1">
+                                <Check className="w-3 h-3 shrink-0" />
+                                Adjusted by {currentAmount >= originalAmount ? "+" : "-"}₦
+                                {Math.abs(currentAmount - originalAmount).toLocaleString()}
+                              </p>
+                            ) : (
+                              <p className="text-[10px] text-slate-400 mt-1.5">
+                                Modify number above if financial committee approved a different sum.
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="space-y-2 pt-1">
+                            <Button
+                              onClick={() => handleApproveFunds(req)}
+                              disabled={processingId === req.id || currentAmount <= 0}
+                              className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl py-3 text-xs uppercase tracking-wider transition-all active:scale-[0.98] shadow-sm cursor-pointer"
+                            >
+                              {processingId === req.id ? (
+                                <span className="flex items-center gap-2">
+                                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                  Authorizing Disbursement...
+                                </span>
+                              ) : (
+                                `Authorize ₦${Number(currentAmount).toLocaleString()}`
+                              )}
+                            </Button>
+
+                            <button
+                              type="button"
+                              onClick={() => setRejectModalReq(req)}
+                              className="w-full py-1.5 text-center text-xs font-bold text-red-400 hover:text-red-300 transition cursor-pointer"
+                            >
+                              Decline Financing Request
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 rounded-lg font-black text-[10px] uppercase">
-                      Active
-                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* ========================================================= */}
+          {/* STAGE 2 — DISTRIBUTOR ASSIGNMENT                          */}
+          {/* ========================================================= */}
+          <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2.5">
+              <div className="w-6 h-6 rounded-lg bg-blue-500 text-white flex items-center justify-center font-black text-xs">
+                2
+              </div>
+              <h2 className="text-lg font-black text-slate-900 dark:text-white">
+                Stage 2 — Distributor Assignment
+              </h2>
+              {stage2.length > 0 && (
+                <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 text-[11px] font-black rounded-full border border-blue-200 dark:border-blue-800">
+                  {stage2.length} Ready for Assignment
+                </span>
+              )}
+            </div>
+
+            {stage2.length === 0 ? (
+              <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800/80">
+                <Truck className="w-10 h-10 text-slate-300 dark:text-slate-700 mx-auto mb-2" />
+                <p className="font-bold text-slate-500 text-sm">
+                  No requests currently awaiting distributor assignment
+                </p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Requests automatically move here once Stage 1 funds are authorized.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {stage2.map((req) => (
+                  <div
+                    key={req.id}
+                    className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 sm:p-6"
+                  >
+                    <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
+                      <RequesterCard req={req} />
+                      <div className="text-right">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                          Authorized Funding
+                        </span>
+                        <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">
+                          ₦{parseFloat(req.total_amount || req.total_value || 0).toLocaleString()}
+                        </p>
+                        <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                          Funds Escrowed ✓
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <Package className="w-4 h-4 text-blue-500" />
+                        <span>Ready to assign certified agro-dealer for distribution</span>
+                      </div>
+                      <Button
+                        onClick={() => setAssigning(req)}
+                        className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl px-5 py-2.5 text-xs shadow-sm cursor-pointer"
+                      >
+                        <Truck className="w-3.5 h-3.5 mr-1.5" />
+                        Assign Distributor & Dispatch
+                      </Button>
+                    </div>
                   </div>
-                  <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Current Fund Balance</p>
-                    <p className="text-2xl font-black text-emerald-600 tracking-tighter mt-1">
-                      ₦{parseFloat(prog.wallet_balance || 0).toLocaleString()}
-                    </p>
-                    <p className="text-[10px] font-bold text-gray-400 mt-1">Available for input financing deductions</p>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ========================================================= */}
+          {/* STAGE 3 — PAYOUT AUTHORIZATION                            */}
+          {/* ========================================================= */}
+          <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2.5">
+              <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-black text-xs">
+                3
+              </div>
+              <h2 className="text-lg font-black text-slate-900 dark:text-white">
+                Stage 3 — Final Payout Release
+              </h2>
+              {stage3.length > 0 && (
+                <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 text-[11px] font-black rounded-full border border-emerald-200 dark:border-emerald-800">
+                  {stage3.length} Pending Distributor Payout
+                </span>
+              )}
+            </div>
+
+            {stage3.length === 0 ? (
+              <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800/80">
+                <CheckCircle2 className="w-10 h-10 text-slate-300 dark:text-slate-700 mx-auto mb-2" />
+                <p className="font-bold text-slate-500 text-sm">
+                  No requests awaiting final payout release
+                </p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Items confirmed as delivered by farmers/clusters will appear here for escrow release.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {stage3.map((req) => (
+                  <div
+                    key={req.id}
+                    className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 sm:p-6"
+                  >
+                    <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
+                      <RequesterCard req={req} />
+                      <div className="text-right">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                          Escrow Payout Due
+                        </span>
+                        <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">
+                          ₦{parseFloat(req.total_amount || req.total_value || 0).toLocaleString()}
+                        </p>
+                        <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+                          Items Delivered ✓
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800">
+                      <div className="text-xs text-slate-500">
+                        Distributor delivery verified by recipient. Release escrow payout to vendor wallet.
+                      </div>
+                      <Button
+                        onClick={() => handleReleaseFunds(req)}
+                        disabled={processingId === `release-${req.id}`}
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl px-5 py-2.5 text-xs shadow-sm cursor-pointer"
+                      >
+                        {processingId === `release-${req.id}` ? "Processing..." : "Release Escrow Payout"}
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center text-xs font-bold pt-2 border-t border-gray-100 dark:border-gray-900">
-                    <span className="text-gray-500">Target Hectares:</span>
-                    <span className="font-black">{parseFloat(prog.target_hectares || 0).toLocaleString()} HA</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            {programs.length === 0 && (
-              <div className="col-span-3 text-center py-16 bg-gray-50 dark:bg-gray-900/50 rounded-3xl font-bold text-gray-400">
-                No active programmes found in the ecosystem.
+                ))}
               </div>
             )}
           </div>
         </TabsContent>
 
-        <TabsContent value="program_approvals" className="space-y-8">
-          {/* Quick Programme Balances Bar */}
-          {programs.length > 0 && (
-            <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-100 dark:border-emerald-800/50 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <Wallet className="text-emerald-600 w-5 h-5 shrink-0" />
-                <div>
-                  <h3 className="font-black text-xs text-emerald-900 dark:text-emerald-300 uppercase tracking-widest">Programme Treasuries Available</h3>
-                  <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">Stage 1 approvals deduct strictly from these program balances</p>
+        {/* 2. ACTIVE PROGRAMMES TAB */}
+        <TabsContent value="active_programs" className="space-y-4">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h2 className="text-lg font-black text-slate-900 dark:text-white">
+                Active Programme Treasuries
+              </h2>
+              <p className="text-xs text-slate-500">
+                Live balances allocated by government, financial institutions, and agricultural boards.
+              </p>
+            </div>
+            <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold text-xs rounded-xl border border-emerald-200 dark:border-emerald-800">
+              {programs.length} Active Programmes
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {programs.map((prog) => (
+              <div
+                key={prog.id}
+                className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-black text-base text-slate-900 dark:text-white truncate">
+                      {prog.name}
+                    </h3>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                      {prog.region || "National"} • {prog.commodity || "Multi-crop"}
+                    </p>
+                  </div>
+                  <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 rounded-md text-[10px] font-bold uppercase">
+                    Active
+                  </span>
+                </div>
+
+                <div className="p-3.5 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Available Treasury
+                  </span>
+                  <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                    ₦{parseFloat(prog.wallet_balance || 0).toLocaleString()}
+                  </p>
+                </div>
+
+                <div className="flex justify-between items-center text-xs text-slate-500 pt-1">
+                  <span>Target Land:</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    {parseFloat(prog.target_hectares || 0).toLocaleString()} Ha
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center gap-4 overflow-x-auto py-1">
-                {programs.slice(0, 3).map(p => (
-                  <div key={p.id} className="px-3 py-1.5 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-2">
-                    <span className="text-xs font-black text-gray-800 dark:text-gray-200 max-w-[120px] truncate">{p.name}:</span>
-                    <span className="text-xs font-black text-emerald-600">₦{parseFloat(p.wallet_balance || 0).toLocaleString()}</span>
-                  </div>
-                ))}
-                {programs.length > 3 && (
-                  <span className="text-[10px] font-black text-emerald-600 uppercase cursor-pointer" onClick={() => {
-                    const el = document.querySelector('[value="active_programs"]');
-                    if(el) el.click();
-                  }}>+{programs.length - 3} more</span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* STAGE 1 — Fund Authorization */}
-          <div>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-7 h-7 rounded-full bg-amber-500 text-white flex items-center justify-center font-black text-sm">
-            1
-          </div>
-          <h2 className="text-lg font-black">Stage 1 — Fund Authorization</h2>
-          {stage1.length > 0 && (
-            <span className="px-2.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-black rounded-full uppercase tracking-wider">
-              {stage1.length} Pending
-            </span>
-          )}
-        </div>
-
-        {stage1.length === 0 ? (
-          <Card className="border-none shadow-sm">
-            <CardContent className="p-12 text-center">
-              <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
-              <p className="font-bold text-gray-400">
-                No pending fund authorizations
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {stage1.map((req) => (
-              <Card
-                key={req.id}
-                className="border-none shadow-sm overflow-hidden"
-              >
-                <CardContent className="p-0">
-                  <div className="p-6 flex flex-col lg:flex-row gap-6 justify-between">
-                    {/* Requester Info */}
-                    <RequesterCard req={req} />
-
-                    {/* Stage UI */}
-                    <div className="flex flex-col sm:flex-row gap-4 flex-1 max-w-2xl">
-                      {/* Stage 1 Box — Active */}
-                      <div className="flex-1 p-4 bg-gray-900 dark:bg-gray-950 rounded-2xl border border-amber-500/30 relative">
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest">
-                              Stage 1: Finance Approval
-                            </p>
-                          </div>
-                          <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-[10px] font-black rounded-full border border-amber-500/30">
-                            PENDING ACTION
-                          </span>
-                        </div>
-                        <div className="mb-1">
-                          <p className="text-[10px] text-gray-400">
-                            Request Value
-                          </p>
-                          <p className="text-2xl font-black text-white">
-                            ₦
-                            {parseFloat(
-                              req.total_amount || req.total_value || 0,
-                            ).toLocaleString()}
-                          </p>
-                        </div>
-                        <p className="text-[10px] text-gray-500 mb-4">
-                          Authorization required to release funds from program
-                          treasury.
-                        </p>
-                        <Button
-                          onClick={() => handleApproveFunds(req)}
-                          disabled={processingId === req.id}
-                          className="w-full bg-amber-500 hover:bg-amber-600 text-black font-black rounded-xl py-5 text-xs uppercase tracking-wider transition-all active:scale-95"
-                        >
-                          {processingId === req.id
-                            ? "Authorizing..."
-                            : "Authorize Funds Disbursement"}
-                        </Button>
-                      </div>
-
-                      <div className="flex items-center justify-center">
-                        <ChevronRight className="w-5 h-5 text-gray-300 dark:text-gray-600" />
-                      </div>
-
-                      {/* Stage 2 Box — Locked */}
-                      <div className="flex-1 p-4 bg-gray-100 dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 opacity-50">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                          Stage 2: Distribution
-                        </p>
-                        <p className="text-[10px] text-gray-400 italic">
-                          Requester selects items after fund approval...
-                        </p>
-                        <div className="mt-4 w-full py-4 rounded-xl bg-gray-200 dark:bg-gray-800 text-center">
-                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                            Locked
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Items Preview */}
-                  {req.input_items &&
-                    Array.isArray(req.input_items) &&
-                    req.input_items.length > 0 && (
-                      <div className="px-6 pb-5">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                          Requested Items
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {req.input_items.map((item, i) => (
-                            <ItemBadge key={i} item={item} />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                </CardContent>
-              </Card>
             ))}
           </div>
-        )}
-      </div>
-
-      {/* STAGE 2 — Distributor Assignment */}
-      <div>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-7 h-7 rounded-full bg-blue-500 text-white flex items-center justify-center font-black text-sm">
-            2
-          </div>
-          <h2 className="text-lg font-black">
-            Stage 2 — Distributor Assignment
-          </h2>
-          {stage2.length > 0 && (
-            <span className="px-2.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-black rounded-full uppercase tracking-wider">
-              {stage2.length} Ready
-            </span>
-          )}
-        </div>
-
-        {stage2.length === 0 ? (
-          <Card className="border-none shadow-sm">
-            <CardContent className="p-12 text-center">
-              <Truck className="w-10 h-10 text-blue-300 mx-auto mb-3" />
-              <p className="font-bold text-gray-400">
-                No requests awaiting distributor assignment
-              </p>
-              <p className="text-xs text-gray-400 mt-1">
-                Requests move here after Stage 1 fund authorization
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {stage2.map((req) => (
-              <Card
-                key={req.id}
-                className="border-none shadow-sm overflow-hidden"
-              >
-                <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-500" />
-                <CardContent className="p-6 space-y-5">
-                  <div className="flex flex-col sm:flex-row justify-between gap-4">
-                    <RequesterCard req={req} />
-                    <div className="text-right">
-                      <p className="text-[10px] text-gray-400 font-bold uppercase">
-                        Total Value
-                      </p>
-                      <p className="text-2xl font-black text-blue-600">
-                        ₦
-                        {parseFloat(
-                          req.total_amount || req.total_value || 0,
-                        ).toLocaleString()}
-                      </p>
-                      <span className="text-[9px] font-black px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full uppercase">
-                        Funds Authorized ✓
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Items with weights/counts */}
-                  {req.input_items &&
-                    Array.isArray(req.input_items) &&
-                    req.input_items.length > 0 && (
-                      <div>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                          Selected Inputs
-                        </p>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          {req.input_items.map((item, i) => {
-                            const label = getItemLabel(item);
-                            const meta = INPUT_CATALOG[label] || {};
-                            return (
-                              <div
-                                key={i}
-                                className="p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-800/30 flex items-start gap-2"
-                              >
-                                <span className="text-xl">
-                                  {meta.icon || "📦"}
-                                </span>
-                                <div>
-                                  <p className="text-xs font-black">{label}</p>
-                                  <p className="text-[10px] text-gray-400">
-                                    {meta.unit || "1 unit"}
-                                  </p>
-                                  <p className="text-[10px] font-black text-blue-600">
-                                    ₦{(meta.price || 0).toLocaleString()}
-                                  </p>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Button
-                      onClick={() => setAssigning(req)}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl py-5 text-xs uppercase tracking-wider shadow-lg shadow-blue-500/20 transition-all active:scale-95"
-                    >
-                      <Truck className="w-4 h-4 mr-2" /> Assign Distributor &
-                      Approve
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* STAGE 3 — Payout Authorization */}
-      <div className="pt-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black text-sm">
-            3
-          </div>
-          <h2 className="text-lg font-black">
-            Stage 3 — Payout Authorization
-          </h2>
-          {stage3.length > 0 && (
-            <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-full uppercase tracking-wider">
-              {stage3.length} Pending Payout
-            </span>
-          )}
-        </div>
-
-        {stage3.length === 0 ? (
-          <Card className="border-none shadow-sm">
-            <CardContent className="p-12 text-center">
-              <CheckCircle2 className="w-10 h-10 text-emerald-300 mx-auto mb-3" />
-              <p className="font-bold text-gray-400">
-                No requests awaiting payout authorization
-              </p>
-              <p className="text-xs text-gray-400 mt-1">
-                Requests move here after the items are delivered
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {stage3.map((req) => (
-              <Card
-                key={req.id}
-                className="border-none shadow-sm overflow-hidden"
-              >
-                <div className="h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />
-                <CardContent className="p-6 space-y-5">
-                  <div className="flex flex-col sm:flex-row justify-between gap-4">
-                    <RequesterCard req={req} />
-                    <div className="text-right">
-                      <p className="text-[10px] text-gray-400 font-bold uppercase">
-                        Total Payout Value
-                      </p>
-                      <p className="text-2xl font-black text-emerald-600">
-                        ₦
-                        {parseFloat(
-                          req.total_amount || req.total_value || 0,
-                        ).toLocaleString()}
-                      </p>
-                      <span className="text-[9px] font-black px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full uppercase">
-                        Delivered ✓
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Button
-                      onClick={() => handleReleaseFunds(req)}
-                      disabled={processingId === `release-${req.id}`}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl py-5 text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
-                    >
-                      <Building2 className="w-4 h-4 mr-2" /> 
-                      {processingId === `release-${req.id}` ? "Processing..." : "Authorize Payout to Distributor"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-
-          {/* (End of STAGE 3) */}
         </TabsContent>
 
-        <TabsContent value="marketplace_orders" className="space-y-8">
-          {/* MARKETPLACE ORDERS PAYMENT CONFIRMATION */}
-          <div>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-7 h-7 rounded-full bg-violet-500 text-white flex items-center justify-center font-black text-sm">
-            <Package className="w-4 h-4" />
+        {/* 3. MARKETPLACE ORDERS TAB */}
+        <TabsContent value="marketplace_orders" className="space-y-4">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-black text-slate-900 dark:text-white">
+              Marketplace Trade Orders (Payment Confirmation)
+            </h2>
+            {marketplaceOrders.length > 0 && (
+              <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-400 text-xs font-black rounded-full">
+                {marketplaceOrders.length} Pending
+              </span>
+            )}
           </div>
-          <h2 className="text-lg font-black">Marketplace Orders (Payment Confirmation)</h2>
-          {marketplaceOrders.length > 0 && (
-            <span className="px-2.5 py-0.5 bg-violet-100 text-violet-700 text-[10px] font-black rounded-full uppercase tracking-wider">
-              {marketplaceOrders.length} Pending
-            </span>
-          )}
-        </div>
 
-        {marketplaceOrders.length === 0 ? (
-          <Card className="border-none shadow-sm">
-            <CardContent className="p-12 text-center">
-              <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
-              <p className="font-bold text-gray-400">
+          {marketplaceOrders.length === 0 ? (
+            <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
+              <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+              <p className="font-bold text-slate-500 text-sm">
                 No marketplace orders awaiting payment confirmation
               </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {marketplaceOrders.map((order) => (
-              <Card
-                key={order.id}
-                className="border-none shadow-sm overflow-hidden"
-              >
-                <CardContent className="p-0">
-                  <div className="p-6 flex flex-col lg:flex-row gap-6 justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-indigo-500 flex items-center justify-center text-white font-black text-lg shadow-lg flex-shrink-0">
-                        <Package size={24} />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-black text-base">
-                            {order.buyer_name || "Buyer Ecosystem"}
-                          </p>
-                          <span className="text-[9px] font-black px-1.5 py-0.5 bg-violet-100 text-violet-600 rounded-full uppercase tracking-wider">
-                            Order {order.id.split('-')[0]}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-500">{order.email}</p>
-                        <div className="flex items-center gap-3 mt-0.5 text-[10px] text-gray-400 font-bold uppercase">
-                          <span>{Array.isArray(order.items) ? order.items.length : 1} items</span>
-                          <span>·</span>
-                          <span>{order.status.replaceAll('_', ' ')}</span>
-                        </div>
-                      </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {marketplaceOrders.map((order) => (
+                <div
+                  key={order.id}
+                  className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-black text-base text-slate-900 dark:text-white">
+                        {order.buyer_name || "Buyer Organization"}
+                      </p>
+                      <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-md text-slate-600 dark:text-slate-300">
+                        Order #{order.id.slice(0, 8)}
+                      </span>
                     </div>
-
-                    <div className="flex flex-col sm:flex-row gap-4 flex-1 max-w-md">
-                      <div className="flex-1 p-4 bg-gray-900 dark:bg-gray-950 rounded-2xl border border-violet-500/30 relative">
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <p className="text-[10px] font-black text-violet-400 uppercase tracking-widest">
-                              Payment Status
-                            </p>
-                          </div>
-                          <span className="px-2 py-0.5 bg-violet-500/20 text-violet-400 text-[10px] font-black rounded-full border border-violet-500/30 uppercase">
-                            {order.payment_status?.replaceAll('_', ' ') || "PENDING"}
-                          </span>
-                        </div>
-                        <div className="mb-4">
-                          <p className="text-[10px] text-gray-400">
-                            Order Value
-                          </p>
-                          <p className="text-2xl font-black text-white">
-                            ₦{parseFloat(order.total_amount).toLocaleString()}
-                          </p>
-                        </div>
-                        <Button
-                          onClick={() => handleConfirmOrderPayment(order.id)}
-                          disabled={processingId === `order-${order.id}`}
-                          className="w-full bg-violet-500 hover:bg-violet-600 text-white font-black rounded-xl py-5 text-xs uppercase tracking-wider transition-all active:scale-95"
-                        >
-                          {processingId === `order-${order.id}`
-                            ? "Confirming..."
-                            : "Confirm Received Payment"}
-                        </Button>
-                      </div>
-                    </div>
+                    <p className="text-xs text-slate-500">{order.email}</p>
+                    <p className="text-xs font-bold text-slate-400">
+                      Amount: <span className="text-slate-900 dark:text-white font-black">₦{parseFloat(order.total_amount).toLocaleString()}</span>
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-    </TabsContent>
 
-    {/* Distributor Assignment Modal */}
-    {assigning && (
-        <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <Card className="w-full max-w-lg border-none shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                  <Button
+                    onClick={() => handleConfirmOrderPayment(order.id)}
+                    disabled={processingId === `order-${order.id}`}
+                    className="bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl px-5 py-2.5 text-xs shadow-sm cursor-pointer"
+                  >
+                    {processingId === `order-${order.id}` ? "Confirming..." : "Confirm Payment Received"}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* 4. HISTORY TAB */}
+        <TabsContent value="history" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-black text-slate-900 dark:text-white">
+              Disbursement & Approval Records
+            </h2>
+            <span className="text-xs text-slate-500 font-bold">
+              {history.length} records processed
+            </span>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60">
+                    <th className="p-4 font-bold text-slate-400 uppercase">Requester</th>
+                    <th className="p-4 font-bold text-slate-400 uppercase">Role</th>
+                    <th className="p-4 font-bold text-slate-400 uppercase">Distributor</th>
+                    <th className="p-4 font-bold text-slate-400 uppercase">Approved Amount</th>
+                    <th className="p-4 font-bold text-slate-400 uppercase">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {history.length > 0 ? (
+                    history.map((req) => (
+                      <tr key={req.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                        <td className="p-4 font-bold text-slate-900 dark:text-white">
+                          {req.fname} {req.lname}
+                          <p className="text-[10px] text-slate-400 font-normal">{req.email}</p>
+                        </td>
+                        <td className="p-4 capitalize text-slate-600 dark:text-slate-300">
+                          {(req.requester_type || "farmer").replace(/_/g, " ")}
+                        </td>
+                        <td className="p-4 text-slate-600 dark:text-slate-300">
+                          {req.distributor_fname ? `${req.distributor_fname} ${req.distributor_lname}` : "—"}
+                        </td>
+                        <td className="p-4 font-black text-slate-900 dark:text-white">
+                          ₦{parseFloat(req.total_amount || req.total_value || 0).toLocaleString()}
+                        </td>
+                        <td className="p-4">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                              req.status === "approved"
+                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
+                                : req.status === "delivered"
+                                  ? "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400"
+                                  : req.status === "rejected"
+                                    ? "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400"
+                                    : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                            }`}
+                          >
+                            {req.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-slate-400 italic">
+                        No historical approval records found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Decline Financing Request Modal */}
+      {rejectModalReq && (
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+            <div>
+              <h3 className="text-base font-black text-slate-900 dark:text-white">
+                Decline Financing Request
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Requester: {rejectModalReq.fname} {rejectModalReq.lname} (₦{parseFloat(rejectModalReq.total_amount || rejectModalReq.total_value || 0).toLocaleString()})
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Reason for Declining (Optional)
+              </label>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="e.g. Budget ceiling exceeded, duplicate request, or cluster requires re-verification"
+                rows={3}
+                className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs focus:ring-2 focus:ring-red-500 outline-none"
+              />
+            </div>
+
+            <div className="flex gap-2.5 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setRejectModalReq(null)}
+                className="flex-1 rounded-xl text-xs font-bold"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleRejectFunds}
+                disabled={isRejecting}
+                className="flex-1 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold"
+              >
+                {isRejecting ? "Declining..." : "Confirm Decline"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Distributor Assignment Modal */}
+      {assigning && (
+        <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-5">
+            <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
-                <h3 className="font-black text-lg">Assign Distributor</h3>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  This action is final and will notify the distributor
+                <h3 className="text-base font-black text-slate-900 dark:text-white">
+                  Assign Delivery Partner
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Select a registered agro-input distributor for this approved order.
                 </p>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
+              <button
+                type="button"
                 onClick={() => {
                   setAssigning(null);
                   setSelectedDistributor("");
                 }}
-                className="rounded-full h-8 w-8"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
               >
                 <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Requester summary */}
+            <div className="p-3.5 bg-slate-50 dark:bg-slate-950 rounded-2xl space-y-2 border border-slate-100 dark:border-slate-800">
+              <RequesterCard req={assigning} />
+              <div className="flex justify-between pt-2 border-t border-slate-200/60 dark:border-slate-800 text-xs">
+                <span className="text-slate-500">Total Approved Value:</span>
+                <span className="font-black text-emerald-600">
+                  ₦{parseFloat(assigning.total_amount || assigning.total_value || 0).toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            {/* Distributor select */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Choose Delivery Partner / Distributor
+              </label>
+              {distributors.length === 0 ? (
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-300">
+                  No active distributors found. Please register an input distributor first.
+                </div>
+              ) : (
+                <select
+                  value={selectedDistributor}
+                  onChange={(e) => setSelectedDistributor(e.target.value)}
+                  className="w-full p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select a distributor...</option>
+                  {distributors.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.fname} {d.lname} ({d.company_name || d.email})
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            <div className="flex gap-2.5 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl text-xs font-bold"
+                onClick={() => {
+                  setAssigning(null);
+                  setSelectedDistributor("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAssign}
+                disabled={processingId === assigning?.id || !selectedDistributor}
+                className="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold cursor-pointer"
+              >
+                {processingId === assigning?.id ? "Assigning..." : "Confirm & Assign"}
               </Button>
             </div>
-            <div className="p-6 space-y-5">
-              {/* Requester summary */}
-              <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-2xl space-y-3">
-                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
-                  Requester
-                </p>
-                <RequesterCard req={assigning} />
-                <div className="flex justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
-                  <span className="text-sm text-gray-500">Total Value</span>
-                  <span className="font-black text-emerald-600">
-                    ₦
-                    {parseFloat(
-                      assigning.total_amount || assigning.total_value || 0,
-                    ).toLocaleString()}
-                  </span>
-                </div>
-              </div>
-
-              {/* Items */}
-              {assigning.input_items &&
-                Array.isArray(assigning.input_items) && (
-                  <div>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                      Items to Deliver
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {assigning.input_items.map((item, i) => (
-                        <ItemBadge key={i} item={item} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-              {/* Distributor select */}
-              <div className="space-y-2">
-                <label className="text-xs font-black text-gray-500 uppercase">
-                  Select Delivery Partner
-                </label>
-                {distributors.length === 0 ? (
-                  <div className="p-4 bg-amber-50 dark:bg-amber-900/10 rounded-xl border border-amber-200 dark:border-amber-800 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-amber-500" />
-                    <p className="text-xs text-amber-600 font-medium">
-                      No distributors available. Please register a distributor
-                      first.
-                    </p>
-                  </div>
-                ) : (
-                  <select
-                    value={selectedDistributor}
-                    onChange={(e) => setSelectedDistributor(e.target.value)}
-                    className="w-full p-3.5 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                  >
-                    <option value="">Choose a distributor...</option>
-                    {distributors.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.fname} {d.lname} — {d.email}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-
-              <div className="flex gap-3 pt-1">
-                <Button
-                  variant="outline"
-                  className="flex-1 rounded-xl py-5 font-bold"
-                  onClick={() => {
-                    setAssigning(null);
-                    setSelectedDistributor("");
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-5 font-black shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
-                  onClick={handleAssign}
-                  disabled={
-                    processingId === assigning?.id || !selectedDistributor
-                  }
-                >
-                  {processingId === assigning?.id
-                    ? "Processing..."
-                    : "Confirm & Assign ✓"}
-                </Button>
-              </div>
-            </div>
-          </Card>
+          </div>
         </div>
       )}
-
-      <TabsContent value="history">
-        {/* History Table */}
-        <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-black">Approval History</h2>
-          <span className="px-2.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 text-[10px] font-black rounded-full uppercase">
-            {history.length} Records
-          </span>
-        </div>
-        <Card className="border-none shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-gray-50 dark:border-gray-900">
-                  {[
-                    "Requester",
-                    "Role",
-                    "Items",
-                    "Distributor",
-                    "Amount",
-                    "Status",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest"
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {history.length > 0 ? (
-                  history.map((req) => (
-                    <tr
-                      key={req.id}
-                      className="border-b border-gray-50 dark:border-gray-900 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-900/30 transition-colors"
-                    >
-                      <td className="p-4">
-                        <p className="font-bold text-sm">
-                          {req.fname} {req.lname}
-                        </p>
-                        <p className="text-[10px] text-gray-400">{req.email}</p>
-                      </td>
-                      <td className="p-4">
-                        <span className="text-[10px] font-black px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full capitalize">
-                          {(req.requester_type || "farmer").replace("_", " ")}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex flex-wrap gap-1">
-                          {(Array.isArray(req.input_items)
-                            ? req.input_items
-                            : []
-                          ).map((item, i) => (
-                            <span
-                              key={i}
-                              className="text-[9px] bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded font-bold uppercase"
-                            >
-                              {getItemLabel(item)}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="p-4 text-xs font-bold">
-                        {req.distributor_fname
-                          ? `${req.distributor_fname} ${req.distributor_lname}`
-                          : "—"}
-                      </td>
-                      <td className="p-4 font-black text-sm">
-                        ₦
-                        {parseFloat(
-                          req.total_amount || req.total_value || 0,
-                        ).toLocaleString()}
-                      </td>
-                      <td className="p-4">
-                        <span
-                          className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                            req.status === "approved"
-                              ? "bg-emerald-100 text-emerald-600"
-                              : req.status === "delivered"
-                                ? "bg-blue-100 text-blue-600"
-                                : req.status === "rejected"
-                                  ? "bg-red-100 text-red-600"
-                                  : "bg-gray-100 text-gray-500"
-                          }`}
-                        >
-                          {req.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="p-12 text-center text-gray-400 italic text-sm"
-                    >
-                      No approval history yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-        </div>
-      </TabsContent>
-    </Tabs>
-  </div>
+    </div>
   );
 }

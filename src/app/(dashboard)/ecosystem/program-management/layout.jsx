@@ -55,7 +55,7 @@ function ProgramManagementLayoutInner({ children }) {
     }
   };
 
-  // Check Session & Approval Status (Matching Storage & Logistics)
+  // Check Session & Approval Status on mount and 30s interval
   useEffect(() => {
     const checkSession = async () => {
       if (typeof navigator !== "undefined" && !navigator.onLine) {
@@ -83,36 +83,9 @@ function ProgramManagementLayoutInner({ children }) {
         setSessionData(session);
         const approved = session?.approval_status === "approved";
         setIsApproved(approved);
-        setIsLoadingSession(false);
-
-        const roleStr = (session?.role || "").toLowerCase();
-        const isSuperv = roleStr.includes("supervisor");
-
-        // Block Cluster Supervisors from Programme Monitoring (strictly reserved for Program Directors)
-        if (isSuperv && pathname.startsWith("/ecosystem/program-management/monitoring")) {
-          toast.error("Access restricted: Programme Monitoring is reserved for Program Directors.");
-          router.replace("/ecosystem/program-management");
-          return;
-        }
-
-        // Block restricted operational sub-routes if unapproved
-        const operationalRestrictedRoutes = [
-          "/ecosystem/program-management/clusters",
-          "/ecosystem/program-management/programs",
-          "/ecosystem/program-management/monitoring",
-          "/ecosystem/program-management/approvals",
-          "/ecosystem/program-management/loop",
-          "/ecosystem/program-management/harvest",
-          "/ecosystem/program-management/wallet",
-        ];
-
-        if (!approved && operationalRestrictedRoutes.some((r) => pathname === r || pathname.startsWith(r + "/"))) {
-          toast.warning("🔒 Program Operations Locked: Your account is pending SuperAdmin approval.");
-          router.replace("/ecosystem/program-management");
-          return;
-        }
       } catch (e) {
         console.warn("Session check in program management layout:", e?.message);
+      } finally {
         setIsLoadingSession(false);
       }
     };
@@ -120,14 +93,165 @@ function ProgramManagementLayoutInner({ children }) {
     checkSession();
     const interval = setInterval(checkSession, 30000);
     return () => clearInterval(interval);
-  }, [pathname, router]);
+  }, []);
+
+  // Instant in-memory route boundary & permission guard based on active session
+  useEffect(() => {
+    if (!sessionData) return;
+
+    const roleStr = (sessionData?.role || "").toLowerCase();
+    const isSuperv = roleStr.includes("supervisor");
+    const isDir = roleStr.includes("director") || (!isSuperv && (roleStr === "program director" || roleStr === "director"));
+    const approved = sessionData?.approval_status === "approved";
+
+    // 1. Role boundaries
+    // Cluster Supervisors cannot access Director governance areas
+    const directorOnlyRoutes = [
+      "/ecosystem/program-management/monitoring",
+      "/ecosystem/program-management/approvals",
+      "/ecosystem/program-management/loop",
+      "/ecosystem/program-management/harvest",
+    ];
+    if (isSuperv && directorOnlyRoutes.some((r) => pathname === r || pathname.startsWith(r + "/"))) {
+      toast.error("Access restricted: Programme Monitoring and Directorate governance are reserved for Program Directors.");
+      router.replace("/ecosystem/program-management");
+      return;
+    }
+
+    // Program Directors do not manage field clusters directly (field supervisors do)
+    if (isDir && (pathname === "/ecosystem/program-management/clusters" || pathname.startsWith("/ecosystem/program-management/clusters/"))) {
+      toast.info("Cluster operations are managed by field Cluster Supervisors. Redirecting to your assigned programs.");
+      router.replace("/ecosystem/program-management/programs");
+      return;
+    }
+
+    // 2. Unapproved account restrictions
+    if (!approved) {
+      if (isSuperv) {
+        const supervisorOperationalRoutes = [
+          "/ecosystem/program-management/clusters",
+          "/ecosystem/program-management/programs",
+          "/ecosystem/program-management/wallet",
+        ];
+        if (supervisorOperationalRoutes.some((r) => pathname === r || pathname.startsWith(r + "/"))) {
+          toast.warning("🔒 Supervisor Operations Locked: Your account is pending SuperAdmin approval.");
+          router.replace("/ecosystem/program-management");
+          return;
+        }
+      } else if (isDir) {
+        const directorOperationalRoutes = [
+          "/ecosystem/program-management/programs",
+          "/ecosystem/program-management/monitoring",
+          "/ecosystem/program-management/approvals",
+          "/ecosystem/program-management/loop",
+          "/ecosystem/program-management/harvest",
+          "/ecosystem/program-management/wallet",
+        ];
+        if (directorOperationalRoutes.some((r) => pathname === r || pathname.startsWith(r + "/"))) {
+          toast.warning("🔒 Program Directorate Locked: Your account is pending SuperAdmin approval.");
+          router.replace("/ecosystem/program-management");
+          return;
+        }
+      }
+    }
+  }, [pathname, sessionData, router]);
 
   // If on onboarding route, render cleanly full width (matching storage & logistics)
   if (pathname?.includes("/onboarding")) {
     return <div className="min-h-screen bg-(--background)">{children}</div>;
   }
 
-  const navMenu = [
+  const userRole = (sessionData?.role || "").toLowerCase();
+  const isSupervisor = userRole.includes("supervisor");
+  const isDirector = userRole.includes("director") || (!isSupervisor && (userRole === "program director" || userRole === "director"));
+  const isAdmin = userRole === "super admin" || userRole === "admin";
+
+  // Dedicated navigation menus tailored strictly by role
+  const directorNavMenu = [
+    {
+      label: "Overview",
+      href: "/ecosystem/program-management",
+      icon: <LayoutDashboard className="w-4 h-4" />,
+      restricted: false,
+    },
+    {
+      label: "Ecosystem Programs",
+      href: "/ecosystem/program-management/programs",
+      icon: <Briefcase className="w-4 h-4" />,
+      restricted: true,
+    },
+    {
+      label: "Programme Monitoring",
+      href: "/ecosystem/program-management/monitoring",
+      icon: <Layers className="w-4 h-4" />,
+      restricted: true,
+    },
+    {
+      label: "Pending Approvals",
+      href: "/ecosystem/program-management/approvals",
+      icon: <Network className="w-4 h-4" />,
+      restricted: true,
+    },
+    {
+      label: "Full Loop",
+      href: "/ecosystem/program-management/loop",
+      icon: <BarChart3 className="w-4 h-4" />,
+      restricted: true,
+    },
+    {
+      label: "Harvest & Operations",
+      href: "/ecosystem/program-management/harvest",
+      icon: <Package className="w-4 h-4" />,
+      restricted: true,
+    },
+    {
+      label: "My Wallet",
+      href: "/ecosystem/program-management/wallet",
+      icon: <Wallet className="w-4 h-4" />,
+      restricted: true,
+    },
+    {
+      label: "Settings",
+      href: "/ecosystem/program-management/settings",
+      icon: <Settings className="w-4 h-4" />,
+      restricted: false,
+    },
+  ];
+
+  const supervisorNavMenu = [
+    {
+      label: "Overview",
+      href: "/ecosystem/program-management",
+      icon: <LayoutDashboard className="w-4 h-4" />,
+      restricted: false,
+    },
+    {
+      label: "Cluster Operations",
+      href: "/ecosystem/program-management/clusters",
+      icon: <Users className="w-4 h-4" />,
+      restricted: true,
+    },
+    {
+      label: "Ecosystem Programs",
+      href: "/ecosystem/program-management/programs",
+      icon: <Briefcase className="w-4 h-4" />,
+      restricted: true,
+    },
+    {
+      label: "My Wallet",
+      href: "/ecosystem/program-management/wallet",
+      icon: <Wallet className="w-4 h-4" />,
+      restricted: true,
+    },
+    {
+      label: "Settings",
+      href: "/ecosystem/program-management/settings",
+      icon: <Settings className="w-4 h-4" />,
+      restricted: false,
+    },
+  ];
+
+  const fullAdminNavMenu = [
     {
       label: "Overview",
       href: "/ecosystem/program-management",
@@ -184,15 +308,12 @@ function ProgramManagementLayoutInner({ children }) {
     },
   ];
 
-  const userRole = (sessionData?.role || "").toLowerCase();
-  const isSupervisorRole = userRole.includes("supervisor");
-  const visibleNavMenu = navMenu.filter((item) => {
-    if (item.href === "/ecosystem/program-management/monitoring") {
-      return !isSupervisorRole;
-    }
-    return true;
-  });
-  const isSupervisor = userRole.includes("supervisor");
+  const visibleNavMenu = isAdmin
+    ? fullAdminNavMenu
+    : isSupervisor
+    ? supervisorNavMenu
+    : directorNavMenu;
+
   const isPendingKyc =
     (!sessionData?.onboarding_status ||
       sessionData.onboarding_status === "pending" ||
@@ -234,7 +355,9 @@ function ProgramManagementLayoutInner({ children }) {
             <nav className="flex flex-col space-y-1.5">
               {visibleNavMenu.map((item) => {
                 const isLocked = item.restricted && !isApproved;
-                const isActive = (optimisticPath === item.href) || (item.href !== "/ecosystem/program-management" && optimisticPath.startsWith(item.href));
+                const isActive = item.href === "/ecosystem/program-management"
+                  ? (optimisticPath === "/ecosystem/program-management" || optimisticPath === "/ecosystem/program-management/")
+                  : (optimisticPath === item.href || optimisticPath.startsWith(item.href + "/") || optimisticPath.startsWith(item.href + "?"));
 
                 if (isLocked) {
                   return (
@@ -262,9 +385,16 @@ function ProgramManagementLayoutInner({ children }) {
                   <Link
                     key={item.href}
                     href={item.href}
+                    prefetch={true}
                     onClick={() => {
                       setOptimisticPath(item.href);
                       setMenuOpen(false);
+                    }}
+                    onMouseEnter={() => {
+                      if (item.href) try { router.prefetch(item.href); } catch {}
+                    }}
+                    onFocus={() => {
+                      if (item.href) try { router.prefetch(item.href); } catch {}
                     }}
                     className={`flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-xs transition-colors duration-75 group ${
                       isActive
@@ -329,9 +459,12 @@ function ProgramManagementLayoutInner({ children }) {
         <EcosystemHeader
           title={portalTitle}
           portalName={portalName}
-          role={userRole || "cluster supervisor"}
+          role={userRole || (isSupervisor ? "cluster supervisor" : "program director")}
           onMenuToggle={handleMenuClick}
         />
+        {optimisticPath && optimisticPath !== pathname && (
+          <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-500 animate-pulse" />
+        )}
         <main className="w-full flex-1 lg:p-8 p-4 bg-gray-50 dark:bg-(--background)">
           {children}
         </main>
