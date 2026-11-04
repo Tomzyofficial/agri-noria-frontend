@@ -111,6 +111,23 @@ export function NotificationProvider({ children, role: initialRole = null, userI
 
     // Listen for incoming targeted notification
     socket.on("new_notification", (notif) => {
+      // Guard: If targeted to a specific recipient, ensure it matches the active user
+      if (notif?.recipient_id && activeUserId && String(notif.recipient_id) !== String(activeUserId)) {
+        return; // Meant for another recipient, do not alert or add
+      }
+
+      // Guard: If targeted to a specific role, ensure it matches current role or admin
+      const myRole = (activeRole || "").toLowerCase().replace(/\s+/g, "_");
+      const notifRole = (notif?.recipient_role || "").toLowerCase().replace(/\s+/g, "_");
+      if (notifRole && notifRole !== "all") {
+        const isSuper = ["super_admin", "admin"].includes(myRole);
+        const targetSuper = ["super_admin", "admin"].includes(notifRole);
+        if (targetSuper && !isSuper) return;
+        if (!targetSuper && notifRole !== myRole && (!notif?.recipient_id || String(notif.recipient_id) !== String(activeUserId))) {
+          return;
+        }
+      }
+
       setNotifications((prev) => [notif, ...prev.filter((n) => n.id !== notif.id)]);
       setUnreadCount((prev) => prev + 1);
       setLastEvent({ type: "new_notification", data: notif, timestamp: Date.now() });

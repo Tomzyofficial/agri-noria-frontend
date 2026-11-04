@@ -17,6 +17,7 @@ import {
   Lock,
   AlertTriangle,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
@@ -40,6 +41,16 @@ function ProgramManagementLayoutInner({ children }) {
     setOptimisticPath(pathname);
     setMenuOpen(false);
   }, [pathname]);
+
+  // Reset optimistic path if navigation stalls or is aborted
+  useEffect(() => {
+    if (optimisticPath !== pathname) {
+      const timer = setTimeout(() => {
+        setOptimisticPath(pathname);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [optimisticPath, pathname]);
 
   const handleSignout = async () => {
     try {
@@ -314,6 +325,18 @@ function ProgramManagementLayoutInner({ children }) {
     ? supervisorNavMenu
     : directorNavMenu;
 
+  const targetMenuItem = visibleNavMenu.find((m) => m.href === optimisticPath);
+  const isNavigating = Boolean(optimisticPath && optimisticPath !== pathname);
+
+  // Warm / prefetch visible navigation routes on mount
+  useEffect(() => {
+    visibleNavMenu.forEach((item) => {
+      if (item.href && !item.restricted) {
+        try { router.prefetch(item.href); } catch {}
+      }
+    });
+  }, [visibleNavMenu, router]);
+
   const isPendingKyc =
     (!sessionData?.onboarding_status ||
       sessionData.onboarding_status === "pending" ||
@@ -408,7 +431,13 @@ function ProgramManagementLayoutInner({ children }) {
                       </div>
                       <span>{item.label}</span>
                     </div>
-                    {isActive && <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />}
+                    {isActive && (
+                      isNavigating ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-white shrink-0" />
+                      ) : (
+                        <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
+                      )
+                    )}
                   </Link>
                 );
               })}
@@ -466,7 +495,23 @@ function ProgramManagementLayoutInner({ children }) {
           <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-500 animate-pulse" />
         )}
         <main className="w-full flex-1 lg:p-8 p-4 bg-gray-50 dark:bg-(--background)">
-          {children}
+          {isNavigating ? (
+            <div className="min-h-[500px] flex flex-col items-center justify-center p-8 gap-3 font-sans animate-in fade-in duration-100">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60 flex items-center justify-center shadow-xs">
+                <Loader2 className="w-6 h-6 text-amber-600 animate-spin" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest">
+                  Opening {targetMenuItem?.label || "Section"}...
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-gray-400 font-medium mt-1">
+                  Synchronizing records, rules & operations...
+                </p>
+              </div>
+            </div>
+          ) : (
+            children
+          )}
         </main>
         <NotificationDrawer />
       </div>
@@ -476,7 +521,7 @@ function ProgramManagementLayoutInner({ children }) {
 
 export default function ProgramManagementLayout({ children }) {
   return (
-    <NotificationProvider role="program_director">
+    <NotificationProvider>
       <ProgramManagementLayoutInner>{children}</ProgramManagementLayoutInner>
     </NotificationProvider>
   );
