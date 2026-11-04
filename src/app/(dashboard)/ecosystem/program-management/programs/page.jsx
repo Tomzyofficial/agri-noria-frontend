@@ -3,18 +3,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { 
    Briefcase, Globe, Users, CheckCircle2, DollarSign, Package, X, Plus, Check, Loader2,
    Sliders, Settings, MapPin, Target, ShieldCheck, FileText, AlertTriangle, Layers,
-   Rocket, PauseCircle, Eye, EyeOff, Clock, AlertCircle, CalendarPlus, Calendar, Sparkles
+   Rocket, PauseCircle, Eye, EyeOff, Clock, AlertCircle, CalendarPlus, Calendar, Sparkles, Trash2
 } from "lucide-react";
 import { useProgramData } from "../useProgramData";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "react-toastify";
 
+export const DEFAULT_FINANCING_INPUTS = [
+   { id: "Mechanical",  name: "Mechanical",  ratePerHa: 150000, icon: "🚜", description: "Land preparation & machinery",  unit: "per hectare", enabled: true },
+   { id: "Seeds",       name: "Seeds",       ratePerHa: 45000,  icon: "🌱", description: "High-yield improved variety",    unit: "per hectare", enabled: true },
+   { id: "Fertilizer",  name: "Fertilizer",  ratePerHa: 65000,  icon: "🧪", description: "NPK and specialized blends",    unit: "per hectare", enabled: true },
+   { id: "Irrigations", name: "Irrigations", ratePerHa: 120000, icon: "💧", description: "Water management systems",      unit: "per hectare", enabled: true },
+   { id: "Pesticides",  name: "Pesticides",  ratePerHa: 35000,  icon: "🧴", description: "Crop protection chemicals",     unit: "per hectare", enabled: true },
+   { id: "Herbicides",  name: "Herbicides",  ratePerHa: 25000,  icon: "🌿", description: "Weed control solutions",        unit: "per hectare", enabled: true },
+];
+
 export default function EcosystemProgramsPage() {
    const { loading, programs, currentUserId, userRole, clusters, fetchData } = useProgramData();
    const isSupervisor = (userRole || "").toLowerCase().includes("supervisor");
    const isDirector = (userRole || "").toLowerCase().includes("director") || (!isSupervisor && ((userRole || "").toLowerCase() === "program director" || (userRole || "").toLowerCase() === "director"));
    const [enrollingId, setEnrollingId] = useState(null);
+   const [confirmingEnrollProgram, setConfirmingEnrollProgram] = useState(null);
    const [isTogglingStatus, setIsTogglingStatus] = useState(null);
 
    // Program Season Extension Modal state
@@ -153,6 +163,7 @@ export default function EcosystemProgramsPage() {
          max_credit_per_ha: "350000",
          interest_fee_pct: "5",
          repayment_tenor_months: "6",
+         eligible_inputs: DEFAULT_FINANCING_INPUTS,
       },
       operational_targets: {
          target_farmers: "500",
@@ -200,6 +211,9 @@ export default function EcosystemProgramsPage() {
             max_credit_per_ha: cfg.financing?.max_credit_per_ha || "350000",
             interest_fee_pct: cfg.financing?.interest_fee_pct || "5",
             repayment_tenor_months: cfg.financing?.repayment_tenor_months || "6",
+            eligible_inputs: (Array.isArray(cfg.financing?.eligible_inputs) && cfg.financing.eligible_inputs.length > 0)
+               ? cfg.financing.eligible_inputs
+               : DEFAULT_FINANCING_INPUTS,
          },
          operational_targets: {
             target_farmers: cfg.operational_targets?.target_farmers || prog.target_farmers || "500",
@@ -216,6 +230,70 @@ export default function EcosystemProgramsPage() {
             timeline_description: cfg.repayment?.timeline_description || "Deduction at harvest aggregation and warehouse intake",
             default_penalty_pct: cfg.repayment?.default_penalty_pct || "2",
          }
+      });
+   };
+
+   // Handlers for Input Packages & Pricing Catalog inside Program Rules
+   const handleToggleInput = (index) => {
+      const inputs = [...(configForm.financing.eligible_inputs || DEFAULT_FINANCING_INPUTS)];
+      inputs[index] = { ...inputs[index], enabled: !inputs[index].enabled };
+      setConfigForm({
+         ...configForm,
+         financing: { ...configForm.financing, eligible_inputs: inputs }
+      });
+   };
+
+   const handleUpdateInputPrice = (index, newPrice) => {
+      const inputs = [...(configForm.financing.eligible_inputs || DEFAULT_FINANCING_INPUTS)];
+      inputs[index] = { ...inputs[index], ratePerHa: Math.max(0, parseFloat(newPrice) || 0) };
+      setConfigForm({
+         ...configForm,
+         financing: { ...configForm.financing, eligible_inputs: inputs }
+      });
+   };
+
+   const handleUpdateInputName = (index, newName) => {
+      const inputs = [...(configForm.financing.eligible_inputs || DEFAULT_FINANCING_INPUTS)];
+      inputs[index] = { ...inputs[index], name: newName, id: newName };
+      setConfigForm({
+         ...configForm,
+         financing: { ...configForm.financing, eligible_inputs: inputs }
+      });
+   };
+
+   const handleUpdateInputDesc = (index, newDesc) => {
+      const inputs = [...(configForm.financing.eligible_inputs || DEFAULT_FINANCING_INPUTS)];
+      inputs[index] = { ...inputs[index], description: newDesc };
+      setConfigForm({
+         ...configForm,
+         financing: { ...configForm.financing, eligible_inputs: inputs }
+      });
+   };
+
+   const handleAddCustomInput = () => {
+      const current = configForm.financing.eligible_inputs || DEFAULT_FINANCING_INPUTS;
+      const customItem = {
+         id: `Input_${Date.now()}`,
+         name: "Specialized Agro-Input",
+         ratePerHa: 50000,
+         icon: "📦",
+         description: "Custom agronomic support package",
+         unit: "per hectare",
+         enabled: true,
+         isCustom: true
+      };
+      setConfigForm({
+         ...configForm,
+         financing: { ...configForm.financing, eligible_inputs: [...current, customItem] }
+      });
+   };
+
+   const handleRemoveCustomInput = (index) => {
+      const current = [...(configForm.financing.eligible_inputs || DEFAULT_FINANCING_INPUTS)];
+      current.splice(index, 1);
+      setConfigForm({
+         ...configForm,
+         financing: { ...configForm.financing, eligible_inputs: current }
       });
    };
 
@@ -331,6 +409,7 @@ export default function EcosystemProgramsPage() {
          const data = await res.json();
          if (res.ok && data.success) {
             toast.success("Cluster enrollment submitted! Awaiting Program Director approval.");
+            setConfirmingEnrollProgram(null);
             fetchData();
          } else {
             toast.error(data.error || "Failed to enroll cluster");
@@ -664,7 +743,17 @@ export default function EcosystemProgramsPage() {
                                        </button>
                                     ) : (
                                        <button 
-                                          onClick={() => handleEnrollCluster(prog.id)}
+                                          onClick={() => {
+                                             if (!activeCluster) {
+                                                toast.error("No active cluster found to enroll in this program.");
+                                                return;
+                                             }
+                                             if (activeCluster.program_id) {
+                                                toast.warning("This cluster is already associated with another program.");
+                                                return;
+                                             }
+                                             setConfirmingEnrollProgram(prog);
+                                          }}
                                           disabled={enrollingId === prog.id || !canEnroll}
                                           className="py-2.5 px-6 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-md shadow-emerald-500/20 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
                                        >
@@ -1042,6 +1131,110 @@ export default function EcosystemProgramsPage() {
                                  />
                               </div>
                            </div>
+
+                           {/* Dynamic Eligible Inputs & Pricing Catalog Configuration */}
+                           <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                 <div>
+                                    <h4 className="text-xs font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest flex items-center gap-1.5">
+                                       <Package className="w-4 h-4" /> Eligible Inputs & Pricing Catalog (₦/Ha)
+                                    </h4>
+                                    <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">
+                                       Configure which inputs are available for cluster & farmer financing, and set custom rates per hectare.
+                                    </p>
+                                 </div>
+                                 <button
+                                    type="button"
+                                    onClick={handleAddCustomInput}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 border border-amber-300 dark:border-amber-800 transition cursor-pointer self-start sm:self-auto"
+                                 >
+                                    <Plus className="w-3.5 h-3.5" /> Add Custom Input
+                                 </button>
+                              </div>
+
+                              <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
+                                 {(configForm.financing.eligible_inputs || DEFAULT_FINANCING_INPUTS).map((item, idx) => (
+                                    <div 
+                                       key={item.id || idx}
+                                       className={`p-3.5 rounded-2xl border transition-all ${
+                                          item.enabled !== false
+                                             ? "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-2xs"
+                                             : "bg-gray-50/70 dark:bg-gray-950/60 border-dashed border-gray-200 dark:border-gray-800 opacity-60"
+                                       }`}
+                                    >
+                                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                          {/* Left: Enable Toggle + Icon + Title */}
+                                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                                             <button
+                                                type="button"
+                                                onClick={() => handleToggleInput(idx)}
+                                                className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors cursor-pointer shrink-0 ${
+                                                   item.enabled !== false
+                                                      ? "bg-emerald-600 border-emerald-600 text-white"
+                                                      : "bg-transparent border-gray-300 dark:border-gray-700"
+                                                }`}
+                                                title={item.enabled !== false ? "Input enabled" : "Input disabled"}
+                                             >
+                                                {item.enabled !== false && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                                             </button>
+
+                                             <span className="text-xl shrink-0">{item.icon || "📦"}</span>
+
+                                             <div className="flex-1 min-w-0">
+                                                {item.isCustom ? (
+                                                   <input
+                                                      type="text"
+                                                      value={item.name}
+                                                      onChange={(e) => handleUpdateInputName(idx, e.target.value)}
+                                                      className="w-full font-bold text-xs bg-transparent border-b border-gray-300 dark:border-gray-700 pb-0.5 outline-none focus:border-amber-500"
+                                                      placeholder="Input Name"
+                                                   />
+                                                ) : (
+                                                   <p className="font-black text-xs text-gray-900 dark:text-gray-100 truncate">
+                                                      {item.name || item.id}
+                                                   </p>
+                                                )}
+                                                <input
+                                                   type="text"
+                                                   value={item.description || ""}
+                                                   onChange={(e) => handleUpdateInputDesc(idx, e.target.value)}
+                                                   className="w-full text-[11px] text-gray-500 bg-transparent border-none p-0 outline-none mt-0.5"
+                                                   placeholder="Short description..."
+                                                />
+                                             </div>
+                                          </div>
+
+                                          {/* Right: Rate Per Hectare + Custom Delete */}
+                                          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                                             <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-950 px-2.5 py-1.5 rounded-xl border border-gray-200 dark:border-gray-800">
+                                                <span className="text-xs font-black text-amber-600">₦</span>
+                                                <input
+                                                   type="number"
+                                                   min="0"
+                                                   step="1000"
+                                                   value={item.ratePerHa || 0}
+                                                   onChange={(e) => handleUpdateInputPrice(idx, e.target.value)}
+                                                   className="w-24 font-black text-xs bg-transparent border-none outline-none text-right"
+                                                />
+                                                <span className="text-[10px] text-gray-400 font-bold">/ Ha</span>
+                                             </div>
+
+                                             {item.isCustom && (
+                                                <button
+                                                   type="button"
+                                                   onClick={() => handleRemoveCustomInput(idx)}
+                                                   className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-lg transition"
+                                                   title="Remove custom input"
+                                                >
+                                                   <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                             )}
+                                          </div>
+                                       </div>
+                                    </div>
+                                 ))}
+                              </div>
+                           </div>
                         </div>
                      )}
 
@@ -1367,6 +1560,127 @@ export default function EcosystemProgramsPage() {
                         </button>
                      </div>
                   </form>
+               </div>
+            </div>
+         )}
+
+         {/* Cluster Enrollment Confirmation Modal */}
+         {confirmingEnrollProgram && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+               <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800">
+                  {/* Modal Header */}
+                  <div className="p-6 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex justify-between items-center">
+                     <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-2xl bg-white/20 text-white">
+                           <ShieldCheck className="w-6 h-6" />
+                        </div>
+                        <div>
+                           <h3 className="text-xl font-black">Confirm Cluster Enrollment</h3>
+                           <p className="text-xs text-emerald-100 font-medium mt-0.5">Formal application to Program Directorate</p>
+                        </div>
+                     </div>
+                     <button 
+                        onClick={() => !enrollingId && setConfirmingEnrollProgram(null)} 
+                        disabled={enrollingId === confirmingEnrollProgram.id}
+                        className="text-white hover:bg-white/20 h-9 w-9 p-0 rounded-full flex items-center justify-center cursor-pointer transition disabled:opacity-50"
+                     >
+                        <X size={18} />
+                     </button>
+                  </div>
+
+                  <div className="p-6 space-y-5">
+                     {/* Target Program Card */}
+                     <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800 space-y-3">
+                        <div className="flex items-center justify-between">
+                           <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Target Program</span>
+                           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                              Active Season
+                           </span>
+                        </div>
+                        <h4 className="text-lg font-black text-(--foreground)">{confirmingEnrollProgram.name}</h4>
+                        
+                        <div className="grid grid-cols-2 gap-3 pt-1 text-xs">
+                           <div>
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Region & Crop</p>
+                              <p className="font-bold text-gray-800 dark:text-gray-200 mt-0.5">{confirmingEnrollProgram.region} • {confirmingEnrollProgram.commodity}</p>
+                           </div>
+                           <div>
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Program Director</p>
+                              <p className="font-bold text-gray-800 dark:text-gray-200 mt-0.5">{confirmingEnrollProgram.director_name || "Appointed Director"}</p>
+                           </div>
+                           <div>
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Target Reach</p>
+                              <p className="font-bold text-gray-800 dark:text-gray-200 mt-0.5">
+                                 {confirmingEnrollProgram.target_farmers ? `${parseInt(confirmingEnrollProgram.target_farmers).toLocaleString()} Farmers` : "Open"} ({confirmingEnrollProgram.target_hectares ? `${parseFloat(confirmingEnrollProgram.target_hectares).toLocaleString()} Ha` : "Flexible"})
+                              </p>
+                           </div>
+                           <div>
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Season Schedule</p>
+                              <p className="font-bold text-gray-800 dark:text-gray-200 mt-0.5">
+                                 {confirmingEnrollProgram.start_date ? new Date(confirmingEnrollProgram.start_date).toLocaleDateString("en-GB", { month: "short", year: "numeric" }) : "Immediate"}
+                                 {" — "}
+                                 {confirmingEnrollProgram.end_date ? new Date(confirmingEnrollProgram.end_date).toLocaleDateString("en-GB", { month: "short", year: "numeric" }) : "Ongoing"}
+                              </p>
+                           </div>
+                        </div>
+                     </div>
+
+                     {/* Enrolling Cluster Details */}
+                     {activeCluster && (
+                        <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-800/50">
+                           <div className="flex items-center gap-2 mb-2">
+                              <Users size={16} className="text-emerald-600 dark:text-emerald-400" />
+                              <p className="text-[11px] font-black uppercase tracking-wider text-emerald-900 dark:text-emerald-200">Enrolling Cluster</p>
+                           </div>
+                           <div className="flex justify-between items-center text-xs">
+                              <div>
+                                 <p className="font-black text-sm text-(--foreground)">{activeCluster.name}</p>
+                                 <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">{activeCluster.region || "Operational Hub"}</p>
+                              </div>
+                              <div className="text-right">
+                                 <p className="font-black text-sm text-emerald-700 dark:text-emerald-300">{parseFloat(activeCluster.total_hectares || 0).toLocaleString()} Ha</p>
+                                 <p className="text-[10px] font-bold text-gray-400">Total Farmland Area</p>
+                              </div>
+                           </div>
+                        </div>
+                     )}
+
+                     {/* Terms and Explanation Alert */}
+                     <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/50 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
+                        <AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                        <p className="text-[11px] leading-relaxed">
+                           By confirming, this cluster's enrollment request will be submitted to Program Director <strong>{confirmingEnrollProgram.director_name || "Peter Parker"}</strong> for review. Once verified, eligible farmers in your cluster can receive program inputs and offtake guarantees.
+                        </p>
+                     </div>
+
+                     {/* Action Buttons */}
+                     <div className="pt-2 flex gap-3">
+                        <button
+                           type="button"
+                           onClick={() => setConfirmingEnrollProgram(null)}
+                           disabled={enrollingId === confirmingEnrollProgram.id}
+                           className="px-5 h-12 rounded-2xl font-bold border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800 text-xs uppercase tracking-wider cursor-pointer transition disabled:opacity-50"
+                        >
+                           Cancel
+                        </button>
+                        <button
+                           type="button"
+                           onClick={() => handleEnrollCluster(confirmingEnrollProgram.id)}
+                           disabled={enrollingId === confirmingEnrollProgram.id}
+                           className="flex-1 h-12 rounded-2xl font-black bg-emerald-600 hover:bg-emerald-700 text-white text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer transition active:scale-98 disabled:opacity-50"
+                        >
+                           {enrollingId === confirmingEnrollProgram.id ? (
+                              <>
+                                 <Loader2 className="w-4 h-4 animate-spin" /> Submitting Request...
+                              </>
+                           ) : (
+                              <>
+                                 <CheckCircle2 className="w-4 h-4" /> Confirm & Submit Enrollment
+                              </>
+                           )}
+                        </button>
+                     </div>
+                  </div>
                </div>
             </div>
          )}

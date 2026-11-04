@@ -33,24 +33,26 @@ function ProgramManagementLayoutInner({ children }) {
   const [isLoadingSession, setIsLoadingSession] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
-  const [optimisticPath, setOptimisticPath] = useState(pathname);
+  const [activeMenuHref, setActiveMenuHref] = useState(pathname);
+  const [navigatingHref, setNavigatingHref] = useState(null);
 
   const handleMenuClick = () => setMenuOpen((open) => !open);
 
   useEffect(() => {
-    setOptimisticPath(pathname);
+    setActiveMenuHref(pathname);
+    setNavigatingHref(null);
     setMenuOpen(false);
   }, [pathname]);
 
-  // Reset optimistic path if navigation stalls or is aborted
+  // Timeout guard to clear navigating indicator if navigation fails or is aborted
   useEffect(() => {
-    if (optimisticPath !== pathname) {
+    if (navigatingHref) {
       const timer = setTimeout(() => {
-        setOptimisticPath(pathname);
-      }, 10000);
+        setNavigatingHref(null);
+      }, 6000);
       return () => clearTimeout(timer);
     }
-  }, [optimisticPath, pathname]);
+  }, [navigatingHref]);
 
   const handleSignout = async () => {
     try {
@@ -325,13 +327,12 @@ function ProgramManagementLayoutInner({ children }) {
     ? supervisorNavMenu
     : directorNavMenu;
 
-  const targetMenuItem = visibleNavMenu.find((m) => m.href === optimisticPath);
-  const isNavigating = Boolean(optimisticPath && optimisticPath !== pathname);
+  const isNavigating = Boolean(navigatingHref && navigatingHref !== pathname);
 
-  // Warm / prefetch visible navigation routes on mount
+  // Warm / prefetch all permitted visible navigation routes on mount
   useEffect(() => {
     visibleNavMenu.forEach((item) => {
-      if (item.href && !item.restricted) {
+      if (item.href) {
         try { router.prefetch(item.href); } catch {}
       }
     });
@@ -378,9 +379,11 @@ function ProgramManagementLayoutInner({ children }) {
             <nav className="flex flex-col space-y-1.5">
               {visibleNavMenu.map((item) => {
                 const isLocked = item.restricted && !isApproved;
+                const currentTarget = activeMenuHref || pathname;
                 const isActive = item.href === "/ecosystem/program-management"
-                  ? (optimisticPath === "/ecosystem/program-management" || optimisticPath === "/ecosystem/program-management/")
-                  : (optimisticPath === item.href || optimisticPath.startsWith(item.href + "/") || optimisticPath.startsWith(item.href + "?"));
+                  ? (currentTarget === "/ecosystem/program-management" || currentTarget === "/ecosystem/program-management/")
+                  : (currentTarget === item.href || currentTarget.startsWith(item.href + "/") || currentTarget.startsWith(item.href + "?"));
+                const isItemNavigating = navigatingHref === item.href;
 
                 if (isLocked) {
                   return (
@@ -410,8 +413,11 @@ function ProgramManagementLayoutInner({ children }) {
                     href={item.href}
                     prefetch={true}
                     onClick={() => {
-                      setOptimisticPath(item.href);
                       setMenuOpen(false);
+                      setActiveMenuHref(item.href);
+                      if (item.href !== pathname) {
+                        setNavigatingHref(item.href);
+                      }
                     }}
                     onMouseEnter={() => {
                       if (item.href) try { router.prefetch(item.href); } catch {}
@@ -431,13 +437,11 @@ function ProgramManagementLayoutInner({ children }) {
                       </div>
                       <span>{item.label}</span>
                     </div>
-                    {isActive && (
-                      isNavigating ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-white shrink-0" />
-                      ) : (
-                        <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
-                      )
-                    )}
+                    {isActive ? (
+                      <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
+                    ) : isItemNavigating ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600 shrink-0" />
+                    ) : null}
                   </Link>
                 );
               })}
@@ -491,27 +495,11 @@ function ProgramManagementLayoutInner({ children }) {
           role={userRole || (isSupervisor ? "cluster supervisor" : "program director")}
           onMenuToggle={handleMenuClick}
         />
-        {optimisticPath && optimisticPath !== pathname && (
+        {isNavigating && (
           <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-gradient-to-r from-amber-500 via-amber-600 to-yellow-500 animate-pulse" />
         )}
         <main className="w-full flex-1 lg:p-8 p-4 bg-gray-50 dark:bg-(--background)">
-          {isNavigating ? (
-            <div className="min-h-[500px] flex flex-col items-center justify-center p-8 gap-3 font-sans animate-in fade-in duration-100">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60 flex items-center justify-center shadow-xs">
-                <Loader2 className="w-6 h-6 text-amber-600 animate-spin" />
-              </div>
-              <div className="text-center">
-                <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest">
-                  Opening {targetMenuItem?.label || "Section"}...
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-gray-400 font-medium mt-1">
-                  Synchronizing records, rules & operations...
-                </p>
-              </div>
-            </div>
-          ) : (
-            children
-          )}
+          {children}
         </main>
         <NotificationDrawer />
       </div>

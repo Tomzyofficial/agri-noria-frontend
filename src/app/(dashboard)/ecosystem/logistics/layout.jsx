@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   LogOut,
+  Loader2,
   LayoutDashboard,
   Wallet,
   Settings,
@@ -28,14 +29,23 @@ function LogisticsLayoutInner({ children }) {
   const [isLoadingSession, setIsLoadingSession] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
-  const [optimisticPath, setOptimisticPath] = useState(pathname);
+  const [activeMenuHref, setActiveMenuHref] = useState(pathname);
+  const [navigatingHref, setNavigatingHref] = useState(null);
 
   const handleMenuClick = () => setMenuOpen((open) => !open);
 
   useEffect(() => {
-    setOptimisticPath(pathname);
+    setActiveMenuHref(pathname);
+    setNavigatingHref(null);
     setMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (navigatingHref) {
+      const timer = setTimeout(() => setNavigatingHref(null), 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [navigatingHref]);
 
   const handleSignout = async () => {
     try {
@@ -106,6 +116,14 @@ function LogisticsLayoutInner({ children }) {
   if (pathname?.includes("/onboarding")) {
     return <div className="min-h-screen bg-(--background)">{children}</div>;
   }
+
+  useEffect(() => {
+    navMenu.forEach((item) => {
+      if (item.href) {
+        try { router.prefetch(item.href); } catch {}
+      }
+    });
+  }, [navMenu, router]);
 
   const navMenu = [
     {
@@ -187,8 +205,9 @@ function LogisticsLayoutInner({ children }) {
               Fleet & Haulage Operations
             </div>
             {navMenu.map((item) => {
-              const activeTarget = optimisticPath || pathname;
-              const isActive = activeTarget === item.href;
+              const currentTarget = activeMenuHref || pathname;
+              const isActive = currentTarget === item.href || (item.href.length > 18 && currentTarget.startsWith(item.href));
+              const isItemNavigating = navigatingHref === item.href;
               const isLocked = !isApproved && item.restricted;
 
               if (isLocked) {
@@ -219,8 +238,11 @@ function LogisticsLayoutInner({ children }) {
                   href={item.href}
                   prefetch={true}
                   onClick={() => {
-                    setOptimisticPath(item.href);
                     setMenuOpen(false);
+                    setActiveMenuHref(item.href);
+                    if (item.href !== pathname) {
+                      setNavigatingHref(item.href);
+                    }
                   }}
                   className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition-colors duration-75 group ${
                     isActive
@@ -240,7 +262,11 @@ function LogisticsLayoutInner({ children }) {
                     </div>
                     <span>{item.label}</span>
                   </div>
-                  {isActive && <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />}
+                  {isActive ? (
+                    <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
+                  ) : isItemNavigating ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600 shrink-0" />
+                  ) : null}
                 </Link>
               );
             })}
@@ -331,19 +357,11 @@ function LogisticsLayoutInner({ children }) {
           </div>
         )}
 
+        {navigatingHref && navigatingHref !== pathname && (
+          <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-400 animate-pulse" />
+        )}
         <main className="flex-1 w-full lg:p-8 p-4">
-          {optimisticPath && optimisticPath !== pathname ? (
-            <div className="flex flex-col items-center justify-center min-h-[65vh] gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center">
-                <div className="w-5 h-5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-              </div>
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
-                Opening {navMenu.find((m) => m.href === optimisticPath)?.label || "Section"}...
-              </p>
-            </div>
-          ) : (
-            children
-          )}
+          {children}
         </main>
         <NotificationDrawer />
       </div>
