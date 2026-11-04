@@ -272,7 +272,7 @@ export default function EcosystemRoleOnboarding({
 
                <form onSubmit={handleSubmit} className="space-y-8">
                   {/* Section 1: Role-Specific Operational Profile */}
-                  {renderRoleFields && renderRoleFields({ formData, handleChange, handleFileUpload, uploadingField })}
+                  {renderRoleFields && renderRoleFields({ formData, handleChange, handleFileUpload, uploadingField, setFormData })}
 
                   {/* Section 2: Official Accreditation & Identity Documents */}
                   <div className="space-y-4">

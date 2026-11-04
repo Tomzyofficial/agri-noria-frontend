@@ -28,6 +28,7 @@ import {
   Sparkles,
   MapPin,
   Phone,
+  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
@@ -1214,6 +1215,8 @@ export default function FinanceApprovalsPage() {
             `${d.fname || ''} ${d.lname || ''}`.toLowerCase().includes(query) ||
             (d.company_name || '').toLowerCase().includes(query) ||
             (d.enterprise_name || '').toLowerCase().includes(query) ||
+            (d.email || '').toLowerCase().includes(query) ||
+            (d.phone || '').toLowerCase().includes(query) ||
             (d.location || d.address || '').toLowerCase().includes(query);
 
           if (!nameMatch) return false;
@@ -1403,15 +1406,33 @@ export default function FinanceApprovalsPage() {
                                   <h4 className="font-black text-sm text-slate-900 dark:text-white">
                                     {d.enterprise_name || d.company_name || `${d.fname} ${d.lname}`}
                                   </h4>
+                                  {d.fname && d.enterprise_name && d.enterprise_name !== `${d.fname} ${d.lname}` && (
+                                    <span className="text-[11px] font-bold text-slate-400">
+                                      • Lead: {d.fname} {d.lname}
+                                    </span>
+                                  )}
                                   <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                                     Verified Dealer
                                   </span>
                                 </div>
-                                <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                                  <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                                  <span>{d.location || d.address || "Warehouse Hub"}</span>
-                                  {d.phone && <span>• Tel: {d.phone}</span>}
-                                </p>
+                                <div className="flex items-center gap-2.5 flex-wrap text-[11px] mt-1">
+                                  {d.email && (
+                                    <span className="inline-flex items-center gap-1 font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md border border-blue-200/80 dark:border-blue-900/60 font-mono">
+                                      <Mail className="w-3 h-3 text-blue-500 shrink-0" />
+                                      {d.email}
+                                    </span>
+                                  )}
+                                  {d.phone && (
+                                    <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-300 font-semibold">
+                                      <Phone className="w-3 h-3 text-emerald-500 shrink-0" />
+                                      {d.phone}
+                                    </span>
+                                  )}
+                                  <span className="inline-flex items-center gap-1 text-slate-500">
+                                    <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                                    <span>{d.location || d.address || "Warehouse Hub"}</span>
+                                  </span>
+                                </div>
                               </div>
                             </div>
 
@@ -1477,9 +1498,15 @@ export default function FinanceApprovalsPage() {
               <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
                 <div className="text-xs text-slate-500 w-full sm:w-auto">
                   {selectedDistObj ? (
-                    <span className="font-bold text-slate-900 dark:text-white">
-                      Selected: {selectedDistObj.enterprise_name || selectedDistObj.fname} ({selectedDistObj.matchPct}% item match)
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap font-bold text-slate-900 dark:text-white">
+                      <span>Selected: <strong>{selectedDistObj.enterprise_name || selectedDistObj.fname}</strong></span>
+                      {selectedDistObj.email && (
+                        <span className="font-mono text-[11px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-1.5 py-0.5 rounded border border-blue-200 dark:border-blue-900">
+                          {selectedDistObj.email}
+                        </span>
+                      )}
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">• {selectedDistObj.matchPct}% item match</span>
+                    </div>
                   ) : (
                     <span className="italic text-slate-400">Click a distributor card to select</span>
                   )}
