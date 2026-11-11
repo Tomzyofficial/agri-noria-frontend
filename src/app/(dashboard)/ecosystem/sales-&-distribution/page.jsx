@@ -1,18 +1,26 @@
 "use client";
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+
+import { useEffect, useState, useMemo } from "react";
+import Link from "next/link";
 import {
   FaTruckMoving,
   FaBoxOpen,
-  FaRoute,
   FaCheckCircle,
-  FaUsers,
   FaShieldAlt,
   FaArrowRight,
+  FaWarehouse,
+  FaPlus,
+  FaSearch,
+  FaMapMarkerAlt,
+  FaCalendarAlt,
+  FaChevronRight,
+  FaCopy,
+  FaUser,
+  FaBoxes,
 } from "react-icons/fa";
+import { Clock, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/Button";
-import Link from "next/link";
 
 export default function SalesDistributionDashboard() {
   const [stats, setStats] = useState({
@@ -26,6 +34,10 @@ export default function SalesDistributionDashboard() {
   const [forwardContracts, setForwardContracts] = useState([]);
   const [distributors, setDistributors] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+
+  // Search & Filter state for Orders
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   // Modal management states
   const [showWarehouseModal, setShowWarehouseModal] = useState(false);
@@ -50,9 +62,78 @@ export default function SalesDistributionDashboard() {
   const [submittingWarehouse, setSubmittingWarehouse] = useState(false);
   const [submittingOrder, setSubmittingOrder] = useState(false);
 
+  const fetchStats = async () => {
+    try {
+      const res = await fetch("/api/proxy/pipeline/stats/sales");
+      const data = await res.json();
+      if (data.success) setStats(data.data);
+    } catch (error) {
+      console.error("Failed to fetch sales stats", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchForwardContracts = async () => {
+    try {
+      const res = await fetch("/api/proxy/pipeline/forward-contracts/sales");
+      const data = await res.json();
+      if (data.success) setForwardContracts(data.data || []);
+    } catch (e) {
+      console.error("Failed to fetch forward contracts", e);
+    }
+  };
+
+  const fetchEcosystemOrders = async () => {
+    setLoadingOrders(true);
+    try {
+      const [ordersRes, distRes] = await Promise.all([
+        fetch("/api/proxy/pipeline/buyer-orders/all"),
+        fetch("/api/proxy/pipeline/distributors"),
+      ]);
+      if (ordersRes.ok) {
+        const od = await ordersRes.json();
+        const validStatuses = [
+          "ready_for_sales",
+          "paid",
+          "assigned",
+          "processing",
+          "processed",
+          "in_progress",
+          "delivered",
+          "completed",
+        ];
+        const filteredOrders = (od.data || []).filter(
+          (o) =>
+            validStatuses.includes(o.status) ||
+            o.payment_status === "finance_confirmed"
+        );
+        setEcosystemOrders(filteredOrders);
+      }
+      if (distRes.ok) {
+        const dd = await distRes.json();
+        setDistributors(dd.data || []);
+      }
+    } catch (err) {
+      toast.error("Failed to fetch ecosystem orders");
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+    fetchEcosystemOrders();
+    fetchForwardContracts();
+  }, []);
+
   const handleWarehouseSubmit = async (e) => {
     e.preventDefault();
-    if (!warehouseForm.quantity || !warehouseForm.warehouse_name || !warehouseForm.price_per_unit) {
+    if (
+      !warehouseForm.quantity ||
+      !warehouseForm.warehouse_name ||
+      !warehouseForm.price_per_unit
+    ) {
       return toast.error("Please fill in all fields");
     }
     setSubmittingWarehouse(true);
@@ -73,10 +154,7 @@ export default function SalesDistributionDashboard() {
           price_per_unit: "",
           warehouse_name: "",
         });
-        // Refresh stats
-        const statsRes = await fetch("/api/proxy/pipeline/stats/sales");
-        const statsData = await statsRes.json();
-        if (statsData.success) setStats(statsData.data);
+        fetchStats();
       } else {
         toast.error(data.error || "Failed to record intake");
       }
@@ -129,7 +207,6 @@ export default function SalesDistributionDashboard() {
           price_per_unit: "",
           delivery_address: "",
         });
-        // Refresh ecosystem orders
         fetchEcosystemOrders();
       } else {
         toast.error(data.error || "Failed to create order");
@@ -138,60 +215,6 @@ export default function SalesDistributionDashboard() {
       toast.error("Network error");
     } finally {
       setSubmittingOrder(false);
-    }
-  };
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await fetch("/api/proxy/pipeline/stats/sales");
-        const data = await res.json();
-        if (data.success) setStats(data.data);
-      } catch (error) {
-        console.error("Failed to fetch sales stats", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStats();
-    fetchEcosystemOrders();
-    fetchForwardContracts();
-  }, []);
-
-  const fetchForwardContracts = async () => {
-    try {
-      const res = await fetch("/api/proxy/pipeline/forward-contracts/sales");
-      const data = await res.json();
-      if (data.success) setForwardContracts(data.data || []);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const fetchEcosystemOrders = async () => {
-    setLoadingOrders(true);
-    try {
-      const [ordersRes, distRes] = await Promise.all([
-        fetch("/api/proxy/pipeline/buyer-orders/all"),
-        fetch("/api/proxy/pipeline/distributors"),
-      ]);
-      if (ordersRes.ok) {
-        const od = await ordersRes.json();
-        const validStatuses = ['ready_for_sales', 'paid', 'assigned', 'processing', 'processed', 'in_progress', 'delivered', 'completed'];
-        const filteredOrders = (od.data || []).filter(o => 
-          validStatuses.includes(o.status) || 
-          o.payment_status === "finance_confirmed"
-        );
-        setEcosystemOrders(filteredOrders);
-      }
-      if (distRes.ok) {
-        const dd = await distRes.json();
-        setDistributors(dd.data || []);
-      }
-    } catch (err) {
-      toast.error("Failed to fetch ecosystem orders");
-    } finally {
-      setLoadingOrders(false);
     }
   };
 
@@ -207,14 +230,14 @@ export default function SalesDistributionDashboard() {
             order_id: orderId,
             distributor_id: distributorId,
           }),
-        },
+        }
       );
       const data = await res.json();
       if (res.ok) {
-        toast.success("Order assigned successfully");
+        toast.success("Distributor assigned successfully");
         fetchEcosystemOrders();
       } else {
-        toast.error(data.error || "Failed to assign");
+        toast.error(data.error || "Failed to assign distributor");
       }
     } catch (err) {
       toast.error("Network error");
@@ -223,11 +246,14 @@ export default function SalesDistributionDashboard() {
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      const res = await fetch(`/api/proxy/pipeline/buyer-orders/${orderId}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
+      const res = await fetch(
+        `/api/proxy/pipeline/buyer-orders/${orderId}/status`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
       const data = await res.json();
       if (res.ok) {
         toast.success(`Order status updated to ${newStatus}`);
@@ -240,318 +266,518 @@ export default function SalesDistributionDashboard() {
     }
   };
 
+  const copyOrderId = (id) => {
+    if (navigator?.clipboard) {
+      navigator.clipboard.writeText(id);
+      toast.info(`Copied #${id.slice(0, 8)} to clipboard`);
+    }
+  };
+
+  // Filtered orders
+  const filteredOrders = useMemo(() => {
+    return ecosystemOrders.filter((order) => {
+      const matchesSearch =
+        !searchQuery ||
+        (order.id && order.id.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (order.buyer_name &&
+          order.buyer_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (order.delivery_address &&
+          order.delivery_address
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()));
+
+      const matchesStatus =
+        statusFilter === "all"
+          ? true
+          : statusFilter === "paid"
+          ? order.status === "paid" || order.status === "ready_for_sales"
+          : statusFilter === "assigned"
+          ? order.status === "assigned" || !!order.distributor_id
+          : statusFilter === "processing"
+          ? order.status === "processing" || order.status === "in_progress"
+          : statusFilter === "delivered"
+          ? order.status === "delivered" || order.status === "completed"
+          : true;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [ecosystemOrders, searchQuery, statusFilter]);
+
   return (
-    <div className="space-y-10 max-w-7xl mx-auto py-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter">
-            Sales & <span className="text-blue-600">Distribution</span>
-          </h1>
-          <p className="text-gray-500 mt-2 font-medium text-lg">
-            Platform Logistics Hub & Order Fulfillment Center.
-          </p>
-        </div>
-        <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-6 py-3 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-800">
-          <div className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse" />
-          <span className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
-            Operational Node: Active
-          </span>
-        </div>
-      </div>
+    <div className="space-y-8 max-w-7xl mx-auto py-2 animate-in fade-in duration-300">
+      {/* Top Banner / Hero Header */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900/90 to-blue-950/40 border border-slate-800/80 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/3 -mb-20 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Interactive Sales Entry Action Buttons */}
-      <div className="flex flex-wrap items-center gap-4 bg-white dark:bg-gray-900 p-6 rounded-[2.5rem] shadow-xl border border-gray-50 dark:border-gray-800">
-        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mr-2">
-          Operational Actions:
-        </h4>
-        <Button
-          onClick={() => setShowWarehouseModal(true)}
-          className="bg-amber-600 hover:bg-amber-700 text-white font-black px-8 py-3.5 rounded-2xl shadow-lg hover:shadow-amber-500/20 transition-all uppercase tracking-widest text-[10px] flex items-center gap-2"
-        >
-          <FaBoxOpen size={14} /> Record Warehouse Intake
-        </Button>
-        <Button
-          onClick={() => setShowOrderModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-black px-8 py-3.5 rounded-2xl shadow-lg hover:shadow-blue-500/20 transition-all uppercase tracking-widest text-[10px] flex items-center gap-2"
-        >
-          <FaCheckCircle size={14} /> Place Direct Order
-        </Button>
-      </div>
-
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <StatCard
-          title="Active Shipments"
-          value={loading ? "..." : stats.activeShipments}
-          icon={<FaTruckMoving />}
-          color="text-blue-600"
-          bg="bg-blue-50"
-          link="/ecosystem/sales-&-distribution/shipments"
-        />
-        <StatCard
-          title="Warehouse Stock"
-          value={loading ? "..." : `${stats.warehouseStock || 0} T`}
-          icon={<FaBoxOpen />}
-          color="text-amber-600"
-          bg="bg-amber-50"
-          link="/ecosystem/sales-&-distribution/warehouse"
-        />
-        <StatCard
-          title="Fulfilled Orders"
-          value={loading ? "..." : stats.fulfilledOrders}
-          icon={<FaCheckCircle />}
-          color="text-emerald-600"
-          bg="bg-emerald-50"
-        />
-      </div>
-
-      {/* Primary Action Section: Ecosystem Orders */}
-      <div className="space-y-6">
-        <div className="flex justify-between items-end">
-          <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-              Ecosystem Orders
-            </h2>
-            <p className="text-sm text-gray-500 font-medium">
-              Fulfill buyer orders secured in platform escrow.
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+              Operational Fulfillment Node
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+              Sales & <span className="text-blue-400">Distribution</span> Hub
+            </h1>
+            <p className="text-slate-400 text-sm max-w-2xl leading-relaxed">
+              Platform logistics dispatch, physical warehouse silos, and buyer orders
+              secured in guaranteed escrow.
             </p>
           </div>
+
+          {/* Quick Action Buttons */}
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <Button
+              onClick={() => setShowWarehouseModal(true)}
+              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-5 py-3 rounded-2xl shadow-lg shadow-amber-500/20 transition-all text-xs flex items-center gap-2 uppercase tracking-wider"
+            >
+              <FaBoxOpen className="w-4 h-4" />
+              <span>Record Intake</span>
+            </Button>
+            <Button
+              onClick={() => setShowOrderModal(true)}
+              className="bg-blue-600 hover:bg-blue-500 text-white font-black px-5 py-3 rounded-2xl shadow-lg shadow-blue-600/25 transition-all text-xs flex items-center gap-2 uppercase tracking-wider"
+            >
+              <FaPlus className="w-3.5 h-3.5" />
+              <span>Direct Order</span>
+            </Button>
+            <Button
+              onClick={() => {
+                fetchStats();
+                fetchEcosystemOrders();
+                fetchForwardContracts();
+              }}
+              variant="ghost"
+              className="p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 border border-slate-700/80"
+              title="Refresh Data"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Key Metric Telemetry Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <ModernStatCard
+          title="Active Shipments"
+          value={loading ? "..." : stats.activeShipments}
+          badge="Live Logistics"
+          icon={<FaTruckMoving className="w-5 h-5" />}
+          gradient="from-blue-500/20 to-blue-600/5"
+          borderColor="border-blue-500/30"
+          iconBg="bg-blue-500/20 text-blue-400 border border-blue-500/30"
+          link="/ecosystem/sales-&-distribution/shipments"
+          subtitle="En route across regional delivery corridors"
+        />
+
+        <ModernStatCard
+          title="Warehouse Stock"
+          value={
+            loading
+              ? "..."
+              : `${Number(stats.warehouseStock || 0).toLocaleString(undefined, {
+                  minimumFractionDigits: 1,
+                  maximumFractionDigits: 2,
+                })} T`
+          }
+          badge="Grain Reserves"
+          icon={<FaWarehouse className="w-5 h-5" />}
+          gradient="from-amber-500/20 to-amber-600/5"
+          borderColor="border-amber-500/30"
+          iconBg="bg-amber-500/20 text-amber-400 border border-amber-500/30"
+          link="/ecosystem/sales-&-distribution/warehouse"
+          subtitle="Physical aggregation stored in certified silos"
+        />
+
+        <ModernStatCard
+          title="Fulfilled Orders"
+          value={loading ? "..." : stats.fulfilledOrders}
+          badge="Escrow Released"
+          icon={<FaCheckCircle className="w-5 h-5" />}
+          gradient="from-emerald-500/20 to-emerald-600/5"
+          borderColor="border-emerald-500/30"
+          iconBg="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+          subtitle="Successfully delivered to off-takers"
+        />
+      </div>
+
+      {/* Primary Section: Ecosystem Orders */}
+      <div className="space-y-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                Ecosystem Orders
+              </h2>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                {ecosystemOrders.length} Total
+              </span>
+            </div>
+            <p className="text-slate-400 text-xs mt-1">
+              Fulfill verified off-taker orders locked in secure smart escrow.
+            </p>
+          </div>
+
           <Link href="/ecosystem/sales-&-distribution/analytics">
             <Button
               variant="ghost"
-              className="text-blue-600 font-bold flex items-center gap-2 hover:bg-blue-50"
+              className="text-xs font-bold text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 p-2.5 rounded-xl flex items-center gap-2 border border-blue-500/20"
             >
-              View Analytics <FaArrowRight />
+              <span>View Analytics</span>
+              <FaArrowRight className="w-3 h-3" />
             </Button>
           </Link>
         </div>
 
-        {loadingOrders ? (
-          <div className="py-20 text-center font-black text-gray-300 italic animate-pulse">
-            Scanning Ecosystem Ledger...
-          </div>
-        ) : ecosystemOrders.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6">
-            {ecosystemOrders.map((order) => (
-              <Card
-                key={order.id}
-                className="rounded-[3rem] border-none shadow-xl bg-white dark:bg-gray-900 p-10 flex flex-col md:flex-row justify-between items-center gap-10 hover:shadow-2xl transition-shadow border-t-8 border-slate-50 dark:border-gray-800"
+        {/* Filter Bar & Search */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
+          {/* Status Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+            {[
+              { id: "all", label: "All Orders" },
+              { id: "paid", label: "Paid / Ready" },
+              { id: "assigned", label: "Assigned" },
+              { id: "processing", label: "Processing" },
+              { id: "delivered", label: "Delivered" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setStatusFilter(tab.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                  statusFilter === tab.id
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/80"
+                }`}
               >
-                <div className="flex-1 space-y-4">
-                  <div className="flex items-center gap-4">
-                    <h3 className="font-black text-2xl text-slate-900 dark:text-white">
-                      {order.buyer_name}
-                    </h3>
-                    <span
-                      className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${order.status === "paid" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
-                    >
-                      {order.status}
-                    </span>
-                    {order.escrow_status === "held" && (
-                      <div className="flex items-center gap-1.5 px-4 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
-                        <FaShieldAlt /> Escrow Secured
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    <div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        Order ID
-                      </p>
-                      <p className="font-bold text-sm dark:text-gray-300">
-                        #{order.id.substring(0, 8)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        Value
-                      </p>
-                      <p className="font-bold text-sm text-slate-900 dark:text-white">
-                        ₦{parseFloat(order.total_amount).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        Fulfillment Address
-                      </p>
-                      <p className="font-bold text-sm truncate max-w-[200px] dark:text-gray-300">
-                        {order.delivery_address}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="shrink-0 space-y-3 flex flex-col items-end">
-                  {order.escrow_status === "held" && !order.distributor_id ? (
-                    <div className="flex flex-col gap-2 w-full max-w-xs">
-                      <select
-                        className="bg-gray-50 border border-gray-100 dark:border-gray-800 rounded-xl px-4 py-2 text-xs font-bold w-full"
-                        onChange={(e) =>
-                          assignDistributor(order.id, e.target.value)
-                        }
-                        defaultValue=""
-                      >
-                        <option value="" disabled>
-                          Assign Distributor
-                        </option>
-                        {distributors.map((d) => (
-                          <option key={d.id} value={d.id}>
-                            {d.name || d.fname + ' ' + d.lname}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : order.distributor_id ? (
-                    <Link href="/ecosystem/sales-&-distribution/shipments">
-                      <div className="bg-emerald-50 dark:bg-emerald-900/20 px-10 py-6 rounded-3xl border border-emerald-100 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-[10px] font-black flex items-center gap-3 uppercase tracking-[0.2em] group cursor-pointer hover:bg-emerald-100 transition-colors">
-                        <FaTruckMoving
-                          size={18}
-                          className="group-hover:translate-x-1 transition-transform"
-                        />{" "}
-                        Logistics Active
-                      </div>
-                    </Link>
-                  ) : (
-                    <div className="bg-amber-50 dark:bg-amber-900/20 px-10 py-6 rounded-3xl border border-amber-100 dark:border-amber-800 text-amber-700 dark:text-amber-400 text-[10px] font-black uppercase tracking-[0.2em]">
-                      Awaiting Escrow
-                    </div>
-                  )}
-
-                  {/* Status Update Dropdown */}
-                  <div className="mt-4 pt-4 border-t border-gray-50 dark:border-gray-800 w-full text-right flex flex-col items-end gap-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Update Process Status</label>
-                    <select 
-                      className="bg-white border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 text-[10px] font-bold uppercase tracking-widest w-40"
-                      value={order.status}
-                      onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                    >
-                      <option value="paid">Paid</option>
-                      <option value="ready_for_sales">Ready For Sales</option>
-                      <option value="processing">Processing</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="delivered">Delivered</option>
-                      <option value="completed">Completed</option>
-                    </select>
-                  </div>
-                </div>
-              </Card>
+                {tab.label}
+              </button>
             ))}
           </div>
-        ) : (
-          <Card className="rounded-[4rem] border-none shadow-xl bg-white dark:bg-gray-800 p-24 text-center">
-            <FaBoxOpen className="text-6xl text-gray-100 mx-auto mb-8" />
-            <h3 className="text-2xl font-black text-slate-300 uppercase tracking-widest">
-              Ecosystem Pipeline Clear
-            </h3>
-            <p className="text-gray-400 mt-2 max-w-sm mx-auto">
-              New buyer orders from the marketplace will appear here once they
-              secure funding.
-            </p>
-          </Card>
-        )}
-      </div>
 
-      <div className="pt-8 mt-8 border-t border-gray-100 dark:border-gray-800">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
-          <div>
-            <h2 className="text-3xl font-black text-(--foreground) tracking-tight flex items-center gap-3">
-              <span className="text-amber-500">
-                <FaBoxOpen />
-              </span>{" "}
-              Pre-Harvest Forward Contracts
-            </h2>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mt-2">
-              Review pre-orders waiting for harvest
-            </p>
+          {/* Search Box */}
+          <div className="relative min-w-[220px]">
+            <FaSearch className="w-3.5 h-3.5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search by buyer or address..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-800/80 border border-slate-700/80 focus:border-blue-500 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none"
+            />
           </div>
         </div>
 
+        {/* Orders Listing */}
+        {loadingOrders ? (
+          <div className="py-20 text-center rounded-3xl bg-slate-900/40 border border-slate-800/60">
+            <RefreshCw className="w-8 h-8 text-blue-400 animate-spin mx-auto mb-3" />
+            <p className="text-slate-400 text-sm font-bold">
+              Scanning Escrow Ledger...
+            </p>
+          </div>
+        ) : filteredOrders.length > 0 ? (
+          <div className="grid grid-cols-1 gap-4">
+            {filteredOrders.map((order) => {
+              const formattedAmount = Number(order.total_amount || 0).toLocaleString();
+              const isAssigned = !!order.distributor_id;
+              const isEscrowHeld = order.escrow_status === "held";
+
+              return (
+                <div
+                  key={order.id}
+                  className="rounded-3xl bg-slate-900/80 border border-slate-800/90 hover:border-slate-700 p-5 sm:p-6 shadow-xl backdrop-blur-md transition-all duration-200 space-y-4"
+                >
+                  {/* Card Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800/80">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center font-bold text-xs">
+                          <FaUser className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <h3 className="text-base sm:text-lg font-black text-white tracking-tight">
+                            {order.buyer_name || "Off-taker Order"}
+                          </h3>
+                        </div>
+                      </div>
+
+                      {/* Order ID Pill with Copy */}
+                      <button
+                        onClick={() => copyOrderId(order.id)}
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] border border-slate-700 transition-colors"
+                        title="Click to copy full ID"
+                      >
+                        <span>#{order.id.substring(0, 8)}</span>
+                        <FaCopy className="w-2.5 h-2.5 text-slate-500" />
+                      </button>
+
+                      {/* Status Badges */}
+                      <OrderStatusBadge status={order.status} />
+
+                      {isEscrowHeld && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                          <FaShieldAlt className="w-3 h-3 text-cyan-400" />
+                          <span>Escrow Secured</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Logistics Status Indicator / Link */}
+                    <div>
+                      {isAssigned ? (
+                        <Link href="/ecosystem/sales-&-distribution/shipments">
+                          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition-all cursor-pointer">
+                            <FaTruckMoving className="w-3.5 h-3.5" />
+                            <span>Logistics Active</span>
+                            <FaChevronRight className="w-2.5 h-2.5 text-emerald-400" />
+                          </div>
+                        </Link>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>Pending Distributor</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card Body Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-1">
+                    {/* Value */}
+                    <div className="bg-slate-800/40 p-3.5 rounded-2xl border border-slate-800/60">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        Settlement Value
+                      </p>
+                      <p className="text-lg font-black text-emerald-400 mt-1">
+                        ₦{formattedAmount}
+                      </p>
+                    </div>
+
+                    {/* Fulfillment Destination */}
+                    <div className="bg-slate-800/40 p-3.5 rounded-2xl border border-slate-800/60 lg:col-span-2">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                        <FaMapMarkerAlt className="text-slate-500" /> Delivery Address
+                      </p>
+                      <p className="text-xs font-bold text-slate-200 mt-1 truncate" title={order.delivery_address}>
+                        {order.delivery_address || "No address specified"}
+                      </p>
+                    </div>
+
+                    {/* Items / Quantity */}
+                    <div className="bg-slate-800/40 p-3.5 rounded-2xl border border-slate-800/60">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                        <FaBoxes className="text-slate-500" /> Order Details
+                      </p>
+                      <p className="text-xs font-bold text-slate-200 mt-1 truncate">
+                        {order.items && order.items.length > 0
+                          ? `${order.items[0].product_name || "Commodity"} (${order.items[0].quantity} units)`
+                          : "Standard Grain Order"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Card Controls Footer: Distributor Assign & Status Update */}
+                  <div className="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    {/* Distributor Assignment */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold text-slate-400 whitespace-nowrap">
+                        Distributor:
+                      </span>
+                      {order.distributor_id ? (
+                        <span className="text-xs font-bold text-blue-400 bg-blue-500/10 px-3 py-1.5 rounded-xl border border-blue-500/20">
+                          {distributors.find((d) => d.id === order.distributor_id)?.name ||
+                            distributors.find((d) => d.id === order.distributor_id)?.fname ||
+                            "Assigned"}
+                        </span>
+                      ) : (
+                        <select
+                          className="bg-slate-800 text-slate-200 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold focus:border-blue-500 focus:outline-none"
+                          onChange={(e) => assignDistributor(order.id, e.target.value)}
+                          defaultValue=""
+                        >
+                          <option value="" disabled>
+                            Select Distributor...
+                          </option>
+                          {distributors.map((d) => (
+                            <option key={d.id} value={d.id} className="bg-slate-900 text-white">
+                              {d.name || `${d.fname || ""} ${d.lname || ""}`.trim()}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+
+                    {/* Status Update Control */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold text-slate-400 whitespace-nowrap">
+                        Process Status:
+                      </span>
+                      <select
+                        className="bg-slate-800 text-white border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold uppercase tracking-wider focus:border-blue-500 focus:outline-none"
+                        value={order.status}
+                        onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                      >
+                        <option value="paid" className="bg-slate-900 text-white">
+                          Paid
+                        </option>
+                        <option value="ready_for_sales" className="bg-slate-900 text-white">
+                          Ready For Sales
+                        </option>
+                        <option value="processing" className="bg-slate-900 text-white">
+                          Processing
+                        </option>
+                        <option value="in_progress" className="bg-slate-900 text-white">
+                          In Progress
+                        </option>
+                        <option value="delivered" className="bg-slate-900 text-white">
+                          Delivered
+                        </option>
+                        <option value="completed" className="bg-slate-900 text-white">
+                          Completed
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="rounded-3xl bg-slate-900/50 border border-slate-800/80 p-12 text-center space-y-3">
+            <div className="w-16 h-16 rounded-2xl bg-slate-800/80 text-slate-500 flex items-center justify-center mx-auto text-2xl">
+              <FaBoxOpen />
+            </div>
+            <h3 className="text-lg font-black text-slate-300">
+              No Ecosystem Orders Found
+            </h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              {searchQuery || statusFilter !== "all"
+                ? "Try adjusting your search criteria or filter tags."
+                : "Active marketplace buyer orders will automatically populate here upon escrow deposit."}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Pre-Harvest Forward Contracts Section */}
+      <div className="space-y-5 pt-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-amber-500 text-lg">
+              <FaBoxOpen />
+            </span>
+            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              Pre-Harvest Forward Contracts
+            </h2>
+          </div>
+          <p className="text-slate-400 text-xs mt-1">
+            Pre-booked harvest volumes awaiting physical collection and silo aggregation.
+          </p>
+        </div>
+
         {forwardContracts.length > 0 ? (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {forwardContracts.map((contract, i) => (
-              <Card
+              <div
                 key={i}
-                className="rounded-[2.5rem] border-2 border-gray-100 dark:border-gray-800 shadow-xl overflow-hidden hover:shadow-2xl hover:border-amber-200 transition-all group bg-white dark:bg-gray-900"
+                className="rounded-3xl bg-slate-900/80 border border-slate-800 hover:border-amber-500/40 p-6 shadow-xl backdrop-blur-md transition-all space-y-4"
               >
-                <div className="p-8 pb-6 border-b border-gray-50 dark:border-gray-800 flex justify-between items-start">
+                <div className="flex justify-between items-start pb-4 border-b border-slate-800">
                   <div>
-                    <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                      Forward Order
+                    </span>
+                    <h3 className="text-xl font-black text-white mt-1.5 tracking-tight">
                       {contract.commodity}
                     </h3>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mt-1">
+                    <p className="text-xs text-slate-400 mt-0.5 font-bold">
                       Buyer: {contract.buyer_name}
                       {contract.buyer_phone && ` • ${contract.buyer_phone}`}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-black text-amber-600">
-                      ₦{parseFloat(contract.total_price || 0).toLocaleString()}
+                    <p className="text-xl font-black text-amber-400">
+                      ₦{Number(contract.total_price || 0).toLocaleString()}
                     </p>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                    <p className="text-xs font-bold text-slate-400 mt-0.5">
                       {contract.quantity_tons} Tons Total
                     </p>
                   </div>
                 </div>
-                <div className="p-8 pt-6 flex items-center justify-between">
+
+                <div className="flex items-center justify-between text-xs">
                   <div>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Status</p>
-                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300 capitalize">{contract.escrow_status.replace('_', ' ')}</p>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                      Escrow State
+                    </p>
+                    <p className="font-bold text-slate-200 capitalize mt-0.5">
+                      {(contract.escrow_status || "Held").replace("_", " ")}
+                    </p>
                   </div>
                   <div className="text-right">
-                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Expected Harvest</p>
-                     <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{new Date(contract.expected_harvest_date).toLocaleDateString()}</p>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1 justify-end">
+                      <FaCalendarAlt /> Expected Harvest
+                    </p>
+                    <p className="font-bold text-slate-200 mt-0.5">
+                      {contract.expected_harvest_date
+                        ? new Date(contract.expected_harvest_date).toLocaleDateString()
+                        : "TBD"}
+                    </p>
                   </div>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         ) : (
-          <Card className="rounded-[4rem] border-none shadow-xl bg-white dark:bg-gray-800 p-24 text-center">
-            <FaBoxOpen className="text-6xl text-gray-100 mx-auto mb-8" />
-            <h3 className="text-2xl font-black text-slate-300 uppercase tracking-widest">
-              No Forward Contracts
-            </h3>
-            <p className="text-gray-400 mt-2 max-w-sm mx-auto">
-              No pre-harvest opportunities have been ordered yet.
+          <div className="rounded-3xl bg-slate-900/50 border border-slate-800/80 p-8 text-center space-y-2">
+            <p className="text-sm font-bold text-slate-400">
+              No Pre-Harvest Contracts Active
             </p>
-          </Card>
+            <p className="text-xs text-slate-600">
+              Off-takers pre-booking harvest slots will appear here with projected yields.
+            </p>
+          </div>
         )}
       </div>
 
       {/* WAREHOUSE INTAKE MODAL */}
       {showWarehouseModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-10 max-w-lg w-full border border-gray-100 dark:border-gray-800 shadow-2xl space-y-6 transform scale-100 transition-all duration-300">
-            <div className="flex justify-between items-center">
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                Warehouse Deposit
-              </h3>
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-slate-800 shadow-2xl space-y-5 text-white animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <FaBoxOpen className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black tracking-tight">
+                    Record Warehouse Intake
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Deposit grain supplies into physical inventory silos.
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={() => setShowWarehouseModal(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-white font-black text-xl"
+                className="w-8 h-8 rounded-xl bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold"
               >
                 ✕
               </button>
             </div>
-            <p className="text-gray-500 text-sm">
-              Add newly aggregated grains or incoming crops to physical stock
-              inventory.
-            </p>
 
             <form onSubmit={handleWarehouseSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                  Commodity / Crop
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                  Commodity / Crop Type
                 </label>
                 <select
                   value={warehouseForm.commodity}
                   onChange={(e) =>
-                    setWarehouseForm({
-                      ...warehouseForm,
-                      commodity: e.target.value,
-                    })
+                    setWarehouseForm({ ...warehouseForm, commodity: e.target.value })
                   }
-                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 text-sm font-bold focus:outline-none dark:text-white"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
                 >
                   <option value="Maize">Maize</option>
                   <option value="Rice">Rice</option>
@@ -561,9 +787,9 @@ export default function SalesDistributionDashboard() {
                 </select>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-1.5 col-span-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2 space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
                     Quantity
                   </label>
                   <input
@@ -572,18 +798,15 @@ export default function SalesDistributionDashboard() {
                     placeholder="e.g. 50"
                     value={warehouseForm.quantity}
                     onChange={(e) =>
-                      setWarehouseForm({
-                        ...warehouseForm,
-                        quantity: e.target.value,
-                      })
+                      setWarehouseForm({ ...warehouseForm, quantity: e.target.value })
                     }
-                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 text-sm font-bold focus:outline-none dark:text-white"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
                     required
                   />
                 </div>
-                <div className="space-y-1.5 col-span-1">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                    Scale
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                    Scale Unit
                   </label>
                   <select
                     value={warehouseForm.measuring_scale}
@@ -593,7 +816,7 @@ export default function SalesDistributionDashboard() {
                         measuring_scale: e.target.value,
                       })
                     }
-                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 text-sm font-bold focus:outline-none dark:text-white"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-3 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
                   >
                     <option value="Tons">Tons</option>
                     <option value="Kg">Kg</option>
@@ -602,9 +825,9 @@ export default function SalesDistributionDashboard() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                  Price per unit (₦)
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                  Price Per Unit (₦)
                 </label>
                 <input
                   type="number"
@@ -617,18 +840,18 @@ export default function SalesDistributionDashboard() {
                       price_per_unit: e.target.value,
                     })
                   }
-                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 text-sm font-bold focus:outline-none dark:text-white"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
                   required
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                  Warehouse Depot Name
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                  Warehouse Depot Name / Location
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Noria Northern Hub (Kano)"
+                  placeholder="e.g. Noria Northern Hub (Kano Silo 2)"
                   value={warehouseForm.warehouse_name}
                   onChange={(e) =>
                     setWarehouseForm({
@@ -636,23 +859,24 @@ export default function SalesDistributionDashboard() {
                       warehouse_name: e.target.value,
                     })
                   }
-                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 text-sm font-bold focus:outline-none dark:text-white"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
                   required
                 />
               </div>
 
-              <div className="flex gap-4 pt-4">
+              <div className="flex gap-3 pt-3">
                 <Button
                   type="button"
                   onClick={() => setShowWarehouseModal(false)}
-                  className="flex-1 bg-gray-100 dark:bg-gray-850 hover:bg-gray-200 text-gray-700 dark:text-gray-300 font-bold py-4 rounded-2xl"
+                  variant="ghost"
+                  className="flex-1 bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold py-3 rounded-xl text-xs"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={submittingWarehouse}
-                  className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-[10px]"
+                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black py-3 rounded-xl text-xs uppercase tracking-wider"
                 >
                   {submittingWarehouse ? "Saving..." : "Record Stock"}
                 </Button>
@@ -662,45 +886,52 @@ export default function SalesDistributionDashboard() {
         </div>
       )}
 
-      {/* MANUAL ORDER MODAL */}
+      {/* MANUAL DIRECT ORDER MODAL */}
       {showOrderModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-[3rem] p-10 max-w-lg w-full border border-gray-100 dark:border-gray-800 shadow-2xl space-y-6 transform scale-100 transition-all duration-300">
-            <div className="flex justify-between items-center">
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                New Manual Order
-              </h3>
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-slate-800 shadow-2xl space-y-5 text-white animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  <FaPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black tracking-tight">
+                    Create Direct Ecosystem Order
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Log an offline buyer order with secured escrow fulfillment.
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={() => setShowOrderModal(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-white font-black text-xl"
+                className="w-8 h-8 rounded-xl bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold"
               >
                 ✕
               </button>
             </div>
-            <p className="text-gray-500 text-sm">
-              Log an offline buyer sale directly. Status will be pre-paid and
-              escrow will be marked held for immediate logistics distribution.
-            </p>
 
             <form onSubmit={handleOrderSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
                   Product Details
                 </label>
                 <input
                   type="text"
+                  placeholder="e.g. Maize Grade A"
                   value={orderForm.product_name}
                   onChange={(e) =>
                     setOrderForm({ ...orderForm, product_name: e.target.value })
                   }
-                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 text-sm font-bold focus:outline-none dark:text-white"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-blue-500"
                   required
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
                     Quantity (Units)
                   </label>
                   <input
@@ -710,12 +941,12 @@ export default function SalesDistributionDashboard() {
                     onChange={(e) =>
                       setOrderForm({ ...orderForm, quantity: e.target.value })
                     }
-                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 text-sm font-bold focus:outline-none dark:text-white"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-blue-500"
                     required
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
                     Price / Unit (₦)
                   </label>
                   <input
@@ -728,18 +959,18 @@ export default function SalesDistributionDashboard() {
                         price_per_unit: e.target.value,
                       })
                     }
-                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 text-sm font-bold focus:outline-none dark:text-white"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-blue-500"
                     required
                   />
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
                   Fulfillment Delivery Address
                 </label>
                 <textarea
-                  placeholder="Enter destination delivery address..."
+                  placeholder="Enter full destination address..."
                   value={orderForm.delivery_address}
                   onChange={(e) =>
                     setOrderForm({
@@ -747,23 +978,24 @@ export default function SalesDistributionDashboard() {
                       delivery_address: e.target.value,
                     })
                   }
-                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 text-sm font-bold focus:outline-none dark:text-white min-h-[80px]"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-blue-500 min-h-[75px]"
                   required
                 />
               </div>
 
-              <div className="flex gap-4 pt-4">
+              <div className="flex gap-3 pt-3">
                 <Button
                   type="button"
                   onClick={() => setShowOrderModal(false)}
-                  className="flex-1 bg-gray-100 dark:bg-gray-850 hover:bg-gray-200 text-gray-700 dark:text-gray-300 font-bold py-4 rounded-2xl"
+                  variant="ghost"
+                  className="flex-1 bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold py-3 rounded-xl text-xs"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={submittingOrder}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl uppercase tracking-widest text-[10px]"
+                  className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-black py-3 rounded-xl text-xs uppercase tracking-wider"
                 >
                   {submittingOrder ? "Creating..." : "Place Order"}
                 </Button>
@@ -776,28 +1008,81 @@ export default function SalesDistributionDashboard() {
   );
 }
 
-function StatCard({ title, value, icon, color, bg, link }) {
-  const content = (
-    <Card
-      className={`border-none shadow-xl rounded-[2.5rem] overflow-hidden transition-all group ${link ? "hover:scale-[1.03] cursor-pointer" : ""}`}
+function ModernStatCard({
+  title,
+  value,
+  badge,
+  icon,
+  gradient,
+  borderColor,
+  iconBg,
+  subtitle,
+  link,
+}) {
+  const CardWrapper = (
+    <div
+      className={`rounded-3xl bg-gradient-to-br ${gradient} bg-slate-900/90 border ${borderColor} p-6 shadow-xl backdrop-blur-md transition-all duration-200 group ${
+        link ? "cursor-pointer hover:scale-[1.01] hover:border-slate-600" : ""
+      }`}
     >
-      <CardContent className="p-10 flex items-center gap-6">
-        <div
-          className={`p-6 rounded-[2rem] ${bg} ${color} text-3xl group-hover:scale-110 transition-transform`}
-        >
+      <div className="flex justify-between items-start mb-4">
+        <div className={`p-3 rounded-2xl ${iconBg} transition-transform group-hover:scale-105`}>
           {icon}
         </div>
-        <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-            {title}
-          </p>
-          <p className="text-4xl font-black text-slate-900 mt-1 tracking-tighter">
-            {value}
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+        <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-800/80 text-slate-400 border border-slate-700/60">
+          {badge}
+        </span>
+      </div>
+      <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+        {title}
+      </p>
+      <h3 className="text-3xl font-black text-white tracking-tight mt-1">
+        {value}
+      </h3>
+      {subtitle && (
+        <p className="text-xs text-slate-400 font-medium mt-2 leading-relaxed">
+          {subtitle}
+        </p>
+      )}
+    </div>
   );
 
-  return link ? <Link href={link}>{content}</Link> : content;
+  return link ? <Link href={link}>{CardWrapper}</Link> : CardWrapper;
+}
+
+function OrderStatusBadge({ status }) {
+  const s = (status || "").toLowerCase();
+  if (s === "paid" || s === "ready_for_sales") {
+    return (
+      <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+        {status.replace(/_/g, " ")}
+      </span>
+    );
+  }
+  if (s === "assigned") {
+    return (
+      <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/15 text-blue-400 border border-blue-500/30">
+        Assigned
+      </span>
+    );
+  }
+  if (s === "processing" || s === "in_progress") {
+    return (
+      <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30">
+        {status.replace(/_/g, " ")}
+      </span>
+    );
+  }
+  if (s === "delivered" || s === "completed") {
+    return (
+      <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-teal-500/15 text-teal-300 border border-teal-500/30">
+        {status.replace(/_/g, " ")}
+      </span>
+    );
+  }
+  return (
+    <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-800 text-slate-400 border border-slate-700">
+      {status || "Pending"}
+    </span>
+  );
 }

@@ -10,8 +10,10 @@ import {
    ArrowLeft,
    FileText,
    AlertCircle,
+   Clock,
 } from "lucide-react";
 import { FaSpinner } from "react-icons/fa6";
+import { verifyVendorSession } from "@/actions/session";
 
 export default function EcosystemRoleOnboarding({
    roleTitle,
@@ -29,6 +31,8 @@ export default function EcosystemRoleOnboarding({
    const router = useRouter();
    const [isSubmitting, setIsSubmitting] = useState(false);
    const [uploadingField, setUploadingField] = useState(null);
+   const [checkingSession, setCheckingSession] = useState(true);
+   const [isSubmittedView, setIsSubmittedView] = useState(false);
 
    const [formData, setFormData] = useState({
       ...initialRoleData,
@@ -67,6 +71,63 @@ export default function EcosystemRoleOnboarding({
          node.play().catch((err) => console.warn("Video auto-play warning:", err));
       }
    }, []);
+
+   useEffect(() => {
+      let isMounted = true;
+      const verifyState = async () => {
+         try {
+            let session;
+            try {
+               const res = await fetch("/api/auth/session");
+               if (res.ok) {
+                  session = await res.json();
+               } else {
+                  session = await verifyVendorSession();
+               }
+            } catch {
+               session = await verifyVendorSession();
+            }
+
+            const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+            const isDossierView = searchParams?.get("view") === "dossier";
+
+            const isApproved =
+               session?.approval_status === "approved" ||
+               session?.is_verified === true ||
+               session?.onboarding_status === "verified";
+
+            if (isApproved) {
+               // User is already approved - redirect immediately to their unlocked dashboard!
+               router.replace(dashboardRoute);
+               return;
+            }
+
+            const hasSubmitted =
+               session?.has_onboarded === true ||
+               session?.has_draft === true ||
+               ["unverified", "submitted", "completed"].includes(session?.onboarding_status?.toLowerCase());
+
+            if (hasSubmitted) {
+               if (!isDossierView) {
+                  router.replace(dashboardRoute);
+                  return;
+               }
+               if (isMounted) {
+                  setIsSubmittedView(true);
+               }
+            }
+         } catch (e) {
+            console.warn("Failed to check ecosystem onboarding state:", e);
+         } finally {
+            if (isMounted) setCheckingSession(false);
+         }
+      };
+
+      verifyState();
+      return () => {
+         isMounted = false;
+      };
+   }, [dashboardRoute, router]);
 
    useEffect(() => {
       if (cameraActive && streamRef.current && videoRef.current) {
@@ -235,6 +296,15 @@ export default function EcosystemRoleOnboarding({
       }
    };
 
+   if (checkingSession) {
+      return (
+         <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col items-center justify-center p-4">
+            <FaSpinner className="w-8 h-8 animate-spin text-emerald-600 mb-3" />
+            <p className="text-xs font-bold text-gray-500">Verifying accreditation status...</p>
+         </div>
+      );
+   }
+
    return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-10 px-4 sm:px-6 lg:px-8">
          <div className="max-w-4xl mx-auto space-y-8">
@@ -269,6 +339,29 @@ export default function EcosystemRoleOnboarding({
                      </div>
                   </div>
                </div>
+
+               {isSubmittedView && (
+                  <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                     <div className="flex items-start gap-3">
+                        <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                        <div>
+                           <h4 className="text-xs font-black uppercase tracking-wider text-amber-900 dark:text-amber-200">
+                              KYC Dossier Submitted • Under SuperAdmin Review
+                           </h4>
+                           <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                              Your onboarding documentation and credentials have been received. SuperAdmin is reviewing your application for operational accreditation.
+                           </p>
+                        </div>
+                     </div>
+                     <button
+                        type="button"
+                        onClick={() => router.push(dashboardRoute)}
+                        className="px-4 py-2 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition cursor-pointer self-start sm:self-auto shrink-0 shadow-sm"
+                     >
+                        Return to Dashboard
+                     </button>
+                  </div>
+               )}
 
                <form onSubmit={handleSubmit} className="space-y-8">
                   {/* Section 1: Role-Specific Operational Profile */}
@@ -536,20 +629,30 @@ export default function EcosystemRoleOnboarding({
                         >
                            Cancel
                         </button>
-                        <button
-                           type="submit"
-                           disabled={isSubmitting}
-                           className="px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/30 transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                        >
-                           {isSubmitting ? (
-                              <>
-                                 <FaSpinner className="w-4 h-4 animate-spin" />
-                                 <span>Submitting Dossier...</span>
-                              </>
-                           ) : (
-                              <span>Submit KYC Dossier for Approval</span>
-                           )}
-                        </button>
+                        {isSubmittedView ? (
+                           <button
+                              type="button"
+                              onClick={() => router.push(dashboardRoute)}
+                              className="px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-wider bg-gray-900 dark:bg-gray-100 hover:bg-gray-800 dark:hover:bg-gray-200 text-white dark:text-gray-900 shadow-lg transition flex items-center gap-2 cursor-pointer"
+                           >
+                              <span>Return to Dashboard</span>
+                           </button>
+                        ) : (
+                           <button
+                              type="submit"
+                              disabled={isSubmitting}
+                              className="px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/30 transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                           >
+                              {isSubmitting ? (
+                                 <>
+                                    <FaSpinner className="w-4 h-4 animate-spin" />
+                                    <span>Submitting Dossier...</span>
+                                 </>
+                              ) : (
+                                 <span>Submit KYC Dossier for Approval</span>
+                              )}
+                           </button>
+                        )}
                      </div>
                   </div>
                </form>

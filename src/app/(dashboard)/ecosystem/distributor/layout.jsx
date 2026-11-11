@@ -17,6 +17,7 @@ import {
   Clock,
   ArrowRight,
   Package,
+  Lock,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
@@ -35,13 +36,22 @@ function DistributorLayoutInner({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const [activeMenuHref, setActiveMenuHref] = useState(pathname);
+  const [navigatingHref, setNavigatingHref] = useState(null);
 
   const handleMenuClick = () => setMenuOpen((open) => !open);
 
   useEffect(() => {
-    setMenuOpen(false);
     setActiveMenuHref(pathname);
+    setNavigatingHref(null);
+    setMenuOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (navigatingHref) {
+      const timer = setTimeout(() => setNavigatingHref(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [navigatingHref]);
 
   const handleSignout = async () => {
     try {
@@ -79,6 +89,19 @@ function DistributorLayoutInner({ children }) {
         setSessionData(session);
         const approved = session?.approval_status === "approved";
         setIsApproved(approved);
+
+        // Block restricted operational sub-routes if unapproved
+        const operationalRestrictedRoutes = [
+          "/ecosystem/distributor/orders",
+          "/ecosystem/distributor/wallet",
+          "/ecosystem/distributor/analytics",
+        ];
+
+        if (!approved && operationalRestrictedRoutes.includes(pathname)) {
+          toast.warning("🔒 Dealership Operations Locked: Your enterprise is pending SuperAdmin approval.");
+          router.replace("/ecosystem/distributor");
+          return;
+        }
       } catch (e) {
         console.warn("Session check in distributor layout:", e?.message);
       } finally {
@@ -87,40 +110,73 @@ function DistributorLayoutInner({ children }) {
     };
 
     checkSession();
-  }, [pathname]);
+    const interval = setInterval(checkSession, 30000);
+    return () => clearInterval(interval);
+  }, [pathname, router]);
 
   // If on onboarding route, render cleanly full width
   if (pathname?.includes("/onboarding")) {
     return <div className="min-h-screen bg-(--background)">{children}</div>;
   }
 
+  const isPendingKyc =
+    (!sessionData ||
+      !sessionData.onboarding_status ||
+      sessionData.onboarding_status === "pending" ||
+      sessionData.onboarding_status === "incomplete") &&
+    sessionData?.approval_status !== "approved";
+
   const navMenu = [
     {
-      label: "Deliveries & Orders",
+      label: "Overview",
       href: "/ecosystem/distributor",
+      icon: <LayoutDashboard className="w-4 h-4" />,
+      restricted: false,
+    },
+    {
+      label: "Deliveries & Orders",
+      href: "/ecosystem/distributor/orders",
       icon: <Truck className="w-4 h-4" />,
+      restricted: true,
     },
     {
       label: "My Wallet & Escrow",
       href: "/ecosystem/distributor/wallet",
       icon: <FaWallet className="w-4 h-4" />,
+      restricted: true,
     },
     {
       label: "Performance Analytics",
       href: "/ecosystem/distributor/analytics",
       icon: <FaChartLine className="w-4 h-4" />,
+      restricted: true,
     },
     {
       label: "KYC & Catalog Profile",
       href: "/ecosystem/distributor/onboarding",
       icon: <FileText className="w-4 h-4" />,
+      restricted: false,
     },
     {
       label: "Settings",
       href: "/ecosystem/distributor/settings",
       icon: <Settings className="w-4 h-4" />,
+      restricted: false,
     },
   ];
+
+  // Prefetch routes for instant page switching
+  useEffect(() => {
+    navMenu.forEach((item) => {
+      if (item.href) {
+        try {
+          router.prefetch(item.href);
+        } catch {}
+      }
+    });
+  }, [router]);
+
+  const navigatingItem = navMenu.find((m) => m.href === navigatingHref);
 
   return (
     <div className="flex min-h-screen bg-(--background)">
@@ -158,7 +214,7 @@ function DistributorLayoutInner({ children }) {
                     Agro-Distributor
                   </h2>
                   <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 uppercase tracking-wider flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isApproved ? "bg-emerald-500" : "bg-amber-500"}`} />
                     {isApproved ? "Certified Partner" : "Pending Review"}
                   </p>
                 </div>
@@ -175,10 +231,33 @@ function DistributorLayoutInner({ children }) {
                 Distribution Console
               </div>
               {navMenu.map((item) => {
+                const isLocked = item.restricted && !isApproved;
                 const currentTarget = activeMenuHref || pathname;
                 const isActive = item.href === "/ecosystem/distributor"
                   ? (currentTarget === "/ecosystem/distributor" || currentTarget === "/ecosystem/distributor/")
                   : (currentTarget === item.href || currentTarget.startsWith(item.href + "/"));
+
+                if (isLocked) {
+                  return (
+                    <div
+                      key={item.label}
+                      onClick={() => {
+                        toast.warning(
+                          isPendingKyc
+                            ? "⚠️ KYC Required: Complete your enterprise onboarding to unlock operations."
+                            : "⏳ Pending Approval: Operational features are locked until SuperAdmin verifies your dealership."
+                        );
+                      }}
+                      className="flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-xs text-gray-400 dark:text-gray-600 opacity-60 cursor-not-allowed select-none hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="text-gray-400 dark:text-gray-500">{item.icon}</div>
+                        <span>{item.label}</span>
+                      </div>
+                      <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" title="Locked pending SuperAdmin approval" />
+                    </div>
+                  );
+                }
 
                 return (
                   <Link
@@ -188,6 +267,9 @@ function DistributorLayoutInner({ children }) {
                     onClick={() => {
                       setMenuOpen(false);
                       setActiveMenuHref(item.href);
+                      if (item.href !== pathname) {
+                        setNavigatingHref(item.href);
+                      }
                     }}
                     onMouseEnter={() => {
                       if (item.href) try { router.prefetch(item.href); } catch {}
@@ -258,7 +340,20 @@ function DistributorLayoutInner({ children }) {
           </div>
         )}
 
-        <div className="flex-1 p-4 sm:p-8">{children}</div>
+        <div className="flex-1 p-4 sm:p-8">
+          {navigatingHref && navigatingHref !== pathname ? (
+            <div className="flex flex-col items-center justify-center min-h-[55vh] gap-3 animate-fade-in">
+              <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 flex items-center justify-center shadow-xs">
+                <div className="w-5 h-5 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+              </div>
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                Opening {navigatingItem?.label || "Section"}...
+              </p>
+            </div>
+          ) : (
+            children
+          )}
+        </div>
       </main>
 
       <NotificationDrawer />

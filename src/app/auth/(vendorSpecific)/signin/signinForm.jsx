@@ -94,7 +94,13 @@ export function SigninForm() {
             const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
             const redirectTarget = searchParams?.get("redirect");
 
-            const isPendingOnboarding = !session?.onboarding_status || ["pending", "unverified", "incomplete"].includes(session?.onboarding_status);
+            const hasSubmittedOnboarding =
+               session?.has_onboarded === true ||
+               session?.has_draft === true ||
+               ["unverified", "submitted", "completed", "verified"].includes(session?.onboarding_status?.toLowerCase()) ||
+               session?.approval_status === "approved";
+
+            const isPendingOnboarding = !hasSubmittedOnboarding && (!session?.onboarding_status || ["pending", "incomplete"].includes(session?.onboarding_status?.toLowerCase()));
             const normRole = role?.toLowerCase().trim();
 
             if (redirectTarget && redirectTarget.startsWith("/")) {
@@ -196,7 +202,7 @@ export function SigninForm() {
                            <Label htmlFor="password" className="block text-left text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">
                               Password
                            </Label>
-                           <Link href="#" className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
+                           <Link href="/auth/forgot-password" className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
                               Forgot password?
                            </Link>
                         </div>

@@ -22,6 +22,10 @@ export default function ReviewAgreementPage({ params }) {
     const [signed, setSigned] = useState(false);
     const [stamped, setStamped] = useState(false);
     const [processing, setProcessing] = useState(false);
+    const [confirmingDelivery, setConfirmingDelivery] = useState(false);
+    const [deliveryNotes, setDeliveryNotes] = useState("");
+    const [buyerRating, setBuyerRating] = useState(5);
+    const [receiverName, setReceiverName] = useState("");
 
     useEffect(() => {
         const fetchAgreement = async () => {
@@ -65,10 +69,47 @@ export default function ReviewAgreementPage({ params }) {
         }
     };
 
+    const handleConfirmDelivery = async () => {
+        setProcessing(true);
+        try {
+            const res = await fetch(`/api/proxy/aggregator/confirm-delivery/${token}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    buyer_rating: buyerRating,
+                    inspection_notes: deliveryNotes,
+                    received_by_name: receiverName || agreement.buyer_name || "Authorized Receiver"
+                })
+            });
+            const d = await res.json();
+            if (res.ok) {
+                toast.success(d.message || "Produce delivery confirmed & escrow released!");
+                setAgreement(d.data);
+                setConfirmingDelivery(false);
+            } else {
+                toast.error(d.error || "Failed to confirm delivery");
+            }
+        } catch (err) {
+            toast.error("Network error confirming delivery");
+        } finally {
+            setProcessing(false);
+        }
+    };
+
     const handlePayment = async () => {
         setProcessing(true);
         try {
-            const res = await fetch(`/api/proxy/aggregator/initialize-payment/${token}`, { method: 'POST' });
+            const clientOrigin = typeof window !== "undefined" ? window.location.origin : "";
+            const callbackUrl = `${clientOrigin}/payment-success?agreement_id=${agreement?.id || ""}&token=${token}`;
+
+            const res = await fetch(`/api/proxy/aggregator/initialize-payment/${token}`, { 
+                method: 'POST',
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    origin: clientOrigin,
+                    callback_url: callbackUrl
+                })
+            });
             const d = await res.json();
             if (res.ok && d.data?.authorization_url) {
                 window.location.href = d.data.authorization_url;
@@ -295,16 +336,184 @@ export default function ReviewAgreementPage({ params }) {
                                 </div>
                             )}
 
-                            {agreement.status === "paid" && (
-                                <Card className="p-6 bg-green-50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/30 rounded-[2rem] flex items-center gap-4 text-left">
-                                    <div className="w-12 h-12 bg-green-600 text-white rounded-2xl flex items-center justify-center shadow-lg shrink-0">
-                                        <FaCheckCircle size={24} />
-                                    </div>
-                                    <div>
-                                        <p className="font-black text-green-900 dark:text-green-400">Transaction Complete</p>
-                                        <p className="text-xs text-green-700 dark:text-green-300">Funds are now held in secure escrow.</p>
-                                    </div>
-                                </Card>
+                            {/* 2-Way Delivery Tracking & Handover Acceptance */}
+                            {["paid", "dispatched", "delivered", "completed"].includes(agreement.status) && (
+                                <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-gray-800 text-left">
+                                    {/* Stage A: Funds in Escrow, Awaiting Dispatch */}
+                                    {agreement.status === "paid" && (
+                                        <div className="p-6 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-3xl space-y-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-emerald-600 text-white rounded-2xl flex items-center justify-center font-bold shadow-md">
+                                                    <FaCheckCircle size={20} />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-black text-slate-900 dark:text-white text-sm">Escrow Funded & Secured</h4>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400">Funds of ₦{parseFloat(agreement.financing_amount || 0).toLocaleString()} are locked in platform escrow.</p>
+                                                </div>
+                                            </div>
+                                            <div className="p-3.5 bg-white dark:bg-slate-900 rounded-2xl border border-emerald-100 dark:border-emerald-900/50 text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                                                <FaTruck className="text-emerald-500 shrink-0" size={16} />
+                                                <span>Awaiting supplier packaging & dispatch to your delivery hub.</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Stage B: Produce Dispatched & In-Transit */}
+                                    {agreement.status === "dispatched" && (
+                                        <div className="p-6 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-500/40 rounded-3xl space-y-5">
+                                            <div className="flex items-center justify-between">
+                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500 text-white">
+                                                    <FaTruck size={10} /> Produce In-Transit
+                                                </span>
+                                                <span className="text-xs font-mono font-bold text-blue-700 dark:text-blue-300">
+                                                    {agreement.product_details?.dispatch?.waybill_number || "Waybill Assigned"}
+                                                </span>
+                                            </div>
+
+                                            <div className="space-y-1.5 text-xs">
+                                                <h4 className="font-black text-slate-900 dark:text-white text-sm">
+                                                    Produce is on its way to your destination
+                                                </h4>
+                                                <p className="text-slate-600 dark:text-slate-300">
+                                                    Carrier: <strong className="text-slate-900 dark:text-white">{agreement.product_details?.dispatch?.driver_name || "Logistics Driver"}</strong> 
+                                                    {agreement.product_details?.dispatch?.driver_phone && <> ({agreement.product_details.dispatch.driver_phone})</>}
+                                                </p>
+                                                {agreement.product_details?.dispatch?.vehicle_plate && (
+                                                    <p className="text-slate-500">Vehicle Plate: <strong>{agreement.product_details.dispatch.vehicle_plate}</strong></p>
+                                                )}
+                                                {agreement.product_details?.dispatch?.dispatch_notes && (
+                                                    <p className="text-[11px] text-slate-500 italic mt-1">"{agreement.product_details.dispatch.dispatch_notes}"</p>
+                                                )}
+                                            </div>
+
+                                            {/* Action to confirm receipt */}
+                                            <div className="pt-2">
+                                                <Button
+                                                    onClick={() => setConfirmingDelivery(true)}
+                                                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 cursor-pointer"
+                                                >
+                                                    <FaCheckCircle /> Confirm Physical Receipt & Release Escrow
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Stage C: Delivered & Confirmed (Escrow Released) */}
+                                    {["delivered", "completed"].includes(agreement.status) && (
+                                        <div className="p-6 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 rounded-3xl space-y-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-emerald-600 text-white rounded-2xl flex items-center justify-center font-bold shadow-md">
+                                                    <FaCheckCircle size={20} />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-black text-emerald-900 dark:text-emerald-300 text-sm">2-Way Handover Verified</h4>
+                                                    <p className="text-xs text-emerald-700 dark:text-emerald-400">Produce received and verified. Escrow payment released to supplier.</p>
+                                                </div>
+                                            </div>
+
+                                            {agreement.product_details?.delivery_confirmation && (
+                                                <div className="p-3 bg-white dark:bg-slate-900 rounded-xl text-xs space-y-1 text-slate-600 dark:text-slate-300 border border-emerald-100 dark:border-emerald-900/40">
+                                                    <p>Received by: <strong>{agreement.product_details.delivery_confirmation.received_by_name || agreement.buyer_name}</strong></p>
+                                                    <p>Quality Rating: <strong>{"★".repeat(agreement.product_details.delivery_confirmation.buyer_rating || 5)}</strong></p>
+                                                    {agreement.product_details.delivery_confirmation.inspection_notes && (
+                                                        <p className="italic text-[11px] text-slate-400">"{agreement.product_details.delivery_confirmation.inspection_notes}"</p>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Modal for Buyer Receipt Confirmation */}
+                            {confirmingDelivery && (
+                                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
+                                    <Card className="w-full max-w-lg rounded-[2.5rem] bg-white dark:bg-slate-900 p-8 space-y-6 text-left border border-slate-200 dark:border-slate-800 shadow-2xl">
+                                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
+                                                    <FaCheckCircle size={20} />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-black text-lg text-slate-900 dark:text-white">Confirm Produce Receipt</h3>
+                                                    <p className="text-xs text-slate-500">2-Way Handover & Escrow Authorization</p>
+                                                </div>
+                                            </div>
+                                            <button onClick={() => setConfirmingDelivery(false)} className="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+                                        </div>
+
+                                        <div className="space-y-4 text-xs">
+                                            <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-300">
+                                                <p className="font-bold">You are confirming delivery of:</p>
+                                                <p className="text-sm font-black mt-1">
+                                                    {agreement.product_details?.quantity} {agreement.product_details?.unit || "Units"} of {agreement.product_details?.commodity}
+                                                </p>
+                                                <p className="text-[11px] mt-1 text-emerald-700 dark:text-emerald-400">
+                                                    Authorizes release of <strong>₦{parseFloat(agreement.financing_amount || 0).toLocaleString()}</strong> held in platform escrow to {agreement.aggregator_company || "the supplier"}.
+                                                </p>
+                                            </div>
+
+                                            <div className="space-y-1.5">
+                                                <label className="font-bold text-slate-700 dark:text-slate-300">Received By (Your Full Name)</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder={agreement.buyer_name || "Enter receiver name"}
+                                                    value={receiverName}
+                                                    onChange={e => setReceiverName(e.target.value)}
+                                                    className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-xs"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-1.5">
+                                                <label className="font-bold text-slate-700 dark:text-slate-300">Produce Quality Rating</label>
+                                                <div className="flex gap-2">
+                                                    {[1, 2, 3, 4, 5].map((star) => (
+                                                        <button
+                                                            type="button"
+                                                            key={star}
+                                                            onClick={() => setBuyerRating(star)}
+                                                            className={`px-3 py-1.5 rounded-lg border font-bold text-xs transition cursor-pointer ${
+                                                                buyerRating >= star
+                                                                    ? "bg-amber-500 text-slate-950 border-amber-400"
+                                                                    : "bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700"
+                                                            }`}
+                                                        >
+                                                            ★ {star}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-1.5">
+                                                <label className="font-bold text-slate-700 dark:text-slate-300">Inspection & Receipt Remarks</label>
+                                                <textarea
+                                                    rows={2}
+                                                    placeholder="e.g. Received at depot, verified quantity and moisture standard."
+                                                    value={deliveryNotes}
+                                                    onChange={e => setDeliveryNotes(e.target.value)}
+                                                    className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-xs"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-3 pt-2">
+                                            <Button
+                                                onClick={handleConfirmDelivery}
+                                                disabled={processing}
+                                                className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl font-bold text-sm cursor-pointer"
+                                            >
+                                                {processing ? "Releasing Escrow..." : "Authorize Escrow Release"}
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => setConfirmingDelivery(false)}
+                                                className="px-5 py-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-bold cursor-pointer"
+                                            >
+                                                Cancel
+                                            </Button>
+                                        </div>
+                                    </Card>
+                                </div>
                             )}
                         </div>
                     </Card>

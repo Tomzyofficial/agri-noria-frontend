@@ -176,7 +176,10 @@ export default function FinanceApprovalsPage() {
   const pending = pendingJson?.success ? pendingJson.data || [] : [];
   const stage1 = pending.filter((r) => r.funds_status === "pending" || !r.funds_status);
   const stage2 = pending.filter((r) => r.funds_status === "approved" && r.status === "items_selected");
-  const stage3 = pending.filter((r) => r.funds_status === "approved" && r.items_status === "delivered");
+  const stage3 = pending.filter(
+    (r) => r.funds_status === "approved" &&
+           (r.items_status === "delivered" || r.items_status === "confirmed_delivered")
+  );
 
   const all = allJson?.success ? allJson.data || [] : [];
   const history = all.filter((r) => r.status !== "pending");
@@ -330,15 +333,16 @@ export default function FinanceApprovalsPage() {
 
   const handleReleaseFunds = async (req) => {
     setProcessingId(`release-${req.id}`);
+    const payoutAmount = editableAmounts[req.id] !== undefined ? editableAmounts[req.id] : (req.total_amount || req.total_value);
     try {
       const res = await fetch("/api/proxy/admin/institution/payout-distributor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requestId: req.id }),
+        body: JSON.stringify({ requestId: req.id, payoutAmount }),
       });
       const json = await res.json();
       if (json.success) {
-        toast.success(`✅ Payout released to distributor for ${req.fname} ${req.lname}`);
+        toast.success(`✅ Payout of ₦${Number(payoutAmount).toLocaleString()} released to distributor for ${req.fname} ${req.lname}`);
         fetchData();
       } else {
         toast.error(json.error || "Failed to release payout");
@@ -919,40 +923,137 @@ export default function FinanceApprovalsPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {stage3.map((req) => (
-                    <div
-                      key={req.id}
-                      className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 sm:p-6"
-                    >
-                      <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
-                        <RequesterCard req={req} />
-                        <div className="text-right">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                            Escrow Payout Due
-                          </span>
-                          <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">
-                            ₦{parseFloat(req.total_amount || req.total_value || 0).toLocaleString()}
-                          </p>
-                          <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
-                            Items Delivered ✓
-                          </span>
-                        </div>
-                      </div>
+                  {stage3.map((req) => {
+                    const isTwoWayVerified = req.items_status === "confirmed_delivered";
+                    const orderValue = parseFloat(req.total_amount || req.total_value || 0);
+                    const currentPayoutAmount = editableAmounts[req.id] !== undefined ? editableAmounts[req.id] : orderValue;
+                    const isModified = editableAmounts[req.id] !== undefined && editableAmounts[req.id] !== orderValue;
 
-                      <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800">
-                        <div className="text-xs text-slate-500">
-                          Distributor delivery verified by recipient. Release escrow payout to vendor wallet.
+                    return (
+                      <div
+                        key={req.id}
+                        className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 sm:p-6 space-y-4"
+                      >
+                        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                          <RequesterCard req={req} />
+                          <div className="text-right shrink-0">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                              Approved Escrow Value
+                            </span>
+                            <p className="text-lg font-black text-slate-700 dark:text-slate-300">
+                              ₦{orderValue.toLocaleString()}
+                            </p>
+
+                            {/* Editable payout input for Finance */}
+                            <div className="flex items-center justify-end gap-1.5 mt-1.5">
+                              <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1">
+                                <Edit3 className="w-3 h-3" /> Payout:
+                              </span>
+                              <div className="relative inline-flex items-center">
+                                <span className="absolute left-2 text-xs font-bold text-slate-400">₦</span>
+                                <input
+                                  type="number"
+                                  value={currentPayoutAmount}
+                                  onChange={(e) => handleAmountChange(req.id, e.target.value)}
+                                  placeholder="0"
+                                  className="w-32 pl-6 pr-2 py-1 text-xs font-black text-right rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                                />
+                              </div>
+                              {isModified && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleResetAmount(req.id)}
+                                  title="Reset to original approved value"
+                                  className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+
+                            {isTwoWayVerified ? (
+                              <span className="inline-flex items-center gap-1.5 mt-2 text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                2-Way Handshake Verified (2/2)
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 mt-2 text-[11px] font-black px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                                <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                Awaiting Recipient Receipt (1/2)
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <Button
-                          onClick={() => handleReleaseFunds(req)}
-                          disabled={processingId === `release-${req.id}`}
-                          className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl px-5 py-2.5 text-xs shadow-sm cursor-pointer"
-                        >
-                          {processingId === `release-${req.id}` ? "Processing..." : "Release Escrow Payout"}
-                        </Button>
+
+                        {/* Two-Way Handshake Audit Box */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800/80 text-xs">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5 text-slate-400 font-bold uppercase text-[10px]">
+                              <Truck className="w-3.5 h-3.5 text-blue-500" />
+                              <span>1. Distributor Handover</span>
+                              <span className="text-emerald-600 font-bold">✓ Arrived</span>
+                            </div>
+                            <p className="font-bold text-slate-800 dark:text-slate-200">
+                              {req.distributor_fname ? `${req.distributor_fname} ${req.distributor_lname}` : "Assigned Distributor"}
+                              {req.distributor_phone && <span className="text-slate-400 text-[11px] ml-1">({req.distributor_phone})</span>}
+                            </p>
+                            <p className="text-[11px] text-slate-500">
+                              {req.distributor_delivered_at
+                                ? `Handover logged: ${new Date(req.distributor_delivered_at).toLocaleDateString()} at ${new Date(req.distributor_delivered_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                                : "Handover logged at destination"}
+                            </p>
+                          </div>
+
+                          <div className="space-y-1 sm:border-l sm:border-slate-200 dark:sm:border-slate-800 sm:pl-3.5">
+                            <div className="flex items-center gap-1.5 text-slate-400 font-bold uppercase text-[10px]">
+                              <UserCheck className="w-3.5 h-3.5 text-purple-500" />
+                              <span>2. Recipient Physical Receipt</span>
+                              {isTwoWayVerified ? (
+                                <span className="text-emerald-600 font-bold">✓ Confirmed</span>
+                              ) : (
+                                <span className="text-amber-600 font-bold">⏳ Pending</span>
+                              )}
+                            </div>
+                            <p className="font-bold text-slate-800 dark:text-slate-200">
+                              {req.fname} {req.lname} ({req.cluster_name ? `Cluster: ${req.cluster_name}` : "Farmer Direct"})
+                            </p>
+                            <p className="text-[11px] text-slate-500">
+                              {isTwoWayVerified
+                                ? (req.recipient_confirmed_at
+                                    ? `Physically confirmed: ${new Date(req.recipient_confirmed_at).toLocaleDateString()} at ${new Date(req.recipient_confirmed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                                    : "Physical receipt verified by recipient")
+                                : "Awaiting recipient physical inspection & in-app confirmation"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800">
+                          <div className="text-xs text-slate-500">
+                            {isTwoWayVerified
+                              ? "✅ 2-Way verification complete. Escrow payout is authorized for vendor supplier wallet disbursement."
+                              : "⏳ Escrow release is locked until recipient physically confirms receipt of delivered materials."}
+                          </div>
+                          {isTwoWayVerified ? (
+                            <Button
+                              onClick={() => handleReleaseFunds(req)}
+                              disabled={processingId === `release-${req.id}`}
+                              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl px-5 py-2.5 text-xs shadow-sm cursor-pointer"
+                            >
+                              {processingId === `release-${req.id}` ? "Processing..." : `Release Escrow Payout (₦${Number(currentPayoutAmount || 0).toLocaleString()})`}
+                            </Button>
+                          ) : (
+                            <Button
+                              disabled
+                              className="bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-bold rounded-xl px-5 py-2.5 text-xs cursor-not-allowed border border-slate-200 dark:border-slate-700"
+                            >
+                              Locked: Awaiting Recipient (1/2)
+                            </Button>
+                          )}
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

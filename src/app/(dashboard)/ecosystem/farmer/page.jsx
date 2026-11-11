@@ -397,6 +397,7 @@ export default function FarmerOverview() {
                                        enrolling={enrollingProgramId === prog.id}
                                        onEnroll={() => handleEnroll(prog.id)}
                                        isVerified={isVerified}
+                                       profile={profile}
                                     />
                                  ))}
 
@@ -565,7 +566,8 @@ function ProgramRow({
    currentProgramName, 
    enrolling, 
    onEnroll, 
-   isVerified = true 
+   isVerified = true,
+   profile = null
 }) {
    const targetFarmers = parseInt(prog.target_farmers, 10) || 0;
    const enrolledFarmers = parseInt(prog.enrolled_farmers, 10) || 0;
@@ -755,7 +757,7 @@ function ProgramRow({
                ? "Submitting..." 
                : canEnroll
                ? "Enroll Now"
-               : profile?.program_enrollment_status === 'pending_verification'
+               : (currentEnrollmentStatus === 'pending_verification' || (typeof profile !== 'undefined' && profile?.program_enrollment_status === 'pending_verification'))
                ? "Pending Approval"
                : "Enrolled in Another Program"}
          </Button>

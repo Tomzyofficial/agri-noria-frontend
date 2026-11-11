@@ -2,6 +2,8 @@
 import { apiUrl } from "@/_lib/api";
 import { cookies } from "next/headers";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 /***************** Vendor side ******************/
 export async function signinBridge(credentials) {
    try {
@@ -23,8 +25,8 @@ export async function signinBridge(credentials) {
       const cookieStore = await cookies();
       const cookieOptions = {
          httpOnly: true,
-         secure: true,
-         sameSite: "none",
+         secure: isProduction,
+         sameSite: isProduction ? "none" : "lax",
          path: "/",
          maxAge: credentials?.rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60,
       };
@@ -34,7 +36,8 @@ export async function signinBridge(credentials) {
 
       return { success: true };
    } catch (error) {
-      return { success: false, error: "Internal server error. Try again later." };
+      console.error("SigninBridge error:", error);
+      return { success: false, error: error?.message || "Internal server error. Try again later." };
    }
 }
 
@@ -55,8 +58,8 @@ export async function registerBridge(credentials) {
       const cookieStore = await cookies();
       const cookieOptions = {
          httpOnly: true,
-         secure: true,
-         sameSite: "none",
+         secure: isProduction,
+         sameSite: isProduction ? "none" : "lax",
          path: "/",
          maxAge: 24 * 60 * 60,
       };
@@ -67,7 +70,7 @@ export async function registerBridge(credentials) {
       return { success: true };
    } catch (error) {
       console.error("RegisterBridge error:", error);
-      return { success: false, error: "Internal server error. Try again later." };
+      return { success: false, error: error?.message || "Internal server error. Try again later." };
    }
 }
 
@@ -107,15 +110,16 @@ export async function buyerSigninBridge(credentials) {
       const cookieStore = await cookies();
       cookieStore.set("buyer-session", data.token, {
          httpOnly: true,
-         secure: true,
-         sameSite: "none",
+         secure: isProduction,
+         sameSite: isProduction ? "none" : "lax",
          path: "/",
          maxAge: 24 * 60 * 60,
       });
 
       return { success: true, buyerId: data.buyerId };
    } catch (error) {
-      return { success: false, error: "Internal server error. Try again later." };
+      console.error("BuyerSigninBridge error:", error);
+      return { success: false, error: error?.message || "Internal server error. Try again later." };
    }
 }
 
@@ -136,15 +140,16 @@ export async function buyerRegisterBridge(credentials) {
       const cookieStore = await cookies();
       cookieStore.set("buyer-session", data.token, {
          httpOnly: true,
-         secure: true,
-         sameSite: "none",
+         secure: isProduction,
+         sameSite: isProduction ? "none" : "lax",
          path: "/",
          maxAge: 24 * 60 * 60,
       });
 
       return { success: true, buyerId: data.token.buyer_id };
    } catch (error) {
-      return { success: false, error: "Internal server error. Try again later." };
+      console.error("BuyerRegisterBridge error:", error);
+      return { success: false, error: error?.message || "Internal server error. Try again later." };
    }
 }
 

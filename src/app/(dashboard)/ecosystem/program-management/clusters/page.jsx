@@ -179,8 +179,11 @@ export default function ClusterOperationsPage() {
       if (cluster.request_items_status === "confirmed_delivered" || cluster.request_status === "distributed") {
          return "completed"; // Delivery confirmed, now ready for distribution
       }
-      if (cluster.request_items_status === "dispatched" || cluster.request_items_status === "delivered") {
-         return "needs_confirmation"; // Items dispatched/delivered by distributor, needs confirmation
+      if (cluster.request_items_status === "delivered") {
+         return "needs_confirmation"; // Items delivered by distributor at farm gate, needs physical confirmation
+      }
+      if (cluster.request_items_status === "dispatched") {
+         return "in_transit"; // Items dispatched and en route
       }
       if (cluster.request_status === "approved" && cluster.request_items_status !== "pending") {
          return "processing"; // Still processing / not dispatched yet
@@ -298,11 +301,15 @@ export default function ClusterOperationsPage() {
                                            ? "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800" :
                                         btnState === "needs_confirmation" 
                                            ? "bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200 dark:border-teal-800" :
+                                        btnState === "in_transit" 
+                                           ? "bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800" :
                                         cluster.status === "active" 
                                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" :
                                            "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border border-gray-200"
                                      }`}>
                                         <span className={`w-2 h-2 rounded-full ${
+                                           btnState === "needs_confirmation" ? "bg-teal-500 animate-pulse" :
+                                           btnState === "in_transit" ? "bg-blue-500 animate-pulse" :
                                            btnState === "select_inputs" ? "bg-purple-500 animate-pulse" :
                                            btnState === "awaiting_approval" ? "bg-amber-500 animate-pulse" :
                                            btnState === "completed" ? "bg-emerald-500" : "bg-blue-500"
@@ -382,15 +389,20 @@ export default function ClusterOperationsPage() {
                                                 <PackageCheck className="w-4 h-4 text-blue-500" />
                                                 Input Selection Submitted
                                              </>
+                                          ) : btnState === "in_transit" ? (
+                                             <>
+                                                <Truck className="w-4 h-4 text-blue-500" />
+                                                Inputs In Transit to Cluster Depot
+                                             </>
                                           ) : btnState === "needs_confirmation" ? (
                                              <>
-                                                <CheckCircle2 className="w-4 h-4 text-teal-600" />
-                                                Supplier Delivery Completed
+                                                <AlertCircle className="w-4 h-4 text-teal-600 animate-pulse" />
+                                                Materials Arrived — Verification Required
                                              </>
                                           ) : btnState === "completed" ? (
                                              <>
                                                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                                                Input Distribution Finalized
+                                                Two-Way Verified — Ready for Member Distribution
                                              </>
                                           ) : (
                                              <>
@@ -406,10 +418,12 @@ export default function ClusterOperationsPage() {
                                              ? "Your financing requisition is pending Finance Department authorization and budget allocation."
                                              : btnState === "awaiting_items_approval"
                                              ? "Selected inputs are being packaged for distributor dispatch to your cluster."
+                                             : btnState === "in_transit"
+                                             ? `Distributor ${cluster.distributor_name || "Partner"} has dispatched your input requisition. Materials are en route to your depot.`
                                              : btnState === "needs_confirmation"
-                                             ? `Distributor ${cluster.distributor_name || "Partner"} has reported input delivery. Please verify physical receipt.`
+                                             ? `Distributor ${cluster.distributor_name || "Partner"} has reported physical delivery at the depot. Please inspect materials and click Confirm Physical Receipt below.`
                                              : btnState === "completed"
-                                             ? "All inputs have been verified and delivered to cluster farmers."
+                                             ? "Delivery physically verified by both distributor and supervisor. Escrow payout queued for Finance authorization."
                                              : "Apply for input financing based on the total farm size of your enrolled cluster members."}
                                        </p>
                                     </div>
@@ -453,6 +467,18 @@ export default function ClusterOperationsPage() {
                                                 </span>
                                              )}
                                           </div>
+                                       ) : btnState === "in_transit" ? (
+                                          <div className="flex flex-col items-end gap-1">
+                                             <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-blue-100/60 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                                <Truck className="w-3.5 h-3.5" />
+                                                In Transit to Depot
+                                             </span>
+                                             {cluster.distributor_name && (
+                                                <span className="text-[10px] text-slate-500">
+                                                   Distributor: {cluster.distributor_name} {cluster.distributor_phone && `(${cluster.distributor_phone})`}
+                                                </span>
+                                             )}
+                                          </div>
                                        ) : btnState === "needs_confirmation" ? (
                                           <div className="flex flex-col items-end gap-1">
                                              <Button
@@ -460,20 +486,20 @@ export default function ClusterOperationsPage() {
                                                    try {
                                                       const res = await fetch(`/api/proxy/pipeline/inputs/${cluster.pending_request_id}/confirm-delivery`, { method: "PATCH" });
                                                       if (res.ok) {
-                                                         toast.success("Delivery confirmed!");
+                                                         toast.success("Physical receipt confirmed! Escrow authorized for payout.");
                                                          fetchClusters();
                                                       } else {
                                                          toast.error("Failed to confirm delivery");
                                                       }
                                                    } catch { toast.error("Network error"); }
                                                 }}
-                                                className="w-full md:w-auto bg-teal-600 hover:bg-teal-700 text-white text-xs px-6 py-2.5 font-bold rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-1.5"
+                                                className="w-full md:w-auto bg-teal-600 hover:bg-teal-700 text-white text-xs px-6 py-2.5 font-bold rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-1.5 animate-pulse"
                                              >
-                                                <Check className="w-4 h-4" /> Confirm Delivery
+                                                <Check className="w-4 h-4" /> Confirm Physical Receipt
                                              </Button>
                                              {cluster.distributor_name && (
                                                 <span className="text-[10px] text-slate-500">
-                                                   Distributor: {cluster.distributor_name}
+                                                   Delivered by: {cluster.distributor_name}
                                                 </span>
                                              )}
                                           </div>

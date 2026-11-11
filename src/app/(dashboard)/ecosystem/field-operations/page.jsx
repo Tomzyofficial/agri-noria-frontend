@@ -9,10 +9,17 @@ import {
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import MapboxFarmCapture from "@/components/MapboxFarmCapture";
+import Link from "next/link";
+import { Button } from "@/components/ui/Button";
+import { Clock, ShieldAlert, Lock, FileText, ArrowRight, RefreshCw } from "lucide-react";
+import { verifyVendorSession } from "@/actions/session";
 
 export default function FieldOperationsDashboard() {
    const [activeSection, setActiveSection] = useState("overview");
    const [loading, setLoading] = useState(true);
+   const [isCheckingSession, setIsCheckingSession] = useState(true);
+   const [isApproved, setIsApproved] = useState(false);
+   const [sessionData, setSessionData] = useState(null);
    const [stats, setStats] = useState({});
    const [clusters, setClusters] = useState([]);
    const [selectedCluster, setSelectedCluster] = useState(null);
@@ -29,6 +36,16 @@ export default function FieldOperationsDashboard() {
    const [assignmentForm, setAssignmentForm] = useState({ officerId: "", community: "", ward: "", lga: "", zone: "", target: "" });
    const [userRole, setUserRole] = useState(null);
 
+   const normRole = (userRole || sessionData?.role || "").toLowerCase().trim();
+   const roleDisplayNames = {
+      agronomist: "Agronomist",
+      inspector: "Field Inspector",
+      enumerator: "Field Enumerator",
+      "field officer": "Field Officer",
+      "field operations supervisor": "Field Operations Supervisor",
+   };
+   const roleTitle = roleDisplayNames[normRole] || "Field Operations";
+
    const [farmerRegData, setFarmerRegData] = useState({
       fname: "", lname: "", email: "", phone: "", pword: "", country_name: "Nigeria", country_code: "NG", state_name: "", currency: "NGN"
    });
@@ -42,7 +59,40 @@ export default function FieldOperationsDashboard() {
       { id: 'harvesting', label: 'Harvesting', icon: <FaSun /> },
    ];
 
+   const fetchSession = async (showToast = false) => {
+      try {
+         let session;
+         try {
+            const res = await fetch("/api/auth/session");
+            if (res.ok) {
+               session = await res.json();
+            } else {
+               session = await verifyVendorSession();
+            }
+         } catch {
+            session = await verifyVendorSession();
+         }
+         if (session?.authenticated) {
+            setSessionData(session);
+            const approved = session?.approval_status === "approved" || session?.is_verified === true || session?.onboarding_status === "verified";
+            setIsApproved(approved);
+            if (showToast) {
+               if (approved) {
+                  toast.success("Field Officer account is approved and accredited!");
+               } else {
+                  toast.info("Field Officer account is still awaiting SuperAdmin approval.");
+               }
+            }
+         }
+      } catch (e) {
+         console.warn("Failed to check field officer session:", e);
+      } finally {
+         setIsCheckingSession(false);
+      }
+   };
+
    useEffect(() => {
+      fetchSession();
       fetchInitialData();
    }, []);
 
@@ -52,6 +102,9 @@ export default function FieldOperationsDashboard() {
 
    const handleRegisterFarmer = async (e) => {
       e.preventDefault();
+      if (!isApproved) {
+         return toast.warning("⏳ Pending Approval: Farmer registration is locked until SuperAdmin verifies your account.");
+      }
       setIsRegistering(true);
       try {
          const res = await fetch("/api/proxy/field-operations/register-farmer", {
@@ -87,7 +140,13 @@ export default function FieldOperationsDashboard() {
          ]);
          if (statsRes.ok) { const d = await statsRes.json(); setStats(d.data || {}); }
          if (assignmentsRes.ok) { const d = await assignmentsRes.json(); setAssignments(d.data || []); }
-         if (sessionRes.ok) { const d = await sessionRes.json(); setUserRole(d.role?.toLowerCase() || ""); }
+         if (sessionRes.ok) { 
+            const d = await sessionRes.json(); 
+            setUserRole(d.role?.toLowerCase() || ""); 
+            setSessionData(d);
+            const isApp = d.approval_status === "approved" || d.is_verified === true || d.onboarding_status === "verified";
+            setIsApproved(isApp);
+         }
          
          if (assignedProgRes.ok) {
             const ap = await assignedProgRes.json();
@@ -170,6 +229,9 @@ export default function FieldOperationsDashboard() {
    };
 
    const handleUpdateSupervision = async () => {
+      if (!isApproved) {
+         return toast.warning("⏳ Pending Approval: Supervision logging is locked until SuperAdmin verifies your account.");
+      }
       if (!selectedCluster || !supervision) return;
       setIsSaving(true);
       try {
@@ -247,6 +309,9 @@ export default function FieldOperationsDashboard() {
 
    const handleCreateAssignment = async (e) => {
       e.preventDefault();
+      if (!isApproved) {
+         return toast.warning("⏳ Pending Approval: Work assignment creation is locked until SuperAdmin verifies your account.");
+      }
       setIsSaving(true);
       try {
          const res = await fetch("/api/proxy/field-operations/work-assignments", {
@@ -270,6 +335,9 @@ export default function FieldOperationsDashboard() {
    };
 
    const handleBoundaryCapture = async (data) => {
+      if (!isApproved) {
+         return toast.warning("⏳ Pending Approval: Farm boundary capture is locked until SuperAdmin verifies your account.");
+      }
       if (!selectedFarmer || !data) return;
       setIsSaving(true);
       try {
@@ -297,36 +365,126 @@ export default function FieldOperationsDashboard() {
       }
    };
 
-   return (
-      <div className="space-y-6 pb-20">
-         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-               <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Field <span className="text-teal-600">Operations</span></h1>
-               <p className="text-gray-500 mt-1 font-medium">Manage visits, verify farms, and monitor agricultural progress.</p>
+   if (isCheckingSession || loading) {
+      return (
+         <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 space-y-4 animate-in fade-in duration-300">
+            <div className="animate-spin h-12 w-12 border-4 border-teal-500 border-t-transparent rounded-full shadow-lg shadow-teal-500/20" />
+            <div className="text-center space-y-1">
+               <p className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">
+                  Loading Field Operations Console
+               </p>
+               <p className="text-xs font-semibold text-gray-400">
+                  Verifying officer credentials and loading field programs...
+               </p>
             </div>
          </div>
+      );
+   }
 
-         <div className="flex flex-wrap gap-2 p-1 bg-gray-100 dark:bg-gray-800/50 rounded-2xl w-fit">
-            {[
-               { key: "overview", label: "Overview", roles: ["all"] },
-               { key: "assigned_programs", label: "Assigned Programs & Farms", roles: ["all"] },
-               { key: "register_farmer", label: "Register Farmer", roles: ["enumerator", "field officer", "agronomist", "field operations supervisor", "program director"] },
-               { key: "capture_boundary", label: "Capture Boundary", roles: ["field officer", "agronomist", "field operations supervisor", "program director"] },
-               { key: "supervision", label: "Farm Supervision (Agronomy)", roles: ["agronomist", "field operations supervisor", "program director"] },
-               { key: "inspections", label: "Field Inspections", roles: ["inspector", "field operations supervisor", "program director"] },
-               { key: "assignments", label: "Work Assignments", roles: ["field operations supervisor", "program director"] }
-            ]
-            .filter(tab => !userRole || tab.roles.includes("all") || tab.roles.some(r => userRole.includes(r)))
-            .map(({ key, label }) => (
-               <button
-                  key={key}
-                  onClick={() => setActiveSection(key)}
-                  className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer ${activeSection === key ? "bg-white dark:bg-gray-700 text-teal-600 shadow-sm" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"}`}
-               >
-                  {label}
-               </button>
-            ))}
-         </div>
+   return (
+      <div className="relative space-y-6 pb-20">
+         {/* PENDING APPROVAL BLUR SCREEN OVERLAY */}
+         {!isCheckingSession && !isApproved && (
+            <div className="absolute inset-0 z-30 backdrop-blur-md bg-white/75 dark:bg-slate-950/80 rounded-3xl flex items-center justify-center p-4 min-h-[600px]">
+               <div className="max-w-xl w-full p-6 sm:p-8 rounded-3xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border-2 border-amber-500/40 shadow-2xl shadow-amber-500/10 text-center animate-fade-in my-auto">
+                  <div className="mx-auto w-16 h-16 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-4 shadow-inner">
+                     <Clock className="w-8 h-8 animate-pulse" />
+                  </div>
+
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 mb-3">
+                     <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+                     {roleTitle} Accreditation Under Review
+                  </span>
+
+                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                     {roleTitle} Console Locked
+                  </h3>
+
+                  <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                     Welcome to Agri-Noria Field Operations! Your {roleTitle} credentials and operational accreditation are currently pending review and verification by Platform SuperAdmin. Once approved, you will be authorized to access assigned field programs and operational tools.
+                  </p>
+
+                  <div className="my-5 p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 text-left space-y-2.5 text-xs">
+                     <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300 font-bold">
+                        <Lock className="w-4 h-4 text-amber-500 shrink-0" />
+                        <span>Farmer registration & identity enrollment locked</span>
+                     </div>
+                     <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300 font-bold">
+                        <Lock className="w-4 h-4 text-amber-500 shrink-0" />
+                        <span>GPS farm boundary mapping & polygon capture disabled</span>
+                     </div>
+                     <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300 font-bold">
+                        <Lock className="w-4 h-4 text-amber-500 shrink-0" />
+                        <span>{roleTitle} advisory, field inspections & task logs restricted</span>
+                     </div>
+                     <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300 font-bold">
+                        <Lock className="w-4 h-4 text-amber-500 shrink-0" />
+                        <span>{roleTitle} wallet & operational disbursement restricted</span>
+                     </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+
+
+                     <Button
+                        variant="outline"
+                        onClick={() => fetchSession(true)}
+                        className="w-full sm:w-auto px-5 py-2.5 rounded-xl border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer"
+                     >
+                        <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Check Approval Status</span>
+                     </Button>
+                  </div>
+               </div>
+            </div>
+         )}
+
+         {/* DASHBOARD CONTENT (Blurred when !isApproved) */}
+         <div className={`space-y-6 ${!isApproved ? "filter blur-sm select-none pointer-events-none transition-all duration-300 opacity-60" : ""}`}>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+               <div>
+                  <h1 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Field <span className="text-teal-600">Operations</span></h1>
+                  <p className="text-gray-500 mt-1 font-medium">Manage visits, verify farms, and monitor agricultural progress.</p>
+               </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2 p-1 bg-gray-100 dark:bg-gray-800/50 rounded-2xl w-fit">
+               {[
+                  { key: "overview", label: "Overview", roles: ["all"], restricted: false },
+                  { key: "assigned_programs", label: "Assigned Programs & Farms", roles: ["all"], restricted: true },
+                  { key: "register_farmer", label: "Register Farmer", roles: ["enumerator", "field officer", "agronomist", "field operations supervisor", "program director"], restricted: true },
+                  { key: "capture_boundary", label: "Capture Boundary", roles: ["field officer", "agronomist", "field operations supervisor", "program director"], restricted: true },
+                  { key: "supervision", label: "Farm Supervision (Agronomy)", roles: ["agronomist", "field operations supervisor", "program director"], restricted: true },
+                  { key: "inspections", label: "Field Inspections", roles: ["inspector", "field operations supervisor", "program director"], restricted: true },
+                  { key: "assignments", label: "Work Assignments", roles: ["field operations supervisor", "program director"], restricted: true }
+               ]
+               .filter(tab => !userRole || tab.roles.includes("all") || tab.roles.some(r => userRole.includes(r)))
+               .map(({ key, label, restricted }) => {
+                  const isTabLocked = !isCheckingSession && restricted && !isApproved;
+                  return (
+                     <button
+                        key={key}
+                        onClick={() => {
+                           if (isTabLocked) {
+                              toast.warning("⏳ Pending Approval: Field operations features are locked until SuperAdmin verifies your account.");
+                              return;
+                           }
+                           setActiveSection(key);
+                        }}
+                        className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer flex items-center gap-2 ${
+                           activeSection === key 
+                              ? "bg-white dark:bg-gray-700 text-teal-600 shadow-sm" 
+                              : isTabLocked
+                              ? "text-gray-400 opacity-60 cursor-not-allowed"
+                              : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                        }`}
+                     >
+                        <span>{label}</span>
+                        {isTabLocked && <Lock className="w-3.5 h-3.5 text-amber-500" />}
+                     </button>
+                  );
+               })}
+            </div>
 
          {loading ? (
             <div className="flex justify-center py-24"><div className="animate-spin h-12 w-12 border-4 border-teal-500 border-t-transparent rounded-full shadow-lg shadow-teal-500/20"></div></div>
@@ -1078,6 +1236,7 @@ export default function FieldOperationsDashboard() {
                )}
             </div>
          )}
+         </div>
       </div>
    );
 }

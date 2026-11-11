@@ -1,7 +1,7 @@
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { FaPlusCircle, FaBoxOpen, FaInfoCircle, FaHandHoldingUsd } from "react-icons/fa";
+import { FaPlusCircle, FaBoxOpen, FaInfoCircle, FaHandHoldingUsd, FaTruck, FaCheckCircle } from "react-icons/fa";
 import { useFarmerData } from "../useFarmerData";
 import { useState, useEffect } from "react";
 import InputRequestModal from "@/app/components/dashboard/InputRequestModal";

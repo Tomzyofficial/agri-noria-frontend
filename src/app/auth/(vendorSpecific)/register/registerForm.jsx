@@ -288,7 +288,7 @@ export function RegisterForm() {
          return;
       }
 
-      setIsLoading(true);
+            setIsLoading(true);
       try {
          const res = await registerBridge(normalizedData);
 
@@ -300,6 +300,7 @@ export function RegisterForm() {
                setErrors({ general: "This email is already registered. Please sign in with your credentials." });
             } else {
                toast.error(errorMsg);
+               setErrors({ general: errorMsg });
             }
             return;
          }
@@ -326,49 +327,81 @@ export function RegisterForm() {
          setShowConfirmPassword(false);
          toast.success("Account created successfully!");
 
-         const session = await verifyVendorSession();
+         let redirected = false;
+         try {
+            const session = await verifyVendorSession();
 
-         if (session.authenticated) {
-            const { workspace, role } = session;
-            const normRole = role?.toLowerCase().trim();
-            if (workspace?.toLowerCase() === "ecosystem") {
-               if (normRole === "farmer") {
-                  router.push("/ecosystem/farmer/onboarding");
-               } else if (["storage", "storage facility", "storage_facility", "storage supplier"].includes(normRole)) {
-                  router.push("/ecosystem/storage/onboarding");
-               } else if (["logistics", "logistics partner", "logistic", "logistics supplier"].includes(normRole)) {
-                  router.push("/ecosystem/logistics/onboarding");
-               } else if (["cluster supervisor", "cluster_supervisor"].includes(normRole)) {
-                  router.push("/ecosystem/program-management/onboarding");
-               } else if (["field officer", "agronomist", "inspector", "enumerator", "field operations supervisor"].includes(normRole)) {
-                  router.push("/ecosystem/field-operations/onboarding");
-               } else if (normRole === "aggregator") {
-                  router.push("/ecosystem/aggregator/onboarding");
-               } else if (normRole === "distributor") {
-                  router.push("/ecosystem/distributor/onboarding");
-               } else if (["exporter", "off-taker", "warehouse buyer", "processor"].includes(normRole)) {
-                  router.push("/ecosystem/buyer-partner/onboarding");
-               } else if (["sales manager", "logistics coordinator", "warehouse supervisor"].includes(normRole)) {
-                  router.push("/ecosystem/sales-&-distribution/onboarding");
-               } else if (["data analyst", "satellite monitor", "field auditor"].includes(normRole)) {
-                  router.push("/ecosystem/intelligence-&-monitoring/onboarding");
-               } else if (["insurance", "insurance firm"].includes(normRole)) {
-                  router.push("/ecosystem/insurance/onboarding");
-               } else if (["producer association", "cooperative", "research institution", "ngo"].includes(normRole)) {
-                  router.push("/ecosystem/institution/onboarding");
+            if (session?.authenticated) {
+               const { workspace, role } = session;
+               const normRole = (role || "").toLowerCase().trim();
+               if (workspace?.toLowerCase() === "ecosystem") {
+                  if (normRole === "farmer") {
+                     router.push("/ecosystem/farmer/onboarding");
+                     redirected = true;
+                  } else if (normRole === "distributor") {
+                     router.push("/ecosystem/distributor/onboarding");
+                     redirected = true;
+                  } else if (["storage", "storage facility", "storage_facility", "storage supplier"].includes(normRole)) {
+                     router.push("/ecosystem/storage/onboarding");
+                     redirected = true;
+                  } else if (["logistics", "logistics partner", "logistic", "logistics supplier"].includes(normRole)) {
+                     router.push("/ecosystem/logistics/onboarding");
+                     redirected = true;
+                  } else if (["cluster supervisor", "cluster_supervisor"].includes(normRole)) {
+                     router.push("/ecosystem/program-management/onboarding");
+                     redirected = true;
+                  } else if (["field officer", "agronomist", "inspector", "enumerator", "field operations supervisor"].includes(normRole)) {
+                     router.push("/ecosystem/field-operations/onboarding");
+                     redirected = true;
+                  } else if (normRole === "aggregator") {
+                     router.push("/ecosystem/aggregator/onboarding");
+                     redirected = true;
+                  } else if (["exporter", "off-taker", "warehouse buyer", "processor"].includes(normRole)) {
+                     router.push("/ecosystem/buyer-partner/onboarding");
+                     redirected = true;
+                  } else if (["sales manager", "logistics coordinator", "warehouse supervisor"].includes(normRole)) {
+                     router.push("/ecosystem/sales-&-distribution/onboarding");
+                     redirected = true;
+                  } else if (["data analyst", "satellite monitor", "field auditor"].includes(normRole)) {
+                     router.push("/ecosystem/intelligence-&-monitoring/onboarding");
+                     redirected = true;
+                  } else if (["insurance", "insurance firm"].includes(normRole)) {
+                     router.push("/ecosystem/insurance/onboarding");
+                     redirected = true;
+                  } else if (["producer association", "cooperative", "research institution", "ngo"].includes(normRole)) {
+                     router.push("/ecosystem/institution/onboarding");
+                     redirected = true;
+                  } else {
+                     router.push(resolveRedirectPath(role, workspace));
+                     redirected = true;
+                  }
                } else {
                   router.push(resolveRedirectPath(role, workspace));
+                  redirected = true;
                }
+            }
+         } catch (sessionErr) {
+            console.error("Session verification error:", sessionErr);
+         }
+
+         if (!redirected) {
+            const role = normalizedData.role;
+            const workspace = normalizedData.workspace;
+            if (workspace?.toLowerCase() === "ecosystem" && role === "distributor") {
+               router.push("/ecosystem/distributor/onboarding");
             } else {
                router.push(resolveRedirectPath(role, workspace));
             }
          }
          router.refresh();
       } catch (err) {
+         console.error("Registration error:", err);
+         const msg = err?.message || "Internal server error. Please try again.";
          setErrors((prev) => ({
             ...prev,
-            general: "Internal server error. Please try again.",
+            general: msg,
          }));
+         toast.error(msg);
       } finally {
          setIsLoading(false);
       }

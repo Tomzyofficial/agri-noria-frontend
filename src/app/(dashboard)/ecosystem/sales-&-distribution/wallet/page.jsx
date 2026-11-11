@@ -14,8 +14,8 @@ export default function SalesWalletPage() {
             try {
                 const res = await fetch("/api/proxy/aggregator/my-wallet"); // Reusing aggregator wallet logic if compatible or similar
                 const data = await res.json();
-                if (data.success) {
-                    setWallet(data.data);
+                if (data.success && data.data) {
+                    setWallet(data.data.wallet || data.data);
                     setTransactions(data.data.transactions || []);
                 }
             } catch (error) {
@@ -55,7 +55,7 @@ export default function SalesWalletPage() {
                         </div>
                         <div>
                             <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Total Earned</p>
-                            <p className="text-xl font-bold mt-1">₦{transactions.filter(t => t.type === 'credit').reduce((acc, t) => acc + parseFloat(t.amount || 0), 0).toLocaleString()}</p>
+                            <p className="text-xl font-bold mt-1">₦{transactions.filter(t => (t.type || t.transaction_type) === 'credit').reduce((acc, t) => acc + parseFloat(t.amount || 0), 0).toLocaleString()}</p>
                         </div>
                     </div>
                 </div>
@@ -71,24 +71,27 @@ export default function SalesWalletPage() {
                     <div className="py-20 text-center animate-pulse text-gray-400 font-bold">Fetching secure transaction ledger...</div>
                 ) : transactions.length > 0 ? (
                     <div className="space-y-4">
-                        {transactions.map((tx, i) => (
-                            <Card key={i} className="rounded-3xl border-none shadow-sm bg-white p-6 hover:shadow-md transition-all">
-                                <div className="flex justify-between items-center">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`p-3 rounded-2xl ${tx.type === 'credit' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                                            {tx.type === 'credit' ? <FaArrowUp /> : <FaArrowDown />}
+                        {transactions.map((tx, i) => {
+                            const isCredit = (tx.type || tx.transaction_type) === 'credit';
+                            return (
+                                <Card key={tx.id || i} className="rounded-3xl border-none shadow-sm bg-white p-6 hover:shadow-md transition-all">
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`p-3 rounded-2xl ${isCredit ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                                                {isCredit ? <FaArrowUp /> : <FaArrowDown />}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-slate-900">{tx.description}</p>
+                                                <p className="text-xs text-gray-400">{new Date(tx.created_at).toLocaleString()}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="font-bold text-slate-900">{tx.description}</p>
-                                            <p className="text-xs text-gray-400">{new Date(tx.created_at).toLocaleString()}</p>
+                                        <div className={`text-xl font-black ${isCredit ? 'text-green-600' : 'text-red-600'}`}>
+                                            {isCredit ? '+' : '-'} ₦{parseFloat(tx.amount || 0).toLocaleString()}
                                         </div>
                                     </div>
-                                    <div className={`text-xl font-black ${tx.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
-                                        {tx.type === 'credit' ? '+' : '-'} ₦{parseFloat(tx.amount).toLocaleString()}
-                                    </div>
-                                </div>
-                            </Card>
-                        ))}
+                                </Card>
+                            );
+                        })}
                     </div>
                 ) : (
                     <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-16 text-center">

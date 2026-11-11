@@ -314,7 +314,13 @@ export default function OnboardingPage() {
             }
 
             if (session.workspace?.toLowerCase() === "ecosystem") {
-               if (session.onboarding_status === "completed" || session.onboarding_status === "verified") {
+               const hasSubmittedOnboarding =
+                  session.has_onboarded === true ||
+                  session.has_draft === true ||
+                  ["unverified", "submitted", "completed", "verified"].includes(session.onboarding_status?.toLowerCase()) ||
+                  session.approval_status === "approved";
+
+               if (hasSubmittedOnboarding) {
                   router.replace(resolveRedirectPath(session.role, session.workspace));
                   return;
                }

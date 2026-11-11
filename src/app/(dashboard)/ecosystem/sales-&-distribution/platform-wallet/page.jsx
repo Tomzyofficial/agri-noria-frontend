@@ -14,7 +14,7 @@ export default function PlatformWalletPage() {
             try {
                 const res = await fetch("/api/proxy/pipeline/stats/platform-wallet");
                 const data = await res.json();
-                if (data.success) {
+                if (data.success && data.data) {
                     setBalance(data.data.balance || 0);
                     setEscrow(data.data.held_in_escrow || 0);
                 }

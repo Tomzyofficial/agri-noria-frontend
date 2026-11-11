@@ -15,7 +15,7 @@ export default function AggregatorWalletPage() {
             const res = await fetch("/api/proxy/aggregator/my-wallet");
             if (res.ok) {
                 const data = await res.json();
-                setWallet(data?.data?.wallet);
+                setWallet(data?.data?.wallet || data?.data || null);
                 setTransactions(data?.data?.transactions || []);
             }
         } catch (err) {
@@ -61,11 +61,11 @@ export default function AggregatorWalletPage() {
                         <div className="mt-12 pt-8 border-t border-white/10 flex justify-between">
                             <div>
                                 <p className="text-green-200 text-[10px] uppercase font-black">Escrow (Locked)</p>
-                                <p className="text-xl font-bold">₦0.00</p>
+                                <p className="text-xl font-bold">₦{parseFloat(wallet?.locked_balance || 0).toLocaleString()}</p>
                             </div>
                             <div className="text-right">
                                 <p className="text-green-200 text-[10px] uppercase font-black">Currency</p>
-                                <p className="text-xl font-bold">NGN</p>
+                                <p className="text-xl font-bold">{wallet?.currency || "NGN"}</p>
                             </div>
                         </div>
                     </div>
@@ -85,27 +85,30 @@ export default function AggregatorWalletPage() {
                                 <p className="text-gray-400 italic">No transactions recorded yet.</p>
                             </div>
                         ) : (
-                            transactions.map(tx => (
-                                <div key={tx.id} className="group p-6 rounded-3xl border border-gray-50 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-all flex items-center justify-between">
-                                    <div className="flex items-center gap-5">
-                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${
-                                            tx.transaction_type === 'credit' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-                                        }`}>
-                                            {tx.transaction_type === 'credit' ? <FaArrowDown size={20} /> : <FaArrowUp size={20} />}
+                            transactions.map((tx, i) => {
+                                const isCredit = (tx.type || tx.transaction_type) === 'credit';
+                                return (
+                                    <div key={tx.id || i} className="group p-6 rounded-3xl border border-gray-50 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-all flex items-center justify-between">
+                                        <div className="flex items-center gap-5">
+                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${
+                                                isCredit ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                                            }`}>
+                                                {isCredit ? <FaArrowDown size={20} /> : <FaArrowUp size={20} />}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-lg text-gray-900 dark:text-white">{tx.description}</p>
+                                                <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">{new Date(tx.created_at).toLocaleString()}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="font-bold text-lg text-gray-900 dark:text-white">{tx.description}</p>
-                                            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">{new Date(tx.created_at).toLocaleString()}</p>
+                                        <div className="text-right">
+                                            <p className={`text-xl font-black ${isCredit ? 'text-green-600' : 'text-red-600'}`}>
+                                                {isCredit ? '+' : '-'} ₦{parseFloat(tx.amount || 0).toLocaleString()}
+                                            </p>
+                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">{tx.status || "Completed"}</span>
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className={`text-xl font-black ${tx.transaction_type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
-                                            {tx.transaction_type === 'credit' ? '+' : '-'} ₦{parseFloat(tx.amount).toLocaleString()}
-                                        </p>
-                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Completed</span>
-                                    </div>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
                 </Card>

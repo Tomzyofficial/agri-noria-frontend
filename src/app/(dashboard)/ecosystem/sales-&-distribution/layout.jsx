@@ -1,25 +1,26 @@
 "use client";
+
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   LogOut,
-  X,
-  Menu,
   LayoutDashboard,
   Truck,
   Warehouse,
   BadgePercent,
   Settings,
-  Globe,
   Wallet,
-  Coins,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { signoutBridge } from "@/actions/authActions";
+import { NotificationProvider } from "@/hooks/useNotificationContext";
+import NotificationDrawer from "@/components/notifications/NotificationDrawer";
+import EcosystemHeader from "@/components/dashboard/EcosystemHeader";
+import { WorkspaceSwitcher } from "@/components/dashboard/WorkspaceSwitcher";
 
-export default function SalesLayout({ children }) {
+function SalesLayoutInner({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function SalesLayout({ children }) {
   const handleSignout = async () => {
     try {
       toast.info("Signing out...", { autoClose: 2000, toastId: "signout" });
-        const res = await signoutBridge();
+      const res = await signoutBridge();
       if (!res) {
         toast.error("Signout failed. Try again.");
         return;
@@ -66,13 +67,13 @@ export default function SalesLayout({ children }) {
     };
     checkExistingUser();
     const interval = setInterval(checkExistingUser, 30000);
-      // If on onboarding route, render cleanly full width (matching storage & logistics)
-  if (pathname?.includes("/onboarding")) {
-    return <div className="min-h-screen bg-(--background)">{children}</div>;
-  }
+    return () => clearInterval(interval);
+  }, [router]);
 
-  return () => clearInterval(interval);
-  }, []);
+  // If on onboarding route, render cleanly full width
+  if (pathname?.includes("/onboarding")) {
+    return <div className="min-h-screen bg-slate-950 text-slate-100">{children}</div>;
+  }
 
   const sidebarNavMenu = [
     {
@@ -90,11 +91,6 @@ export default function SalesLayout({ children }) {
       href: "/ecosystem/sales-&-distribution/warehouse",
       icon: <Warehouse className="w-4 h-4" />,
     },
-    // {
-    //    label: "Platform Wallet",
-    //    href: "/ecosystem/sales-&-distribution/platform-wallet",
-    //    icon: <Coins className="w-4 h-4 text-emerald-500" />,
-    // },
     {
       label: "Sales Wallet",
       href: "/ecosystem/sales-&-distribution/wallet",
@@ -112,71 +108,113 @@ export default function SalesLayout({ children }) {
     },
   ];
 
-  const navLinksStyle = (path) => {
-    return path === pathname
-      ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 p-2 rounded shadow-sm"
-      : "hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded transition-all duration-200";
-  };
-
   return (
-    <div className="flex min-h-screen bg-(--background)">
+    <div className="flex min-h-screen bg-slate-950 text-slate-100 selection:bg-blue-500/30 selection:text-blue-200">
+      {/* Mobile Drawer Backdrop */}
+      {menuOpen && (
+        <div
+          onClick={() => setMenuOpen(false)}
+          className="lg:hidden fixed inset-0 z-30 bg-black/70 backdrop-blur-xs transition-opacity duration-300"
+        />
+      )}
+
       {/* Sidebar */}
       <aside>
         <div
-          aria-label="Open menu"
-          onClick={handleMenuClick}
-          className="lg:hidden fixed z-50 bg-black dark:bg-white right-4 top-4 cursor-pointer shadow-md p-2 rounded"
+          className={`${
+            menuOpen ? "left-0 w-64 h-full shadow-2xl" : "-left-64"
+          } transition-all duration-300 fixed z-40 top-0 lg:left-0 lg:w-64 lg:h-screen bg-slate-900 border-r border-slate-800 p-4 flex flex-col justify-between`}
         >
-          {menuOpen ? (
-            <X className="text-white dark:text-black" />
-          ) : (
-            <Menu className="text-white dark:text-black" />
-          )}
-        </div>
+          <div>
+            <div className="mb-4 px-2">
+              <h2 className="text-xl font-black text-blue-500 uppercase tracking-tight">
+                Agri-Noria
+              </h2>
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                  Sales & Distribution
+                </p>
+                <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Active
+                </p>
+              </div>
+            </div>
 
-        <div
-          className={`${menuOpen ? "left-0 w-64 h-full bg-white shadow-xl" : "-left-64"} transition-all duration-300 fixed z-40 top-0 lg:left-0 lg:w-64 lg:h-screen dark:bg-gray-900 dark:text-(--foreground) lg:bg-white lg:shadow-md p-4 flex flex-col`}
-        >
-          <div className="mb-8 px-2">
-            <h2 className="text-xl font-black text-blue-600 tracking-tighter uppercase">
-              Agri-Noria
-            </h2>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
-              Sales & Distribution
-            </p>
+            {/* Workspace Switcher */}
+            <div className="mb-4">
+              <WorkspaceSwitcher currentWorkspace="ecosystem" role="sales" />
+            </div>
+
+            <nav className="flex flex-col space-y-1">
+              <div className="px-2 pb-1 text-[10px] font-black uppercase tracking-wider text-slate-500">
+                Operations
+              </div>
+              {sidebarNavMenu.map((item) => {
+                const isActive =
+                  item.href === "/ecosystem/sales-&-distribution"
+                    ? pathname === "/ecosystem/sales-&-distribution" || pathname === "/ecosystem/sales-&-distribution/"
+                    : pathname === item.href || pathname.startsWith(item.href + "/");
+
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={() => setMenuOpen(false)}
+                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-xs transition-all duration-150 ${
+                      isActive
+                        ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30 font-extrabold"
+                        : "text-slate-400 hover:bg-slate-800/80 hover:text-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className={isActive ? "text-white" : "text-slate-400"}>
+                        {item.icon}
+                      </div>
+                      <span>{item.label}</span>
+                    </div>
+                    {isActive && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-white shadow-sm" />
+                    )}
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
 
-          <nav className="flex flex-col space-y-2 flex-grow">
-            {sidebarNavMenu.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={`flex items-center gap-3 font-semibold text-sm ${navLinksStyle(item.href)}`}
-              >
-                {item.icon} {item.label}
-              </Link>
-            ))}
-
-            {/* <div className="my-4 border-t border-gray-100 dark:border-gray-800 pt-4">
-                     
-                  </div> */}
-
+          <div className="pt-4 border-t border-slate-800/80">
             <Button
               onClick={handleSignout}
-              className="mt-auto cursor-pointer flex items-center text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 p-2 rounded-xl transition-all font-bold"
-              variant="ghost"
+              type="button"
+              className="w-full cursor-pointer flex items-center text-rose-400 hover:bg-rose-500/10 px-3 py-2.5 rounded-xl transition-colors justify-start gap-2 bg-transparent text-xs font-bold"
             >
-              <LogOut className="w-4 mr-2" />
-              Sign out
+              <LogOut className="w-4 h-4" /> Sign out
             </Button>
-          </nav>
+          </div>
         </div>
       </aside>
 
       {/* Main content */}
-      <main className="lg:ml-64 w-full lg:p-8 p-4 bg-gray-50 dark:bg-(--background)">
-        {children}
-      </main>
+      <div className="lg:ml-64 w-full flex-1 flex flex-col min-h-screen">
+        <EcosystemHeader
+          title="Sales & Distribution Hub"
+          portalName="Sales & Distribution"
+          role="sales_operations"
+          onMenuToggle={handleMenuClick}
+        />
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-slate-950">
+          {children}
+        </main>
+      </div>
     </div>
+  );
+}
+
+export default function SalesLayout({ children }) {
+  return (
+    <NotificationProvider>
+      <SalesLayoutInner>{children}</SalesLayoutInner>
+      <NotificationDrawer />
+    </NotificationProvider>
   );
 }

@@ -66,13 +66,13 @@ export default function IntelligenceLayout({ children }) {
     };
     checkExistingUser();
     const interval = setInterval(checkExistingUser, 30000);
-      // If on onboarding route, render cleanly full width (matching storage & logistics)
+    return () => clearInterval(interval);
+  }, [router]);
+
+  // If on onboarding route, render cleanly full width (matching storage & logistics)
   if (pathname?.includes("/onboarding")) {
     return <div className="min-h-screen bg-(--background)">{children}</div>;
   }
-
-  return () => clearInterval(interval);
-  }, []);
 
   const sidebarNavMenu = [
     {
