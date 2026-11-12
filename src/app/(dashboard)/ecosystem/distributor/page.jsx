@@ -22,7 +22,7 @@ import {
    Eye,
    Layers,
 } from "lucide-react";
-import { FaTruckLoading, FaWallet, FaChartLine } from "react-icons/fa6";
+import { FaTruckLoading, FaWallet, FaChartLine } from "react-icons/fa";
 import { toast } from "react-toastify";
 
 const DEFAULT_INVENTORY = [

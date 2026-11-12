@@ -1049,7 +1049,6 @@ export default function FinanceApprovalsPage() {
                               Locked: Awaiting Recipient (1/2)
                             </Button>
                           )}
-                          )}
                         </div>
                       </div>
                     );
