@@ -208,7 +208,10 @@ function LogisticsLayoutInner({ children }) {
             </div>
             {navMenu.map((item) => {
               const currentTarget = activeMenuHref || pathname;
-              const isActive = currentTarget === item.href || (item.href.length > 18 && currentTarget.startsWith(item.href));
+              const isActive =
+                item.href === "/ecosystem/logistics"
+                  ? currentTarget === "/ecosystem/logistics" || currentTarget === "/ecosystem/logistics/"
+                  : currentTarget === item.href || currentTarget.startsWith(item.href + "/");
               const isItemNavigating = navigatingHref === item.href;
               const isLocked = !isApproved && item.restricted;
 

@@ -208,7 +208,10 @@ function StorageLayoutInner({ children }) {
             </div>
             {navMenu.map((item) => {
               const currentTarget = activeMenuHref || pathname;
-              const isActive = currentTarget === item.href || (item.href.length > 18 && currentTarget.startsWith(item.href));
+              const isActive =
+                item.href === "/ecosystem/storage"
+                  ? currentTarget === "/ecosystem/storage" || currentTarget === "/ecosystem/storage/"
+                  : currentTarget === item.href || currentTarget.startsWith(item.href + "/");
               const isItemNavigating = navigatingHref === item.href;
               const isLocked = !isApproved && item.restricted;
 
