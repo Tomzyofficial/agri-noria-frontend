@@ -59,7 +59,10 @@ export default function DistributorDashboard() {
          const res = await fetch("/api/auth/session");
          if (res.ok) {
             const data = await res.json();
-            const approved = data?.approval_status === "approved";
+            const approved =
+               data?.approval_status === "approved" ||
+               data?.is_verified === true ||
+               data?.onboarding_status === "verified";
             setIsApproved(approved);
             if (showToast) {
                if (approved) {
@@ -205,7 +208,7 @@ export default function DistributorDashboard() {
 
                      <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                         <Link
-                           href="/ecosystem/distributor/onboarding"
+                           href="/ecosystem/distributor/onboarding?view=dossier"
                            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-amber-600/25 transition cursor-pointer"
                         >
                            <FileText className="w-4 h-4" />

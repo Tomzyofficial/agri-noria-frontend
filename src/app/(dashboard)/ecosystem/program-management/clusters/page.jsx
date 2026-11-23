@@ -5,7 +5,7 @@ import { FaMapMarkedAlt, FaPlus, FaTimes, FaUserTie, FaWallet, FaVideo } from "r
 import { 
    Users, UserPlus, MessageSquare, Calendar, TrendingUp, Eye, Sparkles, 
    CheckCircle2, Clock, PackageCheck, AlertCircle, ShieldCheck, MapPin, 
-   Building2, ChevronRight, Wallet, UserCheck, Check, ArrowUpRight
+   Building2, ChevronRight, Wallet, UserCheck, Check, ArrowUpRight, Truck
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";

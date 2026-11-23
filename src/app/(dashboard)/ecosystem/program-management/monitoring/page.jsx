@@ -37,14 +37,6 @@ export default function ProgrammeMonitoringPage() {
       }
    }, [userRole, router]);
 
-   if (userRole && (userRole.includes("supervisor") || userRole === "cluster supervisor")) {
-      return (
-         <div className="p-8 text-center text-sm font-bold text-gray-500">
-            Access restricted. Redirecting to your dashboard...
-         </div>
-      );
-   }
-
    // 1. Fetch programs (strictly filter for program director)
    const { data: programsRes, isLoading: loadingPrograms, mutate: mutatePrograms } = useSWR(
       "/api/proxy/programs", 
@@ -101,6 +93,14 @@ export default function ProgrammeMonitoringPage() {
    );
    const allEnrollments = enrollmentsRes?.data?.farmers || [];
    const programFarmers = allEnrollments.filter(f => f.program_id === currentProgram?.id);
+
+   if (userRole && (userRole.includes("supervisor") || userRole === "cluster supervisor")) {
+      return (
+         <div className="p-8 text-center text-sm font-bold text-gray-500">
+            Access restricted. Redirecting to your dashboard...
+         </div>
+      );
+   }
 
    // Handle assigning field officer
    const handleAssignOfficer = async () => {

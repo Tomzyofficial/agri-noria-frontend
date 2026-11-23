@@ -121,7 +121,11 @@ export default function DistributorDashboard() {
          const res = await fetch("/api/auth/session");
          if (res.ok) {
             const data = await res.json();
-            setIsApproved(data.approval_status === "approved");
+            setIsApproved(
+               data.approval_status === "approved" ||
+               data.is_verified === true ||
+               data.onboarding_status === "verified"
+            );
          }
       } catch (e) {
          console.warn("Failed to fetch session in distributor page:", e);

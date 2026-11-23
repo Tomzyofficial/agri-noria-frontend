@@ -9,6 +9,7 @@ import {
   Package,
   Truck,
   User,
+  UserCheck,
   Building2,
   ChevronRight,
   AlertCircle,
@@ -53,7 +54,7 @@ function getItemLabel(item) {
 }
 
 function RequesterCard({ req }) {
-  const initials = `${(req.fname || "?")[0]}${(req.lname || "?")[0]}`.toUpperCase();
+  const initials = `${(req?.fname?.[0] || "?")}${(req?.lname?.[0] || "?")}`.toUpperCase();
   const role = req.requester_type || "farmer";
   const roleColors = {
     farmer: "bg-emerald-600 text-white",
@@ -162,18 +163,18 @@ export default function FinanceApprovalsPage() {
   const { data: treasuryJson, isLoading: l6, mutate: m6 } = useSWR("/api/proxy/pipeline/stats/platform-wallet", fetcher, { refreshInterval: 30000, revalidateOnFocus: true });
   const { data: programsJson, isLoading: l7, mutate: m7 } = useSWR("/api/proxy/programs", fetcher, { refreshInterval: 30000, revalidateOnFocus: true });
 
-  const stats = statsJson?.success ? statsJson.data.disbursements : {
+  const stats = (statsJson?.success && statsJson?.data?.disbursements) ? statsJson.data.disbursements : {
     pendingCount: 0,
     pendingValue: 0,
     totalDisbursed: 0,
     rejectedCount: 0,
     rejectedValue: 0,
   };
-  const ecosystemTreasury = treasuryJson?.success ? treasuryJson.data.ecosystem_treasury || 0 : 0;
-  const distributors = distJson?.success ? distJson.data : [];
-  const programs = programsJson?.success ? programsJson.data || [] : [];
+  const ecosystemTreasury = treasuryJson?.success ? treasuryJson?.data?.ecosystem_treasury || 0 : 0;
+  const distributors = Array.isArray(distJson?.data) ? distJson.data : [];
+  const programs = Array.isArray(programsJson?.data) ? programsJson.data : [];
 
-  const pending = pendingJson?.success ? pendingJson.data || [] : [];
+  const pending = Array.isArray(pendingJson?.data) ? pendingJson.data : [];
   const stage1 = pending.filter((r) => r.funds_status === "pending" || !r.funds_status);
   const stage2 = pending.filter((r) => r.funds_status === "approved" && r.status === "items_selected");
   const stage3 = pending.filter(
@@ -181,10 +182,10 @@ export default function FinanceApprovalsPage() {
            (r.items_status === "delivered" || r.items_status === "confirmed_delivered")
   );
 
-  const all = allJson?.success ? allJson.data || [] : [];
+  const all = Array.isArray(allJson?.data) ? allJson.data : [];
   const history = all.filter((r) => r.status !== "pending");
 
-  const allOrders = ordersJson?.success ? ordersJson.data || [] : [];
+  const allOrders = Array.isArray(ordersJson?.data) ? ordersJson.data : [];
   const marketplaceOrders = allOrders.filter(
     (o) =>
       o.status === "payment_pending_finance" ||

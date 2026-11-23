@@ -169,11 +169,6 @@ function ProgramManagementLayoutInner({ children }) {
     }
   }, [pathname, sessionData, router]);
 
-  // If on onboarding route, render cleanly full width (matching storage & logistics)
-  if (pathname?.includes("/onboarding")) {
-    return <div className="min-h-screen bg-(--background)">{children}</div>;
-  }
-
   const userRole = (sessionData?.role || "").toLowerCase();
   const isSupervisor = userRole.includes("supervisor");
   const isDirector = userRole.includes("director") || (!isSupervisor && (userRole === "program director" || userRole === "director"));
@@ -331,12 +326,19 @@ function ProgramManagementLayoutInner({ children }) {
 
   // Warm / prefetch all permitted visible navigation routes on mount
   useEffect(() => {
+    if (pathname?.includes("/onboarding")) return;
     visibleNavMenu.forEach((item) => {
       if (item.href) {
         try { router.prefetch(item.href); } catch {}
       }
     });
-  }, [visibleNavMenu, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, userRole, router]);
+
+  // If on onboarding route, render cleanly full width (matching storage & logistics)
+  if (pathname?.includes("/onboarding")) {
+    return <div className="min-h-screen bg-(--background)">{children}</div>;
+  }
 
   const isPendingKyc =
     (!sessionData?.onboarding_status ||

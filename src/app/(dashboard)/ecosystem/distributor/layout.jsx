@@ -87,7 +87,10 @@ function DistributorLayoutInner({ children }) {
           return;
         }
         setSessionData(session);
-        const approved = session?.approval_status === "approved";
+        const approved =
+          session?.approval_status === "approved" ||
+          session?.is_verified === true ||
+          session?.onboarding_status === "verified";
         setIsApproved(approved);
 
         // Block restricted operational sub-routes if unapproved
@@ -114,17 +117,12 @@ function DistributorLayoutInner({ children }) {
     return () => clearInterval(interval);
   }, [pathname, router]);
 
-  // If on onboarding route, render cleanly full width
-  if (pathname?.includes("/onboarding")) {
-    return <div className="min-h-screen bg-(--background)">{children}</div>;
-  }
-
   const isPendingKyc =
     (!sessionData ||
       !sessionData.onboarding_status ||
       sessionData.onboarding_status === "pending" ||
       sessionData.onboarding_status === "incomplete") &&
-    sessionData?.approval_status !== "approved";
+    !isApproved;
 
   const navMenu = [
     {
@@ -151,12 +149,18 @@ function DistributorLayoutInner({ children }) {
       icon: <FaChartLine className="w-4 h-4" />,
       restricted: true,
     },
-    {
-      label: "KYC & Catalog Profile",
-      href: "/ecosystem/distributor/onboarding",
-      icon: <FileText className="w-4 h-4" />,
-      restricted: false,
-    },
+    ...(!isLoadingSession && !isApproved
+      ? [
+          {
+            label: "KYC & Catalog Profile",
+            href: isPendingKyc
+              ? "/ecosystem/distributor/onboarding"
+              : "/ecosystem/distributor/onboarding?view=dossier",
+            icon: <FileText className="w-4 h-4" />,
+            restricted: false,
+          },
+        ]
+      : []),
     {
       label: "Settings",
       href: "/ecosystem/distributor/settings",
@@ -167,14 +171,21 @@ function DistributorLayoutInner({ children }) {
 
   // Prefetch routes for instant page switching
   useEffect(() => {
+    if (pathname?.includes("/onboarding")) return;
     navMenu.forEach((item) => {
       if (item.href) {
         try {
-          router.prefetch(item.href);
+          router.prefetch(item.href.split("?")[0]);
         } catch {}
       }
     });
-  }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, router, isApproved, isLoadingSession]);
+
+  // If on onboarding route, render cleanly full width
+  if (pathname?.includes("/onboarding")) {
+    return <div className="min-h-screen bg-(--background)">{children}</div>;
+  }
 
   const navigatingItem = navMenu.find((m) => m.href === navigatingHref);
 
@@ -312,8 +323,11 @@ function DistributorLayoutInner({ children }) {
 
       <main className="lg:ml-64 w-full flex-1 flex flex-col min-h-screen">
         <EcosystemHeader
-          roleTitle="Agro-Input Distribution Portal"
-          roleBadge="Distributor Gateway"
+          title="Agro-Input Distribution Portal"
+          portalName="Distributor Gateway"
+          role="distributor"
+          user={sessionData}
+          onMenuToggle={handleMenuClick}
         />
 
         {/* Global Verification Alert Banner if Pending Approval */}
@@ -331,10 +345,10 @@ function DistributorLayoutInner({ children }) {
               </div>
             </div>
             <Link
-              href="/ecosystem/distributor/onboarding"
+              href={isPendingKyc ? "/ecosystem/distributor/onboarding" : "/ecosystem/distributor/onboarding?view=dossier"}
               className="px-3.5 py-1.5 rounded-xl bg-amber-600 text-white font-bold text-[11px] shrink-0 flex items-center gap-1 hover:bg-amber-700 transition"
             >
-              <span>View Submitted Dossier</span>
+              <span>{isPendingKyc ? "Complete KYC" : "View Submitted Dossier"}</span>
               <ArrowRight className="w-3 h-3" />
             </Link>
           </div>

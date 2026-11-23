@@ -112,19 +112,6 @@ function StorageLayoutInner({ children }) {
     return () => clearInterval(interval);
   }, [pathname, router]);
 
-  // If on onboarding route, render cleanly full width
-  if (pathname?.includes("/onboarding")) {
-    return <div className="min-h-screen bg-(--background)">{children}</div>;
-  }
-
-  useEffect(() => {
-    navMenu.forEach((item) => {
-      if (item.href) {
-        try { router.prefetch(item.href); } catch {}
-      }
-    });
-  }, [navMenu, router]);
-
   const navMenu = [
     {
       label: "Dashboard",
@@ -151,6 +138,21 @@ function StorageLayoutInner({ children }) {
       restricted: false,
     },
   ];
+
+  useEffect(() => {
+    if (pathname?.includes("/onboarding")) return;
+    navMenu.forEach((item) => {
+      if (item.href) {
+        try { router.prefetch(item.href); } catch {}
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, router]);
+
+  // If on onboarding route, render cleanly full width
+  if (pathname?.includes("/onboarding")) {
+    return <div className="min-h-screen bg-(--background)">{children}</div>;
+  }
 
   const isPendingKyc =
     (!sessionData ||
