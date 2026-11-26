@@ -117,6 +117,18 @@ function ProgramManagementLayoutInner({ children }) {
     const isDir = roleStr.includes("director") || (!isSuperv && (roleStr === "program director" || roleStr === "director"));
     const approved = sessionData?.approval_status === "approved";
 
+    const onboardingStatus = String(sessionData?.onboarding_status || "").toLowerCase();
+    const hasSubmittedOnboarding =
+      sessionData?.has_onboarded === true ||
+      sessionData?.has_draft === true ||
+      ["unverified", "submitted", "completed", "verified"].includes(onboardingStatus) ||
+      approved;
+    if ((isSuperv || isDir) && !hasSubmittedOnboarding && !pathname?.includes("/onboarding")) {
+      toast.info("Please complete your onboarding & KYC verification before continuing.");
+      router.replace("/ecosystem/program-management/onboarding");
+      return;
+    }
+
     // 1. Role boundaries
     // Cluster Supervisors cannot access Director governance areas
     const directorOnlyRoutes = [

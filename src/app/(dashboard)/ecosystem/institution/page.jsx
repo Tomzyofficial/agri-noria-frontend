@@ -643,6 +643,133 @@ const SupplyChainMetricsPanel = ({ metrics }) => {
   );
 };
 
+const InstitutionProfitAnalyticsPanel = ({ profitAnalytics, userRole }) => {
+  if (!profitAnalytics) return null;
+  const isBank = userRole === "bank";
+  const breakdown = Array.isArray(profitAnalytics.programProfitBreakdown)
+    ? profitAnalytics.programProfitBreakdown
+    : [];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <TrendingUp size={20} className="text-emerald-600" />
+          <h2 className="text-lg font-black text-(--foreground) uppercase tracking-wider">
+            {isBank ? "Bank Profit & Interest Analytics" : "Institution Profit Made Analytics"}
+          </h2>
+        </div>
+        <span className="text-xs font-black px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+          ROI: {profitAnalytics.roiPercent || 0}%
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+          <CardContent className="p-5">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Realized Profit Made</p>
+            <h3 className="text-2xl font-black mt-2 text-emerald-600">
+              ₦{parseFloat(profitAnalytics.totalProfitMade || 0).toLocaleString()}
+            </h3>
+            <p className="text-[11px] font-semibold text-gray-400 mt-1">
+              {isBank ? "Settled bank interest returns" : "Settled interest & surplus payouts"}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+          <CardContent className="p-5">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              {isBank ? "Expected Loan Interest" : "Projected Interest / Yield"}
+            </p>
+            <h3 className="text-2xl font-black mt-2 text-blue-600">
+              ₦{parseFloat(profitAnalytics.expectedInterestProfit || 0).toLocaleString()}
+            </h3>
+            <p className="text-[11px] font-semibold text-gray-400 mt-1">
+              Across active funded programmes
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+          <CardContent className="p-5">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Institution Surplus Payouts</p>
+            <h3 className="text-2xl font-black mt-2 text-purple-600">
+              ₦{parseFloat(profitAnalytics.institutionSurplusEarned || 0).toLocaleString()}
+            </h3>
+            <p className="text-[11px] font-semibold text-gray-400 mt-1">
+              Pending approval: ₦{parseFloat(profitAnalytics.pendingSurplusProfit || 0).toLocaleString()}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm bg-white dark:bg-gray-950">
+          <CardContent className="p-5">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Principal Deployed</p>
+            <h3 className="text-2xl font-black mt-2 text-(--foreground)">
+              ₦{parseFloat(profitAnalytics.totalPrincipalDeployed || 0).toLocaleString()}
+            </h3>
+            <p className="text-[11px] font-semibold text-gray-400 mt-1">
+              Direct programme capital deployed
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {breakdown.length > 0 && (
+        <Card className="border-none shadow-sm bg-white dark:bg-gray-950 overflow-hidden">
+          <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+            <p className="text-xs font-black uppercase tracking-wider text-gray-500">
+              Programme-by-Programme Profit & Settlement Breakdown
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="bg-gray-50 dark:bg-gray-900 text-gray-500 font-black uppercase tracking-wider">
+                  <th className="px-4 py-3">Programme</th>
+                  <th className="px-4 py-3">Principal Funded</th>
+                  <th className="px-4 py-3">Bank Interest (%)</th>
+                  <th className="px-4 py-3">Expected Profit</th>
+                  <th className="px-4 py-3">Settled Interest</th>
+                  <th className="px-4 py-3">Institution Surplus</th>
+                  <th className="px-4 py-3">Settlement Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                {breakdown.slice(0, 8).map((item) => (
+                  <tr key={item.program_id} className="hover:bg-gray-50 dark:hover:bg-gray-900/40">
+                    <td className="px-4 py-3 font-bold text-(--foreground)">
+                      {item.program_name}
+                      <span className="block text-[10px] font-normal text-gray-400 capitalize">{item.commodity}</span>
+                    </td>
+                    <td className="px-4 py-3 font-bold">₦{parseFloat(item.principal_funded || 0).toLocaleString()}</td>
+                    <td className="px-4 py-3 font-bold text-blue-600">{item.bank_interest_rate || 0}%</td>
+                    <td className="px-4 py-3 font-bold text-emerald-600">₦{parseFloat(item.expected_interest || 0).toLocaleString()}</td>
+                    <td className="px-4 py-3 font-bold">₦{parseFloat(item.settled_interest || 0).toLocaleString()}</td>
+                    <td className="px-4 py-3 font-bold text-purple-600">₦{parseFloat(item.institution_payout || 0).toLocaleString()}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                        item.settlement_status === "settled"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : item.settlement_status === "pending_finance_approval"
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-gray-100 text-gray-600"
+                      }`}>
+                        {String(item.settlement_status || "active").replace(/_/g, " ")}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+};
+
 export default function InstitutionDashboard() {
   const [userRole, setUserRole] = useState("");
   const [stats, setStats] = useState({
@@ -710,6 +837,9 @@ export default function InstitutionDashboard() {
       {(!["government", "bank", "commodity board", "dfi", "ngo", "producer association", "cooperative", "research institution"].includes(userRole)) && (
          <GovernmentDashboard stats={stats} />
       )}
+
+      {/* Profit Made Analytics */}
+      <InstitutionProfitAnalyticsPanel profitAnalytics={stats.profitAnalytics} userRole={userRole} />
 
       {/* Input Metrics - visible to all institution roles */}
       <InputMetricsPanel inputMetrics={stats.inputMetrics} />

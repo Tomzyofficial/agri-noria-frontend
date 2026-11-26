@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { 
    Layers, Users, ShieldCheck, UserPlus, Trash2, MapPin, Search, 
    CheckCircle2, AlertCircle, RefreshCw, Phone, Mail, Award, Activity, 
-   Sprout, ChevronRight, Check, X, Loader2, ArrowRight
+   Sprout, ChevronRight, Check, X, Loader2, ArrowRight, FileText, Eye
 } from "lucide-react";
 import { toast } from "react-toastify";
 import Link from "next/link";
@@ -20,7 +20,7 @@ export default function ProgrammeMonitoringPage() {
    const [selectedOfficerToAssign, setSelectedOfficerToAssign] = useState(null);
    const [isAssigning, setIsAssigning] = useState(false);
    const [isRemovingId, setIsRemovingId] = useState(null);
-   const [activeViewTab, setActiveViewTab] = useState("officers"); // "officers" | "farmers"
+   const [activeViewTab, setActiveViewTab] = useState("officers"); // "officers" | "farmers" | "reports"
 
    // 0. Fetch user session to identify Program Director
    const { data: sessionRes } = useSWR("/api/proxy/auth/verify-vendor", fetcher, { revalidateOnFocus: false });
@@ -93,6 +93,19 @@ export default function ProgrammeMonitoringPage() {
    );
    const allEnrollments = enrollmentsRes?.data?.farmers || [];
    const programFarmers = allEnrollments.filter(f => f.program_id === currentProgram?.id);
+
+   // 5. Fetch field officer supervisions & inspection reports for this program
+   const {
+      data: fieldReportsRes,
+      isLoading: loadingFieldReports,
+   } = useSWR(
+      currentProgram ? `/api/proxy/programs/${currentProgram.id}/field-reports` : null,
+      fetcher,
+      { revalidateOnFocus: true }
+   );
+   const programInspections = fieldReportsRes?.data?.inspections || [];
+   const programSupervisions = fieldReportsRes?.data?.supervisions || [];
+   const totalFieldReports = programInspections.length + programSupervisions.length;
 
    if (userRole && (userRole.includes("supervisor") || userRole === "cluster supervisor")) {
       return (
@@ -325,6 +338,17 @@ export default function ProgrammeMonitoringPage() {
                         <Sprout className="w-4 h-4" />
                         Enrolled Farmers & Farms ({programFarmers.length})
                      </button>
+                     <button
+                        onClick={() => setActiveViewTab("reports")}
+                        className={`cursor-pointer px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+                           activeViewTab === "reports"
+                              ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                              : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                        }`}
+                     >
+                        <FileText className="w-4 h-4" />
+                        Supervisions & Reports ({totalFieldReports})
+                     </button>
                   </div>
 
                   {activeViewTab === "officers" && (
@@ -540,6 +564,172 @@ export default function ProgrammeMonitoringPage() {
                               </tbody>
                            </table>
                         </div>
+                     )}
+                  </div>
+               )}
+
+               {/* SECTION 3: Field Officer Supervisions & Inspection Reports */}
+               {activeViewTab === "reports" && (
+                  <div className="space-y-6">
+                     {loadingFieldReports ? (
+                        <div className="p-8 text-center bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+                           <Loader2 className="w-6 h-6 animate-spin text-amber-600 mx-auto mb-2" />
+                           <p className="text-xs text-gray-500">Loading field officer supervisions and reports...</p>
+                        </div>
+                     ) : totalFieldReports === 0 ? (
+                        <div className="p-12 text-center bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 space-y-2">
+                           <FileText className="w-10 h-10 text-gray-300 mx-auto" />
+                           <h3 className="font-bold text-gray-900 dark:text-white text-sm">No Field Supervisions or Reports Yet</h3>
+                           <p className="text-xs text-gray-500 max-w-md mx-auto">
+                              Field supervisions and inspection reports submitted by officers assigned to {currentProgram.name} will appear here automatically.
+                           </p>
+                        </div>
+                     ) : (
+                        <>
+                           {/* Farm & Cluster Supervisions */}
+                           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+                              <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                                 <div>
+                                    <h3 className="font-bold text-sm text-gray-900 dark:text-white">
+                                       Field Supervisions ({programSupervisions.length})
+                                    </h3>
+                                    <p className="text-xs text-gray-500">
+                                       Stage-by-stage crop supervision logs recorded by assigned field officers.
+                                    </p>
+                                 </div>
+                              </div>
+                              {programSupervisions.length === 0 ? (
+                                 <div className="p-8 text-center text-xs text-gray-400">No supervision logs recorded yet.</div>
+                              ) : (
+                                 <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                                    {programSupervisions.map((sup) => {
+                                       const stages = [
+                                          { label: "Clearing", status: sup.clearing_status, notes: sup.clearing_notes },
+                                          { label: "Irrigation", status: sup.irrigation_status, notes: sup.irrigation_notes },
+                                          { label: "Ridging", status: sup.ridging_status, notes: sup.ridging_notes },
+                                          { label: "Weeding", status: sup.weeding_status, notes: sup.weeding_notes },
+                                          { label: "Harvesting", status: sup.harvesting_status, notes: sup.harvesting_notes },
+                                       ];
+                                       return (
+                                          <div key={sup.id} className="p-4 space-y-3 hover:bg-gray-50/50 dark:hover:bg-gray-800/20">
+                                             <div className="flex flex-wrap items-center justify-between gap-2">
+                                                <div>
+                                                   <p className="font-bold text-sm text-gray-900 dark:text-white">
+                                                      {sup.farmer_name || sup.cluster_name || "Supervised Farm / Cluster"}
+                                                      {sup.commodity ? ` • ${sup.commodity}` : ""}
+                                                   </p>
+                                                   <p className="text-[11px] text-gray-500">
+                                                      Officer: <strong className="text-gray-700 dark:text-gray-300">{sup.officer_name || "Field Officer"}</strong>
+                                                      {sup.officer_role ? ` (${sup.officer_role})` : ""}
+                                                   </p>
+                                                </div>
+                                                <span className="text-[10px] font-bold text-gray-400">
+                                                   Updated {sup.updated_at ? new Date(sup.updated_at).toLocaleDateString() : "Recently"}
+                                                </span>
+                                             </div>
+                                             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                                                {stages.map((st) => (
+                                                   <div key={st.label} className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800">
+                                                      <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">{st.label}</p>
+                                                      <p className={`text-xs font-bold capitalize mt-0.5 ${
+                                                         st.status === "completed" || st.status === "approved"
+                                                            ? "text-emerald-600"
+                                                            : st.status === "in_progress"
+                                                            ? "text-amber-600"
+                                                            : "text-gray-600 dark:text-gray-300"
+                                                      }`}>
+                                                         {(st.status || "pending").replace(/_/g, " ")}
+                                                      </p>
+                                                      {st.notes && (
+                                                         <p className="text-[10px] text-gray-500 mt-1 line-clamp-2" title={st.notes}>{st.notes}</p>
+                                                      )}
+                                                   </div>
+                                                ))}
+                                             </div>
+                                          </div>
+                                       );
+                                    })}
+                                 </div>
+                              )}
+                           </div>
+
+                           {/* Field Inspection & Verification Reports */}
+                           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+                              <div className="p-4 border-b border-gray-100 dark:border-gray-800">
+                                 <h3 className="font-bold text-sm text-gray-900 dark:text-white">
+                                    Field Inspection Reports ({programInspections.length})
+                                 </h3>
+                                 <p className="text-xs text-gray-500">
+                                    Geotagged farm inspection and verification reports submitted by field officers.
+                                 </p>
+                              </div>
+                              {programInspections.length === 0 ? (
+                                 <div className="p-8 text-center text-xs text-gray-400">No inspection reports submitted yet.</div>
+                              ) : (
+                                 <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-xs">
+                                       <thead className="bg-gray-50 dark:bg-gray-800/50 uppercase text-[10px] font-black tracking-wider text-gray-500">
+                                          <tr>
+                                             <th className="p-3">Officer</th>
+                                             <th className="p-3">Farmer / Cluster</th>
+                                             <th className="p-3">Status</th>
+                                             <th className="p-3">Notes / Findings</th>
+                                             <th className="p-3">GPS / Evidence</th>
+                                             <th className="p-3">Date</th>
+                                          </tr>
+                                       </thead>
+                                       <tbody className="divide-y divide-gray-100 dark:divide-gray-800 font-medium">
+                                          {programInspections.map((rep) => (
+                                             <tr key={rep.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
+                                                <td className="p-3">
+                                                   <p className="font-bold text-gray-900 dark:text-white">{rep.officer_name || "Field Officer"}</p>
+                                                   <p className="text-[10px] text-gray-400 uppercase">{rep.officer_role || "Officer"}</p>
+                                                </td>
+                                                <td className="p-3">
+                                                   <p className="font-bold text-gray-800 dark:text-gray-200">{rep.farmer_name || rep.cluster_name || "—"}</p>
+                                                   {rep.commodity && <p className="text-[10px] text-gray-400">{rep.commodity}</p>}
+                                                </td>
+                                                <td className="p-3">
+                                                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                                      ["verified", "approved", "pass"].includes((rep.status || "").toLowerCase())
+                                                         ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                                                         : ["rejected", "failed", "fail"].includes((rep.status || "").toLowerCase())
+                                                         ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400"
+                                                         : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400"
+                                                   }`}>
+                                                      {rep.status || "Pending"}
+                                                   </span>
+                                                </td>
+                                                <td className="p-3 max-w-xs">
+                                                   <p className="text-gray-600 dark:text-gray-300 line-clamp-2">{rep.notes || "No notes"}</p>
+                                                </td>
+                                                <td className="p-3">
+                                                   <div className="flex flex-col gap-1">
+                                                      {rep.latitude && rep.longitude && (
+                                                         <span className="text-[10px] font-mono text-gray-500">
+                                                            {Number(rep.latitude).toFixed(4)}, {Number(rep.longitude).toFixed(4)}
+                                                         </span>
+                                                      )}
+                                                      {Array.isArray(rep.image_urls) && rep.image_urls.length > 0 && (
+                                                         <a href={rep.image_urls[0]} target="_blank" rel="noreferrer" className="text-[10px] font-bold text-amber-600 hover:underline inline-flex items-center gap-1">
+                                                            <Eye className="w-3 h-3" /> {rep.image_urls.length} Photo(s)
+                                                         </a>
+                                                      )}
+                                                   </div>
+                                                </td>
+                                                <td className="p-3 text-gray-400">
+                                                   {rep.timestamp_recorded || rep.created_at
+                                                      ? new Date(rep.timestamp_recorded || rep.created_at).toLocaleDateString()
+                                                      : "—"}
+                                                </td>
+                                             </tr>
+                                          ))}
+                                       </tbody>
+                                    </table>
+                                 </div>
+                              )}
+                           </div>
+                        </>
                      )}
                   </div>
                )}

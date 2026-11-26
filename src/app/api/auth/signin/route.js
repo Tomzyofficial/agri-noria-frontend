@@ -22,13 +22,21 @@ export async function POST(req) {
          );
       }
 
+      const proto =
+         req.headers.get("x-forwarded-proto") ||
+         req.nextUrl?.protocol ||
+         "";
+      const isHttps =
+         proto.includes("https") ||
+         (req.headers.get("origin") || "").startsWith("https://");
+
       const response = NextResponse.json({ success: true, user: data.user });
       const cookieOptions = {
          httpOnly: true,
-         secure: true,
-         sameSite: "none",
+         secure: isHttps,
+         sameSite: "lax",
          path: "/",
-         maxAge: credentials.rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60,
+         maxAge: credentials.rememberMe ? 30 * 24 * 60 * 60 : 7 * 24 * 60 * 60,
       };
 
       response.cookies.set("vendor-session", data.user.token, cookieOptions);

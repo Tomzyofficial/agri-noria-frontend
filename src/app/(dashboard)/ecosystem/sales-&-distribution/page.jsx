@@ -18,7 +18,7 @@ import {
   FaUser,
   FaBoxes,
 } from "react-icons/fa";
-import { Clock, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import { Clock, CheckCircle2, AlertCircle, RefreshCw, Pencil, Check, X, Landmark } from "lucide-react";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/Button";
 
@@ -28,12 +28,19 @@ export default function SalesDistributionDashboard() {
     pendingDeliveries: 0,
     fulfilledOrders: 0,
     warehouseStock: 0,
+    companyAccount: null,
   });
   const [loading, setLoading] = useState(true);
   const [ecosystemOrders, setEcosystemOrders] = useState([]);
   const [forwardContracts, setForwardContracts] = useState([]);
+  const [ecosystemLogistics, setEcosystemLogistics] = useState([]);
   const [distributors, setDistributors] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+
+  // Inline settlement value editing
+  const [editingSettlementId, setEditingSettlementId] = useState(null);
+  const [settlementDraft, setSettlementDraft] = useState("");
+  const [savingSettlement, setSavingSettlement] = useState(false);
 
   // Search & Filter state for Orders
   const [searchQuery, setSearchQuery] = useState("");
@@ -87,8 +94,9 @@ export default function SalesDistributionDashboard() {
   const fetchEcosystemOrders = async () => {
     setLoadingOrders(true);
     try {
-      const [ordersRes, distRes] = await Promise.all([
+      const [ordersRes, logisticsRes, distRes] = await Promise.all([
         fetch("/api/proxy/pipeline/buyer-orders/all"),
+        fetch("/api/proxy/pipeline/ecosystem-logistics"),
         fetch("/api/proxy/pipeline/distributors"),
       ]);
       if (ordersRes.ok) {
@@ -109,6 +117,10 @@ export default function SalesDistributionDashboard() {
             o.payment_status === "finance_confirmed"
         );
         setEcosystemOrders(filteredOrders);
+      }
+      if (logisticsRes.ok) {
+        const ld = await logisticsRes.json();
+        setEcosystemLogistics(ld.data || []);
       }
       if (distRes.ok) {
         const dd = await distRes.json();
@@ -219,7 +231,7 @@ export default function SalesDistributionDashboard() {
   };
 
   const assignDistributor = async (orderId, distributorId) => {
-    if (!distributorId) return toast.error("Please select a distributor");
+    if (!distributorId) return toast.error("Please select an ecosystem logistics partner");
     try {
       const res = await fetch(
         "/api/proxy/pipeline/buyer-orders/assign-distributor",
@@ -234,13 +246,41 @@ export default function SalesDistributionDashboard() {
       );
       const data = await res.json();
       if (res.ok) {
-        toast.success("Distributor assigned successfully");
+        toast.success("Logistics partner assigned successfully");
         fetchEcosystemOrders();
       } else {
-        toast.error(data.error || "Failed to assign distributor");
+        toast.error(data.error || "Failed to assign logistics partner");
       }
     } catch (err) {
       toast.error("Network error");
+    }
+  };
+
+  const handleSaveSettlementValue = async (orderId) => {
+    const parsed = Number(settlementDraft);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return toast.error("Please enter a valid settlement amount greater than 0");
+    }
+    setSavingSettlement(true);
+    try {
+      const res = await fetch(`/api/proxy/pipeline/buyer-orders/${orderId}/settlement-value`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ total_amount: parsed }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("Settlement value updated");
+        setEditingSettlementId(null);
+        setSettlementDraft("");
+        fetchEcosystemOrders();
+      } else {
+        toast.error(data.error || "Failed to update settlement value");
+      }
+    } catch {
+      toast.error("Network error updating settlement value");
+    } finally {
+      setSavingSettlement(false);
     }
   };
 
@@ -358,7 +398,19 @@ export default function SalesDistributionDashboard() {
       </div>
 
       {/* Key Metric Telemetry Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <ModernStatCard
+          title="Company Account Balance"
+          value={loading ? "..." : `₦${Number(stats.companyAccount?.balance || 0).toLocaleString()}`}
+          badge={stats.companyAccount?.account_number ? `Acct: ${stats.companyAccount.account_number}` : "Agri-Noria Treasury"}
+          icon={<Landmark className="w-5 h-5" />}
+          gradient="from-indigo-500/20 to-purple-600/5"
+          borderColor="border-indigo-500/30"
+          iconBg="bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
+          link="/ecosystem/sales-&-distribution/platform-wallet"
+          subtitle={`Escrow held: ₦${Number(stats.companyAccount?.held_in_escrow || 0).toLocaleString()}`}
+        />
+
         <ModernStatCard
           title="Active Shipments"
           value={loading ? "..." : stats.activeShipments}
@@ -536,7 +588,7 @@ export default function SalesDistributionDashboard() {
                       ) : (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold">
                           <Clock className="w-3.5 h-3.5" />
-                          <span>Pending Distributor</span>
+                          <span>Pending Logistics</span>
                         </span>
                       )}
                     </div>
@@ -544,14 +596,64 @@ export default function SalesDistributionDashboard() {
 
                   {/* Card Body Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-1">
-                    {/* Value */}
+                    {/* Value (Editable) */}
                     <div className="bg-slate-800/40 p-3.5 rounded-2xl border border-slate-800/60">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                        Settlement Value
-                      </p>
-                      <p className="text-lg font-black text-emerald-400 mt-1">
-                        ₦{formattedAmount}
-                      </p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                          Settlement Value
+                        </p>
+                        {editingSettlementId !== order.id && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingSettlementId(order.id);
+                              setSettlementDraft(String(Number(order.total_amount || 0)));
+                            }}
+                            className="text-slate-400 hover:text-blue-400 p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                            title="Edit settlement value"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                      {editingSettlementId === order.id ? (
+                        <div className="mt-1.5 flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            min="1"
+                            step="any"
+                            value={settlementDraft}
+                            onChange={(e) => setSettlementDraft(e.target.value)}
+                            className="w-full bg-slate-900 border border-blue-500/60 rounded-lg px-2 py-1 text-sm font-black text-emerald-400 focus:outline-none"
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            disabled={savingSettlement}
+                            onClick={() => handleSaveSettlementValue(order.id)}
+                            className="p-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-50 cursor-pointer"
+                            title="Save"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={savingSettlement}
+                            onClick={() => {
+                              setEditingSettlementId(null);
+                              setSettlementDraft("");
+                            }}
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer"
+                            title="Cancel"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="text-lg font-black text-emerald-400 mt-1">
+                          ₦{formattedAmount}
+                        </p>
+                      )}
                     </div>
 
                     {/* Fulfillment Destination */}
@@ -577,16 +679,18 @@ export default function SalesDistributionDashboard() {
                     </div>
                   </div>
 
-                  {/* Card Controls Footer: Distributor Assign & Status Update */}
+                  {/* Card Controls Footer: Ecosystem Logistics Assign & Status Update */}
                   <div className="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    {/* Distributor Assignment */}
+                    {/* Ecosystem Logistics Assignment */}
                     <div className="flex items-center gap-2">
                       <span className="text-[11px] font-bold text-slate-400 whitespace-nowrap">
-                        Distributor:
+                        Logistics Partner:
                       </span>
                       {order.distributor_id ? (
                         <span className="text-xs font-bold text-blue-400 bg-blue-500/10 px-3 py-1.5 rounded-xl border border-blue-500/20">
-                          {distributors.find((d) => d.id === order.distributor_id)?.name ||
+                          {ecosystemLogistics.find((l) => l.id === order.distributor_id)?.enterprise_name ||
+                            ecosystemLogistics.find((l) => l.id === order.distributor_id)?.name ||
+                            distributors.find((d) => d.id === order.distributor_id)?.name ||
                             distributors.find((d) => d.id === order.distributor_id)?.fname ||
                             "Assigned"}
                         </span>
@@ -597,11 +701,11 @@ export default function SalesDistributionDashboard() {
                           defaultValue=""
                         >
                           <option value="" disabled>
-                            Select Distributor...
+                            Select Ecosystem Logistics...
                           </option>
-                          {distributors.map((d) => (
-                            <option key={d.id} value={d.id} className="bg-slate-900 text-white">
-                              {d.name || `${d.fname || ""} ${d.lname || ""}`.trim()}
+                          {ecosystemLogistics.map((l) => (
+                            <option key={l.id} value={l.id} className="bg-slate-900 text-white">
+                              {l.enterprise_name || l.name || `${l.fname || ""} ${l.lname || ""}`.trim()} ({l.role})
                             </option>
                           ))}
                         </select>

@@ -162,6 +162,7 @@ export default function FinanceApprovalsPage() {
   const { data: ordersJson, isLoading: l5, mutate: m5 } = useSWR("/api/proxy/pipeline/buyer-orders/all", fetcher, { refreshInterval: 30000, revalidateOnFocus: true });
   const { data: treasuryJson, isLoading: l6, mutate: m6 } = useSWR("/api/proxy/pipeline/stats/platform-wallet", fetcher, { refreshInterval: 30000, revalidateOnFocus: true });
   const { data: programsJson, isLoading: l7, mutate: m7 } = useSWR("/api/proxy/programs", fetcher, { refreshInterval: 30000, revalidateOnFocus: true });
+  const { data: settlementsJson, mutate: m8 } = useSWR("/api/proxy/admin/institution/program-settlements", fetcher, { refreshInterval: 30000, revalidateOnFocus: true });
 
   const stats = (statsJson?.success && statsJson?.data?.disbursements) ? statsJson.data.disbursements : {
     pendingCount: 0,
@@ -173,6 +174,8 @@ export default function FinanceApprovalsPage() {
   const ecosystemTreasury = treasuryJson?.success ? treasuryJson?.data?.ecosystem_treasury || 0 : 0;
   const distributors = Array.isArray(distJson?.data) ? distJson.data : [];
   const programs = Array.isArray(programsJson?.data) ? programsJson.data : [];
+  const programSettlements = Array.isArray(settlementsJson?.data?.settlements) ? settlementsJson.data.settlements : [];
+  const pendingProgramSettlements = programSettlements.filter((s) => s.status !== "settled");
 
   const pending = Array.isArray(pendingJson?.data) ? pendingJson.data : [];
   const stage1 = pending.filter((r) => r.funds_status === "pending" || !r.funds_status);
@@ -196,7 +199,29 @@ export default function FinanceApprovalsPage() {
   const loading = l1 || l2 || l6 || l7;
 
   const fetchData = async () => {
-    await Promise.all([m1(), m2(), m3(), m4(), m5(), m6(), m7()]);
+    await Promise.all([m1(), m2(), m3(), m4(), m5(), m6(), m7(), m8()]);
+  };
+
+  const handleApproveProgramSettlement = async (settlement) => {
+    setProcessingId(`prog-sett-${settlement.id}`);
+    try {
+      const res = await fetch(`/api/proxy/admin/institution/program-settlements/${settlement.id}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(json.message || "Programme repayment waterfall approved & distributed!");
+        fetchData();
+      } else {
+        toast.error(json.error || "Failed to approve program settlement");
+      }
+    } catch {
+      toast.error("Network error approving program settlement");
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   const handleAmountChange = (requestId, value) => {
@@ -500,9 +525,12 @@ export default function FinanceApprovalsPage() {
 
       {/* Main Tabbed Interface */}
       <Tabs defaultValue="program_approvals" className="w-full">
-        <TabsList className="mb-6 grid w-full grid-cols-2 sm:grid-cols-4 max-w-2xl bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200 dark:border-slate-800">
+        <TabsList className="mb-6 grid w-full grid-cols-2 sm:grid-cols-5 max-w-3xl bg-slate-100 dark:bg-slate-900 rounded-2xl p-1 border border-slate-200 dark:border-slate-800">
           <TabsTrigger value="program_approvals" className="rounded-xl font-bold text-xs py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm">
             Financing ({stage1.length + stage2.length + stage3.length})
+          </TabsTrigger>
+          <TabsTrigger value="repayments" className="rounded-xl font-bold text-xs py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm">
+            Repayments ({pendingProgramSettlements.length})
           </TabsTrigger>
           <TabsTrigger value="active_programs" className="rounded-xl font-bold text-xs py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm">
             Program Funds ({programs.length})
@@ -514,6 +542,72 @@ export default function FinanceApprovalsPage() {
             History ({history.length})
           </TabsTrigger>
         </TabsList>
+
+        {/* END-OF-PROGRAM REPAYMENTS WATERFALL TAB */}
+        <TabsContent value="repayments" className="space-y-4">
+          <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-900 dark:text-emerald-200">
+            <strong>End-of-Program Settlement Waterfall:</strong> Approving releases total Escrow/Repayment funds in order:
+            <strong> (1) Bank Principal + Interest → Bank Wallet</strong>,
+            <strong> (2) SuperAdmin Platform Coordination Fee → Agri-Noria Company Account</strong>,
+            <strong> (3) Remaining Balance → Funding Institution Wallet</strong>.
+          </div>
+          {programSettlements.length === 0 ? (
+            <Card className="border-none shadow-sm bg-white dark:bg-slate-900 p-10 text-center text-sm text-slate-500">
+              No end-of-program repayment settlements queued yet.
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {programSettlements.map((s) => (
+                <Card key={s.id} className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+                  <CardContent className="p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-black text-base text-slate-900 dark:text-white">{s.program_name}</h4>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                          s.status === "settled"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}>
+                          {String(s.status || "").replace(/_/g, " ")}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        Bank: <strong>{s.bank_name || "N/A"}</strong> · Institution: <strong>{s.institution_name || "N/A"}</strong>
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs">
+                        <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950">
+                          <span className="text-[10px] font-bold uppercase text-slate-400 block">Escrow Pool</span>
+                          <span className="font-black text-slate-900 dark:text-white">₦{parseFloat(s.total_escrow_pool || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/30">
+                          <span className="text-[10px] font-bold uppercase text-blue-500 block">Bank Loan + {s.bank_interest_rate}% Int.</span>
+                          <span className="font-black text-blue-700 dark:text-blue-300">₦{parseFloat(s.bank_total_payout || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30">
+                          <span className="text-[10px] font-bold uppercase text-amber-600 block">Coord Fee ({s.coordination_fee_pct}%)</span>
+                          <span className="font-black text-amber-700 dark:text-amber-300">₦{parseFloat(s.coordination_fee_amount || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30">
+                          <span className="text-[10px] font-bold uppercase text-emerald-600 block">Institution Balance</span>
+                          <span className="font-black text-emerald-700 dark:text-emerald-300">₦{parseFloat(s.institution_payout || 0).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                    {s.status !== "settled" && (
+                      <Button
+                        onClick={() => handleApproveProgramSettlement(s)}
+                        disabled={processingId === `prog-sett-${s.id}`}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl px-5 py-2.5 text-xs shrink-0"
+                      >
+                        {processingId === `prog-sett-${s.id}` ? "Settling..." : "Approve & Disburse Waterfall"}
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
 
         {/* 1. PROGRAM FINANCING TAB */}
         <TabsContent value="program_approvals" className="space-y-6">

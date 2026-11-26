@@ -12,6 +12,10 @@ export default function WalletView({ role, walletType = "personal" }) {
    const [walletData, setWalletData] = useState({
       balance: 0,
       locked: 0,
+      accountNumber: null,
+      accountName: null,
+      bankName: null,
+      allowWithdrawal: true,
       transactions: []
    });
    const [loading, setLoading] = useState(true);
@@ -27,9 +31,15 @@ export default function WalletView({ role, walletType = "personal" }) {
          if (response.ok) {
             const data = await response.json();
             if (data.success) {
+               const w = data.data?.wallet || {};
+               const isLockedRole = String(role || "").toLowerCase() === "cluster" || String(w.owner_type || "").toLowerCase() === "cluster";
                setWalletData({
-                  balance: data.data?.wallet?.balance || 0,
-                  locked: data.data?.wallet?.locked_balance || 0,
+                  balance: w.balance || 0,
+                  locked: w.locked_balance || 0,
+                  accountNumber: w.account_number || null,
+                  accountName: w.account_name || null,
+                  bankName: w.bank_name || null,
+                  allowWithdrawal: w.allow_withdrawal !== false && !isLockedRole,
                   transactions: data.data?.transactions || []
                });
             }
@@ -151,18 +161,31 @@ export default function WalletView({ role, walletType = "personal" }) {
                   <Wallet className="w-32 h-32" />
                </div>
                <div className="relative z-10">
-                  <p className="text-gray-400 font-bold uppercase tracking-widest text-xs mb-2">Available Balance</p>
-                  <h2 className="text-5xl font-black mb-6">{formatCurrency(walletData.balance)}</h2>
-                  <div className="flex gap-4">
-                     <Button className="bg-white text-black hover:bg-gray-200 border-none font-black px-8">Withdraw</Button>
-                     <Button 
-                        onClick={() => setIsTransferModalOpen(true)}
-                        variant="outline" 
-                        className="border-white/20 text-white hover:bg-white/10 font-black"
-                     >
-                        Transfer
-                     </Button>
+                  <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
+                     <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Available Balance</p>
+                     {walletData.accountNumber && (
+                        <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-white/10 text-emerald-300 border border-white/10">
+                           {walletData.bankName || "Agri-Noria Partner Bank"} · {walletData.accountNumber}
+                        </span>
+                     )}
                   </div>
+                  <h2 className="text-5xl font-black mb-6">{formatCurrency(walletData.balance)}</h2>
+                  {walletData.allowWithdrawal === false ? (
+                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-400/30 text-amber-200 text-xs font-bold">
+                        Withdrawals Locked — Financing funds can only pay into Company Escrow for input orders
+                     </div>
+                  ) : (
+                     <div className="flex gap-4">
+                        <Button className="bg-white text-black hover:bg-gray-200 border-none font-black px-8">Withdraw</Button>
+                        <Button 
+                           onClick={() => setIsTransferModalOpen(true)}
+                           variant="outline" 
+                           className="border-white/20 text-white hover:bg-white/10 font-black"
+                        >
+                           Transfer
+                        </Button>
+                     </div>
+                  )}
                </div>
             </Card>
 

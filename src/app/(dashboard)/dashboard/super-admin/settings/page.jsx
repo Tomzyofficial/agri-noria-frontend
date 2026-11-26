@@ -599,9 +599,9 @@ export default function SuperAdminSettingsPage() {
                   <div>
                     <label className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                       <DollarSign size={14} className="text-emerald-600" />
-                      <span>Platform Commission Fee (%)</span>
+                      <span>Platform Coordination Fee (%)</span>
                     </label>
-                    <p className="text-[11px] text-gray-500 mt-0.5">Standard service tariff applied to completed contracts and warehouse tickets.</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">SuperAdmin coordination tariff deducted during end-of-program repayments (sent to Company Account) and contract settlements.</p>
                   </div>
                   <div className="text-right">
                     <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
@@ -617,7 +617,11 @@ export default function SuperAdminSettingsPage() {
                     min="0"
                     max="20"
                     value={settings.platformFeePercent}
-                    onChange={(e) => handleChange("platformFeePercent", parseFloat(e.target.value) || 0)}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0;
+                      handleChange("platformFeePercent", val);
+                      handleChange("platformCoordinationFeePercent", val);
+                    }}
                     className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-sm font-black text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                   />
                 </div>

@@ -33,8 +33,10 @@ export default function FarmersRegistryPage() {
   const [retryingJobId, setRetryingJobId] = useState(null);
   const [rollingBackJobId, setRollingBackJobId] = useState(null);
 
-  // Single Farmer Form
+  // Multi-role Onboarding & Directory Filter
+  const [roleFilter, setRoleFilter] = useState("all"); // "all" | "farmer" | "field officer" | "agronomist" | "cluster"
   const [form, setForm] = useState({
+    entity_role: "farmer",
     fname: "",
     lname: "",
     phone: "",
@@ -43,6 +45,8 @@ export default function FarmersRegistryPage() {
     commodity: "Cassava",
     farm_size_hectares: "2.5",
     membership_number: "",
+    cluster_name: "",
+    region: "",
   });
 
   // Bulk CSV state
@@ -241,13 +245,13 @@ export default function FarmersRegistryPage() {
   const handleAddSingleFarmer = async (e) => {
     e.preventDefault();
     if (!form.phone && !form.email) {
-      toast.error("Phone number or Email is required for farmer digital ID");
+      toast.error("Phone number or Email is required for digital ID");
       return;
     }
 
     setSubmitting(true);
     try {
-      const res = await fetch("/api/proxy/admin/institution/members/import", {
+      const res = await fetch("/api/proxy/admin/institution/onboard-entity", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -255,21 +259,21 @@ export default function FarmersRegistryPage() {
 
       const json = await res.json();
       if (res.ok && json.success) {
-        if (json.isNewFarmer) {
-          toast.success("New Master Farmer created & linked to your organization!");
-          if (json.tempPassword) {
-            setCreatedFarmerCreds({
-              name: json.name || `${form.fname} ${form.lname}`.trim(),
-              email: json.email || form.email,
-              phone: json.phone || form.phone,
-              tempPassword: json.tempPassword,
-            });
-          }
-        } else {
-          toast.info("Existing Agri-Noria Farmer identified — linked to your organization!");
+        toast.success(json.message || "Member onboarded successfully!");
+        if (json.isNewAccount && json.tempPassword) {
+          setCreatedFarmerCreds({
+            name: json.name || `${form.fname} ${form.lname}`.trim(),
+            email: json.email || form.email,
+            phone: json.phone || form.phone,
+            tempPassword: json.tempPassword,
+            role: json.role || form.entity_role,
+            accountNumber: json.accountNumber,
+            clusterAccountNumber: json.clusterAccountNumber,
+          });
         }
         setShowAddModal(false);
         setForm({
+          entity_role: "farmer",
           fname: "",
           lname: "",
           phone: "",
@@ -278,10 +282,12 @@ export default function FarmersRegistryPage() {
           commodity: "Cassava",
           farm_size_hectares: "2.5",
           membership_number: "",
+          cluster_name: "",
+          region: "",
         });
         fetchData();
       } else {
-        toast.error(json.error || "Failed to add/link farmer");
+        toast.error(json.error || "Failed to onboard member");
       }
     } catch {
       toast.error("Network error");
@@ -508,11 +514,22 @@ export default function FarmersRegistryPage() {
     }
   };
 
-  const filteredData = data.filter((item) =>
-    `${item.fname} ${item.lname}`.toLowerCase().includes(search.toLowerCase()) ||
-    item.phone?.includes(search) ||
-    item.commodity?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredData = data.filter((item) => {
+    const q = search.toLowerCase();
+    const matchesSearch =
+      !q ||
+      `${item.fname || ""} ${item.lname || ""}`.toLowerCase().includes(q) ||
+      item.phone?.includes(search) ||
+      item.email?.toLowerCase().includes(q) ||
+      item.commodity?.toLowerCase().includes(q) ||
+      item.role?.toLowerCase().includes(q) ||
+      item.account_number?.includes(search);
+    if (!matchesSearch) return false;
+    if (roleFilter === "all") return true;
+    const itemRole = String(item.role || "farmer").toLowerCase();
+    if (roleFilter === "cluster") return itemRole.includes("cluster");
+    return itemRole === roleFilter;
+  });
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
@@ -566,10 +583,34 @@ export default function FarmersRegistryPage() {
               onClick={() => setShowAddModal(true)}
               className="h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl px-5 flex items-center gap-2 shadow-lg shadow-blue-600/20 whitespace-nowrap"
             >
-              <UserPlus size={18} /> Add / Import Farmers
+              <UserPlus size={18} /> Onboard Member / Role
             </Button>
           </div>
         </div>
+      </div>
+
+      {/* Role Filter Pills */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { id: "all", label: `All Identities (${data.length})` },
+          { id: "farmer", label: "Farmers" },
+          { id: "field officer", label: "Field Officers" },
+          { id: "agronomist", label: "Agronomists" },
+          { id: "cluster", label: "Clusters & Supervisors" },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setRoleFilter(tab.id)}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              roleFilter === tab.id
+                ? "bg-blue-600 text-white shadow-sm"
+                : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-800 hover:bg-gray-50"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* Active Background Queue Tracking Banner (Live Progress, No Freeze) */}
@@ -770,19 +811,43 @@ export default function FarmersRegistryPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-xs font-bold text-(--foreground)">
-                            {farmer.commodity || "Cassava"} • {Number(farmer.farm_size_hectares || 2).toFixed(1)} ha
+                          <div className="text-xs font-bold text-(--foreground) capitalize">
+                            <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 mr-1.5 text-[10px] font-black uppercase">
+                              {farmer.role || "farmer"}
+                            </span>
+                            {farmer.commodity || "General"} {farmer.farm_size_hectares ? `• ${Number(farmer.farm_size_hectares).toFixed(1)} ha` : ""}
                           </div>
+                          {farmer.account_number && (
+                            <p className="text-[10px] font-mono text-gray-500 mt-1">Acct: {farmer.account_number}</p>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
                             {farmer.cluster_name || "Unassigned"}
                           </span>
+                          {farmer.cluster_account_number && (
+                            <span className="block text-[10px] font-mono text-gray-400">Cluster Acct: {farmer.cluster_account_number}</span>
+                          )}
                         </td>
                         <td className="px-8 py-4 text-right">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
-                            <ShieldCheck size={12} /> Verified
-                          </span>
+                          <div className="flex flex-col items-end gap-1">
+                            {farmer.approval_status === "approved" || farmer.is_verified ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+                                <ShieldCheck size={12} /> Admin Approved
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">
+                                Pending Admin Approval
+                              </span>
+                            )}
+                            <span className={`text-[10px] font-bold ${
+                              ["submitted", "completed", "verified"].includes(String(farmer.onboarding_status || "").toLowerCase())
+                                ? "text-emerald-600"
+                                : "text-rose-500"
+                            }`}>
+                              KYC: {farmer.onboarding_status || "pending"}
+                            </span>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -839,9 +904,57 @@ export default function FarmersRegistryPage() {
                 <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-200/80 dark:border-emerald-800/40 text-xs text-emerald-950 dark:text-emerald-200 flex items-start gap-2.5">
                   <span className="text-base shrink-0">💡</span>
                   <span className="leading-relaxed">
-                    <strong className="font-black text-emerald-800 dark:text-emerald-300">Single Identity Rule:</strong> If this farmer already exists on Agri-Noria, the system will link their existing profile to your organization without creating duplicate records.
+                    <strong className="font-black text-emerald-800 dark:text-emerald-300">Compulsory Onboarding & Bank Account:</strong> Onboard Farmers, Field Officers, Agronomists, or Clusters. New members receive a Bank Account and must complete in-app onboarding & await Admin approval.
                   </span>
                 </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">Entity Role to Onboard</Label>
+                  <select
+                    value={form.entity_role}
+                    onChange={(e) => setForm({ ...form, entity_role: e.target.value })}
+                    className="w-full h-12 px-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-sm font-bold"
+                  >
+                    <option value="farmer">Farmer</option>
+                    <option value="field officer">Field Officer</option>
+                    <option value="agronomist">Agronomist</option>
+                    <option value="cluster">Cluster (Creates Cluster Account & Supervisor)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">Email Address</Label>
+                  <Input
+                    type="email"
+                    placeholder="member@example.com"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    className="h-12 rounded-xl"
+                  />
+                </div>
+
+                {form.entity_role === "cluster" && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">Cluster Name</Label>
+                      <Input
+                        placeholder="e.g. Kaduna Maize Cluster"
+                        value={form.cluster_name}
+                        onChange={(e) => setForm({ ...form, cluster_name: e.target.value })}
+                        className="h-12 rounded-xl"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold uppercase tracking-wider text-gray-500">Region / State</Label>
+                      <Input
+                        placeholder="e.g. Kaduna"
+                        value={form.region}
+                        onChange={(e) => setForm({ ...form, region: e.target.value })}
+                        className="h-12 rounded-xl"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">

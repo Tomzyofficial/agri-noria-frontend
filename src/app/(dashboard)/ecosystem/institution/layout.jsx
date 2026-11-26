@@ -37,12 +37,10 @@ function InstitutionLayoutInner({ children }) {
   const [notifications, setNotifications] = useState([]);
   const pathname = usePathname();
   const router = useRouter();
-  const [optimisticPath, setOptimisticPath] = useState(pathname);
 
   const handleMenuClick = () => setMenuOpen((open) => !open);
 
   useEffect(() => {
-    setOptimisticPath(pathname);
     setMenuOpen(false);
   }, [pathname]);
 
@@ -213,9 +211,7 @@ function InstitutionLayoutInner({ children }) {
     return <div className="min-h-screen bg-(--background)">{children}</div>;
   }
 
-  const activeTarget = optimisticPath || pathname;
-  const isNavigating = Boolean(optimisticPath && optimisticPath !== pathname);
-  const targetMenuItem = navMenu.find((item) => item.href === optimisticPath);
+  const activeTarget = pathname || "/ecosystem/institution";
   const navLinksStyle = (path) => {
     const isActive = path === "/ecosystem/institution"
       ? activeTarget === "/ecosystem/institution"
@@ -284,7 +280,6 @@ function InstitutionLayoutInner({ children }) {
                 href={item.href}
                 prefetch={true}
                 onClick={() => {
-                  setOptimisticPath(item.href);
                   setMenuOpen(false);
                 }}
                 onMouseEnter={() => {
@@ -351,18 +346,7 @@ function InstitutionLayoutInner({ children }) {
               </div>
             </div>
           )}
-          {isNavigating ? (
-            <div className="flex flex-col items-center justify-center min-h-[65vh] gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center">
-                <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-              </div>
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
-                Opening {targetMenuItem?.label || "Section"}...
-              </p>
-            </div>
-          ) : (
-            children
-          )}
+          {children}
         </main>
         <NotificationDrawer />
       </div>

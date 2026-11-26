@@ -102,6 +102,11 @@ function FieldOperationsLayoutInner({ children }) {
           const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
           const isDossierView = searchParams?.get("view") === "dossier";
 
+          if (!hasSubmitted && !isOnboarding) {
+            router.replace("/ecosystem/field-operations/onboarding");
+            return;
+          }
+
           if (isOnboarding && hasSubmitted && !isDossierView) {
             router.replace("/ecosystem/field-operations");
           }

@@ -67,7 +67,8 @@ async function handler(req, { params }) {
       // Build clean headers without hop-by-hop headers that cause ECONNRESET in Node undici
       const forwardedHeaders = {};
       for (const [key, value] of req.headers.entries()) {
-         if (!HOP_BY_HOP_HEADERS.has(key.toLowerCase())) {
+         const lower = key.toLowerCase();
+         if (!HOP_BY_HOP_HEADERS.has(lower) && lower !== "cookie") {
             forwardedHeaders[key] = value;
          }
       }

@@ -30,7 +30,10 @@ export default function ProgramsPage() {
    // Funding modal state
    const [fundingProgram, setFundingProgram] = useState(null);
    const [fundAmount, setFundAmount] = useState("");
+   const [fundInterestRate, setFundInterestRate] = useState("");
    const [isFunding, setIsFunding] = useState(false);
+   const [endingProgramId, setEndingProgramId] = useState(null);
+   const [scopeFilter, setScopeFilter] = useState("all"); // "all" | "mine"
 
    // Program Director appointment modal state
    const [appointingProgram, setAppointingProgram] = useState(null);
@@ -83,12 +86,16 @@ export default function ProgramsPage() {
       }
    };
 
-   const { data: progData, isLoading: loading, error: progError, mutate: mutatePrograms } = useSWR("/api/proxy/programs/mine", fetcher, { revalidateOnFocus: true });
+   const { data: progData, isLoading: loading, error: progError, mutate: mutatePrograms } = useSWR("/api/proxy/programs?scope=all", fetcher, { revalidateOnFocus: true });
    const { data: userData } = useSWR("/api/proxy/auth/verify-vendor", fetcher, { revalidateOnFocus: false });
    const { data: enrollData, mutate: mutateEnrollments } = useSWR("/api/proxy/programs/institution/enrollments", fetcher, { revalidateOnFocus: true });
 
-   const programs = progData?.success ? (progData.data || []) : [];
+   const allPrograms = progData?.success ? (progData.data || []) : [];
    const currentUser = userData?.authenticated ? { ...userData, id: userData.id || userData.userId } : null;
+   const isBankUser = String(currentUser?.role || "").toLowerCase() === "bank";
+   const programs = scopeFilter === "mine" && currentUser?.id
+      ? allPrograms.filter((p) => String(p.created_by) === String(currentUser.id) || String(p.funded_by_bank_id) === String(currentUser.id))
+      : allPrograms;
 
    const enrolledFarmers = enrollData?.data?.farmers || [];
    const enrolledClusters = enrollData?.data?.clusters || [];
@@ -167,6 +174,10 @@ export default function ProgramsPage() {
 
    const handleFundSubmit = async (e) => {
       e.preventDefault();
+      if (!fundingProgram?.id) {
+         toast.error("Please select a programme to fund");
+         return;
+      }
       if (!fundAmount || isNaN(fundAmount) || parseFloat(fundAmount) <= 0) {
          toast.error("Please enter a valid funding amount");
          return;
@@ -177,13 +188,17 @@ export default function ProgramsPage() {
          const res = await fetch(`/api/proxy/programs/${fundingProgram.id}/fund`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ amount: parseFloat(fundAmount) }),
+            body: JSON.stringify({
+               amount: parseFloat(fundAmount),
+               interest_rate_pct: fundInterestRate ? parseFloat(fundInterestRate) : 0,
+            }),
          });
          const json = await res.json();
          if (res.ok && json.success) {
-            toast.success(`Successfully allocated ₦${parseFloat(fundAmount).toLocaleString()} to '${fundingProgram.name}'!`);
+            toast.success(json.message || `Successfully allocated ₦${parseFloat(fundAmount).toLocaleString()} to '${fundingProgram.name}'!`);
             setFundingProgram(null);
             setFundAmount("");
+            setFundInterestRate("");
             await loadPrograms();
          } else {
             toast.error(json.error || "Failed to fund programme.");
@@ -192,6 +207,28 @@ export default function ProgramsPage() {
          toast.error("Network error while allocating funds.");
       } finally {
          setIsFunding(false);
+      }
+   };
+
+   const handleEndAndInitiateRepayment = async (program) => {
+      setEndingProgramId(program.id);
+      try {
+         const res = await fetch(`/api/proxy/programs/${program.id}/end-and-initiate-repayment`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+         });
+         const json = await res.json();
+         if (res.ok && json.success) {
+            toast.success(json.message || "Programme ended and repayment settlement submitted for Finance approval!");
+            await loadPrograms();
+         } else {
+            toast.error(json.error || "Failed to initiate repayment");
+         }
+      } catch {
+         toast.error("Network error initiating program repayment");
+      } finally {
+         setEndingProgramId(null);
       }
    };
 
@@ -423,6 +460,30 @@ export default function ProgramsPage() {
                         <div className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-900 p-1 rounded-xl">
                            <button
                               type="button"
+                              onClick={() => setScopeFilter("all")}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                 scopeFilter === "all"
+                                    ? "bg-white dark:bg-gray-800 text-indigo-600 shadow-xs"
+                                    : "text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
+                              }`}
+                           >
+                              All Programmes ({allPrograms.length})
+                           </button>
+                           <button
+                              type="button"
+                              onClick={() => setScopeFilter("mine")}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                 scopeFilter === "mine"
+                                    ? "bg-white dark:bg-gray-800 text-indigo-600 shadow-xs"
+                                    : "text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
+                              }`}
+                           >
+                              My Funded / Created
+                           </button>
+                        </div>
+                        <div className="inline-flex items-center gap-1 bg-gray-100 dark:bg-gray-900 p-1 rounded-xl">
+                           <button
+                              type="button"
                               onClick={() => setStatusFilter("all")}
                               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                                  statusFilter === "all"
@@ -638,6 +699,18 @@ export default function ProgramsPage() {
                                   </td>
                                  <td className="px-6 py-5 text-right sticky right-0 bg-white dark:bg-gray-950 shadow-md z-10">
                                     <div className="flex items-center justify-end gap-2">
+                                       {program.status !== "completed" && (
+                                          <Button
+                                             type="button"
+                                             onClick={() => handleEndAndInitiateRepayment(program)}
+                                             disabled={endingProgramId === program.id}
+                                             size="sm"
+                                             className="h-8 px-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold transition-all cursor-pointer"
+                                             title="End programme & initiate repayment settlement"
+                                          >
+                                             {endingProgramId === program.id ? "..." : "End & Repay"}
+                                          </Button>
+                                       )}
                                        <Button
                                           type="button"
                                           onClick={() => setSelectedProgramDetails(program)}
@@ -898,14 +971,14 @@ export default function ProgramsPage() {
          {/* Fund Programme Modal */}
          {fundingProgram && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-               <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800">
+               <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800 max-h-[92vh] overflow-y-auto">
                   <div className="p-6 bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex justify-between items-center">
                      <div className="flex items-center gap-3">
                         <div className="p-3 rounded-2xl bg-white/20 text-white">
                            <Coins className="w-6 h-6" />
                         </div>
                         <div>
-                           <h3 className="text-xl font-black">Fund Programme</h3>
+                           <h3 className="text-xl font-black">Fund Programme Directly</h3>
                            <p className="text-xs text-emerald-100 font-medium mt-0.5">{fundingProgram.name}</p>
                         </div>
                      </div>
@@ -918,29 +991,94 @@ export default function ProgramsPage() {
                      </Button>
                   </div>
 
-                  <form onSubmit={handleFundSubmit} className="p-6 space-y-6">
-                     <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200/60 dark:border-gray-700/50 space-y-2">
-                        <div className="flex justify-between text-xs font-semibold text-gray-600 dark:text-gray-400">
+                  <form onSubmit={handleFundSubmit} className="p-6 space-y-5">
+                     {/* All Programmes Dropdown */}
+                     <div className="space-y-1.5">
+                        <label className="text-xs font-black uppercase text-gray-500 tracking-wider">Select Programme (All Ecosystem Programmes)</label>
+                        <select
+                           value={fundingProgram.id}
+                           onChange={(e) => {
+                              const picked = allPrograms.find((p) => String(p.id) === e.target.value);
+                              if (picked) {
+                                 setFundingProgram(picked);
+                                 setFundInterestRate(picked.bank_interest_rate ? String(picked.bank_interest_rate) : "");
+                              }
+                           }}
+                           className="w-full h-11 px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 text-sm font-bold text-gray-900 dark:text-white"
+                        >
+                           {allPrograms.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                 {p.name} — {p.commodity || "Crop"} ({p.region || "National"}) • Sponsor: {p.institution_name || p.creator_name || "Partner"}
+                              </option>
+                           ))}
+                        </select>
+                     </div>
+
+                     {/* Programme Details & Creator Info */}
+                     <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200/60 dark:border-gray-700/50 space-y-2.5 text-xs">
+                        <div className="flex justify-between">
+                           <span className="text-gray-500 font-semibold">Created / Sponsored By</span>
+                           <span className="font-black text-gray-900 dark:text-white">
+                              {fundingProgram.institution_name || fundingProgram.creator_name || "Institutional Sponsor"}
+                              {fundingProgram.creator_role ? ` (${fundingProgram.creator_role})` : ""}
+                           </span>
+                        </div>
+                        <div className="flex justify-between">
+                           <span className="text-gray-500 font-semibold">Crops & Region</span>
+                           <span className="font-bold text-gray-800 dark:text-gray-200 capitalize">
+                              {fundingProgram.commodity || "Mixed Crops"} · {fundingProgram.region || "National"}
+                           </span>
+                        </div>
+                        <div className="flex justify-between">
+                           <span className="text-gray-500 font-semibold">Capacity</span>
+                           <span className="font-bold text-gray-800 dark:text-gray-200">
+                              {fundingProgram.enrolled_farmers || 0} / {fundingProgram.target_farmers || 0} Farmers · {fundingProgram.target_hectares || 0} Ha
+                           </span>
+                        </div>
+                        <div className="flex justify-between font-semibold text-gray-600 dark:text-gray-400 pt-1.5 border-t border-gray-200 dark:border-gray-700">
                            <span>Current Programme Fund</span>
                            <span className="text-emerald-600 dark:text-emerald-400 font-black">₦{parseFloat(fundingProgram.wallet_balance || 0).toLocaleString()}</span>
                         </div>
-                        <div className="text-[11px] text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-700">
-                           Funds will be directly deducted from your institutional entity wallet and allocated exclusively to settlements and input financing for this programme.
+                     </div>
+
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                           <label className="text-xs font-black uppercase text-gray-500 tracking-wider">Amount to Fund (NGN)</label>
+                           <Input
+                              type="number"
+                              required
+                              placeholder="e.g. 5000000"
+                              value={fundAmount}
+                              onChange={(e) => setFundAmount(e.target.value)}
+                              className="h-12 rounded-xl text-base font-black text-gray-900 dark:text-white"
+                              autoFocus
+                           />
+                        </div>
+                        <div className="space-y-1.5">
+                           <label className="text-xs font-black uppercase text-gray-500 tracking-wider">
+                              {isBankUser ? "Bank Interest / Profit (%)" : "Interest Rate (%)"}
+                           </label>
+                           <Input
+                              type="number"
+                              step="0.1"
+                              min="0"
+                              max="100"
+                              placeholder="e.g. 12.5"
+                              value={fundInterestRate}
+                              onChange={(e) => setFundInterestRate(e.target.value)}
+                              className="h-12 rounded-xl text-base font-black text-blue-600 dark:text-blue-400"
+                           />
                         </div>
                      </div>
 
-                     <div className="space-y-2">
-                        <label className="text-xs font-black uppercase text-gray-500 tracking-wider">Amount to Allocate (NGN)</label>
-                        <Input
-                           type="number"
-                           required
-                           placeholder="e.g. 5000000"
-                           value={fundAmount}
-                           onChange={(e) => setFundAmount(e.target.value)}
-                           className="h-12 rounded-xl text-lg font-black text-gray-900 dark:text-white"
-                           autoFocus
-                        />
-                     </div>
+                     {fundAmount && parseFloat(fundAmount) > 0 && (
+                        <div className="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-xs flex items-center justify-between">
+                           <span className="font-bold text-blue-800 dark:text-blue-300">Projected Profit ({parseFloat(fundInterestRate || 0)}%)</span>
+                           <span className="font-black text-base text-blue-700 dark:text-blue-200">
+                              +₦{((parseFloat(fundAmount) * parseFloat(fundInterestRate || 0)) / 100).toLocaleString()}
+                           </span>
+                        </div>
+                     )}
 
                      <div className="flex gap-3 pt-2">
                         <Button

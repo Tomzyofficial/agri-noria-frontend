@@ -359,13 +359,21 @@ export default function ClusterOperationsPage() {
                                  </div>
 
                                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800/80">
-                                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
-                                       <Wallet className="w-3.5 h-3.5 text-emerald-500" />
-                                       Locked Funds
+                                    <div className="flex items-center justify-between gap-1 text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+                                       <span className="flex items-center gap-1.5">
+                                          <Wallet className="w-3.5 h-3.5 text-emerald-500" />
+                                          Cluster Account Balance
+                                       </span>
+                                       <span className="text-[9px] px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 font-black">No Withdraw</span>
                                     </div>
                                     <p className="font-black text-lg text-emerald-600 dark:text-emerald-400">
-                                       ₦{lockedBalance.toLocaleString()}
+                                       ₦{Math.max(parseFloat(cluster.wallet_balance || 0), lockedBalance).toLocaleString()}
                                     </p>
+                                    {cluster.wallet_account_number && (
+                                       <p className="text-[10px] font-mono font-bold text-slate-500 mt-0.5">
+                                          Acct: {cluster.wallet_account_number} ({cluster.wallet_bank_name || "Partner Bank"})
+                                       </p>
+                                    )}
                                  </div>
                               </div>
 
@@ -436,7 +444,7 @@ export default function ClusterOperationsPage() {
                                                    requestId: cluster.pending_request_id,
                                                    clusterId: cluster.id,
                                                    programId: cluster.program_id,
-                                                   lockedFunds: lockedBalance
+                                                   lockedFunds: Math.max(parseFloat(cluster.wallet_balance || 0), lockedBalance)
                                                 }); 
                                                 setShowRequestModal(true); 
                                              }}

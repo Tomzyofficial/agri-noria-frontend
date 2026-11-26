@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { NotificationProvider } from "@/hooks/useNotificationContext";
+import { signoutBridge } from "@/actions/authActions";
 
 const DEFAULT_ECOSYSTEM_SETTINGS = {
   platformName: "AgriNoria",
@@ -212,8 +213,7 @@ export default function EcosystemEnforcementLayout({ children }) {
       if (Date.now() - lastActivityRef.current > maxIdleMs) {
         clearInterval(timer);
         try {
-          const rawFetch = window.__ORIGINAL_FETCH__ || fetch;
-          await rawFetch("/api/proxy/vendor/logout", { method: "POST" });
+          await signoutBridge();
         } catch {}
         setTimeout(() => {
           toast.warning(`Session expired after ${timeoutMins} minutes of inactivity.`);

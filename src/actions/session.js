@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { jwtVerify } from "jose";
 import { apiUrl } from "@/_lib/api";
 
@@ -211,11 +211,19 @@ export async function setCartCookie(cart) {
       const token = await res.json();
 
       if (res.ok && token) {
+         let isHttps = process.env.NODE_ENV === "production";
+         try {
+            const h = await headers();
+            const proto = h.get("x-forwarded-proto") || "";
+            const host = h.get("host") || "";
+            if (proto) isHttps = proto.includes("https");
+            else if (host.startsWith("localhost") || host.startsWith("127.0.0.1")) isHttps = false;
+         } catch {}
          const cookieStore = await cookies();
          cookieStore.set("cart-session", token, {
             httpOnly: true,
-            sameSite: "none",
-            secure: true,
+            sameSite: "lax",
+            secure: isHttps,
             path: "/",
          });
       }

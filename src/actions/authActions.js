@@ -1,8 +1,33 @@
 "use server";
 import { apiUrl } from "@/_lib/api";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
-const isProduction = process.env.NODE_ENV === "production";
+async function getFirstPartyCookieOptions(maxAge = 7 * 24 * 60 * 60) {
+   let isHttps = process.env.NODE_ENV === "production";
+   try {
+      const h = await headers();
+      const proto = h.get("x-forwarded-proto") || "";
+      const origin = h.get("origin") || h.get("referer") || "";
+      const host = h.get("host") || "";
+      if (proto) {
+         isHttps = proto.includes("https");
+      } else if (
+         origin.startsWith("http://") ||
+         host.startsWith("localhost") ||
+         host.startsWith("127.0.0.1")
+      ) {
+         isHttps = false;
+      }
+   } catch {}
+
+   return {
+      httpOnly: true,
+      secure: isHttps,
+      sameSite: "lax",
+      path: "/",
+      maxAge,
+   };
+}
 
 /***************** Vendor side ******************/
 export async function signinBridge(credentials) {
@@ -23,13 +48,9 @@ export async function signinBridge(credentials) {
       }
 
       const cookieStore = await cookies();
-      const cookieOptions = {
-         httpOnly: true,
-         secure: isProduction,
-         sameSite: isProduction ? "none" : "lax",
-         path: "/",
-         maxAge: credentials?.rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60,
-      };
+      const cookieOptions = await getFirstPartyCookieOptions(
+         credentials?.rememberMe ? 30 * 24 * 60 * 60 : 7 * 24 * 60 * 60
+      );
       cookieStore.set("vendor-session", data.user.token, cookieOptions);
       cookieStore.set("marketplace-session", data.user.token, cookieOptions);
       cookieStore.set("ecosystem-session", data.user.token, cookieOptions);
@@ -56,13 +77,7 @@ export async function registerBridge(credentials) {
       if (!res.ok || !data.success) return { success: false, error: data.error };
 
       const cookieStore = await cookies();
-      const cookieOptions = {
-         httpOnly: true,
-         secure: isProduction,
-         sameSite: isProduction ? "none" : "lax",
-         path: "/",
-         maxAge: 24 * 60 * 60,
-      };
+      const cookieOptions = await getFirstPartyCookieOptions(7 * 24 * 60 * 60);
       cookieStore.set("vendor-session", data.user.token, cookieOptions);
       cookieStore.set("marketplace-session", data.user.token, cookieOptions);
       cookieStore.set("ecosystem-session", data.user.token, cookieOptions);
@@ -108,13 +123,8 @@ export async function buyerSigninBridge(credentials) {
       }
 
       const cookieStore = await cookies();
-      cookieStore.set("buyer-session", data.token, {
-         httpOnly: true,
-         secure: isProduction,
-         sameSite: isProduction ? "none" : "lax",
-         path: "/",
-         maxAge: 24 * 60 * 60,
-      });
+      const cookieOptions = await getFirstPartyCookieOptions(7 * 24 * 60 * 60);
+      cookieStore.set("buyer-session", data.token, cookieOptions);
 
       return { success: true, buyerId: data.buyerId };
    } catch (error) {
@@ -138,13 +148,8 @@ export async function buyerRegisterBridge(credentials) {
       if (!res.ok || !data.success) return { success: false, error: data.error };
 
       const cookieStore = await cookies();
-      cookieStore.set("buyer-session", data.token, {
-         httpOnly: true,
-         secure: isProduction,
-         sameSite: isProduction ? "none" : "lax",
-         path: "/",
-         maxAge: 24 * 60 * 60,
-      });
+      const cookieOptions = await getFirstPartyCookieOptions(7 * 24 * 60 * 60);
+      cookieStore.set("buyer-session", data.token, cookieOptions);
 
       return { success: true, buyerId: data.token.buyer_id };
    } catch (error) {
