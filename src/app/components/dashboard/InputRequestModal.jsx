@@ -22,6 +22,7 @@ export default function InputRequestModal({
    farmerId = null, 
    clusterId = null, 
    programId = null,
+   initialHectares = null,
    isClusterRequest = false, 
    requestId = null, 
    lockedFunds = null,
@@ -30,6 +31,7 @@ export default function InputRequestModal({
    const [selected, setSelected] = useState([]);
    const [submitting, setSubmitting] = useState(false);
    const [farmSize, setFarmSize] = useState(1);
+   const [maxClusterHectares, setMaxClusterHectares] = useState(1);
    const [loadingSize, setLoadingSize] = useState(true);
    const [catalogInputs, setCatalogInputs] = useState(DEFAULT_INPUTS);
    const [programDetails, setProgramDetails] = useState(null);
@@ -43,15 +45,18 @@ export default function InputRequestModal({
          setLoadingSize(true);
          try {
             let activeProgramId = programId;
-            let detectedFarmSize = 1;
+            let detectedFarmSize = parseFloat(initialHectares) || 1;
 
             if (isClusterRequest && clusterId) {
-               const res = await fetch(`/api/proxy/pipeline/clusters/${clusterId}`);
+               const res = await fetch(`/api/proxy/pipeline/clusters`);
                const json = await res.json();
-               if (json.data) {
-                  detectedFarmSize = parseFloat(json.data.total_hectares || json.data.target_hectares || 1);
-                  if (!activeProgramId && json.data.program_id) {
-                     activeProgramId = json.data.program_id;
+               const matched = Array.isArray(json.data)
+                  ? json.data.find((c) => String(c.id) === String(clusterId))
+                  : null;
+               if (matched) {
+                  detectedFarmSize = parseFloat(matched.total_hectares || initialHectares || 1);
+                  if (!activeProgramId && matched.program_id) {
+                     activeProgramId = matched.program_id;
                   }
                }
             } else if (isClusterRequest && requestId) {
@@ -76,7 +81,9 @@ export default function InputRequestModal({
             }
 
             if (isMounted) {
-               setFarmSize(detectedFarmSize > 0 ? detectedFarmSize : 1);
+               const safeSize = detectedFarmSize > 0 ? detectedFarmSize : 1;
+               setMaxClusterHectares(safeSize);
+               setFarmSize(safeSize);
             }
 
             // Fetch dynamic program configuration for custom inputs and rates
@@ -168,6 +175,7 @@ export default function InputRequestModal({
             body: JSON.stringify({
                inputItems: selected,
                input_items: selected,
+               covered_hectares: farmSize,
                requestId,
                farmer_id: farmerId,
                cluster_id: clusterId,
@@ -253,6 +261,31 @@ export default function InputRequestModal({
                            Budget Exceeded
                         </span>
                      )}
+                  </div>
+               )}
+
+               {requestId && maxClusterHectares > 1 && (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
+                     <div>
+                        <p className="font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider text-[10px]">
+                           Hectares Covered by This Order (Cluster Total: {maxClusterHectares.toFixed(2)} Ha)
+                        </p>
+                        <p className="text-[11px] text-slate-500">
+                           Adjust covered hectares if Finance approved a partial budget.
+                        </p>
+                     </div>
+                     <input
+                        type="number"
+                        min="0.5"
+                        max={maxClusterHectares}
+                        step="0.5"
+                        value={farmSize}
+                        onChange={(e) => {
+                           const v = parseFloat(e.target.value);
+                           if (!isNaN(v) && v > 0) setFarmSize(Math.min(v, maxClusterHectares));
+                        }}
+                        className="w-28 h-9 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 font-black text-sm text-right"
+                     />
                   </div>
                )}
 

@@ -444,6 +444,7 @@ export default function ClusterOperationsPage() {
                                                    requestId: cluster.pending_request_id,
                                                    clusterId: cluster.id,
                                                    programId: cluster.program_id,
+                                                   totalHectares: parseFloat(cluster.total_hectares || 1),
                                                    lockedFunds: Math.max(parseFloat(cluster.wallet_balance || 0), lockedBalance)
                                                 }); 
                                                 setShowRequestModal(true); 
@@ -609,6 +610,7 @@ export default function ClusterOperationsPage() {
             requestId={typeof selectingForRequest === "object" ? selectingForRequest?.requestId : selectingForRequest}
             clusterId={typeof selectingForRequest === "object" ? selectingForRequest?.clusterId : null}
             programId={typeof selectingForRequest === "object" ? selectingForRequest?.programId : null}
+            initialHectares={typeof selectingForRequest === "object" ? selectingForRequest?.totalHectares : null}
             lockedFunds={typeof selectingForRequest === "object" ? selectingForRequest?.lockedFunds : null}
             isClusterRequest={true}
             onSuccess={() => { fetchClusters(); }}
