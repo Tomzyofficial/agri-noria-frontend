@@ -227,7 +227,7 @@ export default function ClusterSupervisorOnboardingPage() {
          const data = await res.json();
          if (data.success) {
             toast.success("Cluster Supervisor KYC submitted successfully!");
-            router.push("/ecosystem/program-management");
+            window.location.href = "/ecosystem/program-management";
          } else {
             toast.error(data.error || "Submission failed. Please check the fields and try again.");
          }

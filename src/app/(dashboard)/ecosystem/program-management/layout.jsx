@@ -106,7 +106,7 @@ function ProgramManagementLayoutInner({ children }) {
     checkSession();
     const interval = setInterval(checkSession, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [pathname]);
 
   // Instant in-memory route boundary & permission guard based on active session
   useEffect(() => {
@@ -126,6 +126,12 @@ function ProgramManagementLayoutInner({ children }) {
     if ((isSuperv || isDir) && !hasSubmittedOnboarding && !pathname?.includes("/onboarding")) {
       toast.info("Please complete your onboarding & KYC verification before continuing.");
       router.replace("/ecosystem/program-management/onboarding");
+      return;
+    }
+    const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+    const isDossierView = searchParams?.get("view") === "dossier";
+    if ((isSuperv || isDir) && hasSubmittedOnboarding && pathname?.includes("/onboarding") && !isDossierView) {
+      router.replace("/ecosystem/program-management");
       return;
     }
 
