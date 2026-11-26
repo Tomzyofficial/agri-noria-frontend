@@ -330,56 +330,77 @@ export default function ProgramsPage() {
    return (
       <div className="space-y-6">
          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-               <h1 className="text-3xl font-black text-(--foreground) flex items-center gap-3">
-                  <div className="p-2 bg-blue-600 rounded-xl text-white">
-                     <Landmark className="w-6 h-6" />
-                  </div>
-                  Institutional Programs
-               </h1>
-               <p className="text-gray-500 mt-1 font-medium">Manage and orchestrate agricultural value chain interventions and program financing.</p>
-            </div>
-            <Button
-               onClick={handleOpenCreate}
-               className="bg-blue-600 hover:bg-blue-700 text-white px-6 h-12 rounded-2xl flex items-center gap-2 shadow-lg shadow-blue-200 dark:shadow-blue-900/20 transition-all active:scale-95"
-            >
-               <Plus className="w-5 h-5" />
-               <span className="font-bold">Launch New Program</span>
-            </Button>
-         </div>
-
-         {/* Tabs */}
-         <div className="flex border-b border-gray-200 dark:border-gray-800 gap-6">
-            <button
-               onClick={() => setActiveTab("programs")}
-               className={`pb-3 font-bold text-sm transition-all flex items-center gap-2 cursor-pointer ${activeTab === "programs"
-                  ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
-                  : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                  }`}
-            >
-               <Landmark className="w-4 h-4" />
-               Programs ({programs.length})
-            </button>
-            <button
-               onClick={() => setActiveTab("verifications")}
-               className={`pb-3 font-bold text-sm transition-all flex items-center gap-2 cursor-pointer ${activeTab === "verifications"
-                  ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
-                  : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                  }`}
-            >
-               <ShieldCheck className="w-4 h-4" />
-               Enrollment Verifications
-               {totalPending > 0 ? (
-                  <span className="px-2 py-0.5 rounded-full text-xs font-black bg-amber-500 text-white animate-pulse">
-                     {totalPending} Pending
-                  </span>
+               <div>
+                  <h1 className="text-3xl font-black text-(--foreground) flex items-center gap-3">
+                     <div className="p-2 bg-blue-600 rounded-xl text-white">
+                        <Landmark className="w-6 h-6" />
+                     </div>
+                     {isBankUser ? "Bank Programme Lending" : "Institutional Programs"}
+                  </h1>
+                  <p className="text-gray-500 mt-1 font-medium">
+                     {isBankUser
+                        ? "Review programme capacities, crops, and sponsor details, and fund programmes directly with your interest rate."
+                        : "Manage and orchestrate agricultural value chain interventions and program financing."}
+                  </p>
+               </div>
+               {isBankUser ? (
+                  allPrograms.length > 0 && (
+                     <Button
+                        onClick={() => {
+                           setFundingProgram(allPrograms[0]);
+                           setFundInterestRate(allPrograms[0].bank_interest_rate ? String(allPrograms[0].bank_interest_rate) : "");
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 h-12 rounded-2xl flex items-center gap-2 shadow-lg shadow-emerald-200 dark:shadow-emerald-900/20 transition-all active:scale-95 cursor-pointer"
+                     >
+                        <Coins className="w-5 h-5" />
+                        <span className="font-bold">Fund a Programme</span>
+                     </Button>
+                  )
                ) : (
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-                     {enrolledFarmers.length + enrolledClusters.length}
-                  </span>
+                  <Button
+                     onClick={handleOpenCreate}
+                     className="bg-blue-600 hover:bg-blue-700 text-white px-6 h-12 rounded-2xl flex items-center gap-2 shadow-lg shadow-blue-200 dark:shadow-blue-900/20 transition-all active:scale-95"
+                  >
+                     <Plus className="w-5 h-5" />
+                     <span className="font-bold">Launch New Program</span>
+                  </Button>
                )}
-            </button>
-         </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200 dark:border-gray-800 gap-6">
+               <button
+                  onClick={() => setActiveTab("programs")}
+                  className={`pb-3 font-bold text-sm transition-all flex items-center gap-2 cursor-pointer ${activeTab === "programs"
+                     ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
+                     : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                     }`}
+               >
+                  <Landmark className="w-4 h-4" />
+                  Programs ({programs.length})
+               </button>
+               {!isBankUser && (
+                  <button
+                     onClick={() => setActiveTab("verifications")}
+                     className={`pb-3 font-bold text-sm transition-all flex items-center gap-2 cursor-pointer ${activeTab === "verifications"
+                        ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
+                        : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                        }`}
+                  >
+                     <ShieldCheck className="w-4 h-4" />
+                     Enrollment Verifications
+                     {totalPending > 0 ? (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-black bg-amber-500 text-white animate-pulse">
+                           {totalPending} Pending
+                        </span>
+                     ) : (
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                           {enrolledFarmers.length + enrolledClusters.length}
+                        </span>
+                     )}
+                  </button>
+               )}
+            </div>
 
          {activeTab === "programs" ? (
             <>
@@ -543,7 +564,7 @@ export default function ProgramsPage() {
                               <th className="px-6 py-4">Commodity & Region</th>
                               <th className="px-6 py-4">Targets</th>
                               <th className="px-6 py-4">Fund Balance</th>
-                              <th className="px-6 py-4">Program Director</th>
+                              {!isBankUser && <th className="px-6 py-4">Program Director</th>}
                               <th className="px-6 py-4 whitespace-nowrap min-w-[150px]">Status</th>
                               <th className="px-6 py-4 text-right sticky right-0 bg-gray-50 dark:bg-gray-900/90 shadow-md z-10">Actions</th>
                            </tr>
@@ -551,7 +572,7 @@ export default function ProgramsPage() {
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                            {filteredPrograms.length === 0 ? (
                               <tr>
-                                 <td colSpan={7} className="text-center py-16 px-4">
+                                 <td colSpan={isBankUser ? 6 : 7} className="text-center py-16 px-4">
                                     <div className="flex flex-col items-center justify-center max-w-md mx-auto text-center space-y-3">
                                        <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-xs">
                                           <Landmark className="w-7 h-7" />
@@ -563,7 +584,7 @@ export default function ProgramsPage() {
                                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                              {searchTerm || statusFilter !== "all"
                                                 ? "We couldn't find any programmes matching your filter criteria. Try resetting filters."
-                                                : "No agricultural intervention programmes are currently active in this workspace. Launch a new program to start enrolling farmers and allocating input packages."}
+                                                : "No agricultural intervention programmes are currently active in this workspace."}
                                           </p>
                                        </div>
                                        {searchTerm || statusFilter !== "all" ? (
@@ -575,7 +596,7 @@ export default function ProgramsPage() {
                                           >
                                              Reset Filters
                                           </Button>
-                                       ) : (
+                                       ) : !isBankUser && (
                                           <Button
                                              onClick={handleOpenCreate}
                                              className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 mt-2 shadow-sm cursor-pointer"
@@ -631,53 +652,55 @@ export default function ProgramsPage() {
                                        </Button>
                                     </div>
                                  </td>
-                                 <td className="px-6 py-5">
-                                    {program.director_name ? (
-                                       <div className="space-y-1.5">
-                                          <div className="flex items-center gap-1.5 font-bold text-sm text-gray-900 dark:text-gray-100">
-                                             <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
-                                             {program.director_name}
+                                 {!isBankUser && (
+                                    <td className="px-6 py-5">
+                                       {program.director_name ? (
+                                          <div className="space-y-1.5">
+                                             <div className="flex items-center gap-1.5 font-bold text-sm text-gray-900 dark:text-gray-100">
+                                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                                                {program.director_name}
+                                             </div>
+                                             <p className="text-xs text-gray-500">{program.director_email}</p>
+                                             {program.director_phone && <p className="text-[10px] text-gray-400 font-mono">{program.director_phone}</p>}
+                                             <div className="flex items-center gap-2 pt-1 flex-wrap">
+                                                <button
+                                                   type="button"
+                                                   onClick={() => setSelectedProgramDetails(program)}
+                                                   className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 text-[11px] font-bold border border-emerald-300 dark:border-emerald-800 flex items-center gap-1 transition-all shadow-xs cursor-pointer"
+                                                   title="Click to view Director login credentials and password"
+                                                >
+                                                   <Key className="w-3 h-3 text-emerald-600" />
+                                                   Credentials & Password
+                                                </button>
+                                                <button
+                                                   type="button"
+                                                   onClick={() => {
+                                                      setDirectorForm({ fname: "", lname: "", email: "", phone: "", password: "", sendEmail: true });
+                                                      setAppointingProgram(program);
+                                                   }}
+                                                   className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-bold cursor-pointer"
+                                                >
+                                                   Reassign &rarr;
+                                                </button>
+                                             </div>
                                           </div>
-                                          <p className="text-xs text-gray-500">{program.director_email}</p>
-                                          {program.director_phone && <p className="text-[10px] text-gray-400 font-mono">{program.director_phone}</p>}
-                                          <div className="flex items-center gap-2 pt-1 flex-wrap">
-                                             <button
-                                                type="button"
-                                                onClick={() => setSelectedProgramDetails(program)}
-                                                className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 text-[11px] font-bold border border-emerald-300 dark:border-emerald-800 flex items-center gap-1 transition-all shadow-xs cursor-pointer"
-                                                title="Click to view Director login credentials and password"
-                                             >
-                                                <Key className="w-3 h-3 text-emerald-600" />
-                                                Credentials & Password
-                                             </button>
+                                       ) : (
+                                          <div>
                                              <button
                                                 type="button"
                                                 onClick={() => {
                                                    setDirectorForm({ fname: "", lname: "", email: "", phone: "", password: "", sendEmail: true });
                                                    setAppointingProgram(program);
                                                 }}
-                                                className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-bold cursor-pointer"
+                                                className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 text-xs font-black uppercase tracking-wider border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
                                              >
-                                                Reassign &rarr;
+                                                <UserCheck className="w-3.5 h-3.5" /> Appoint Director
                                              </button>
+                                             <p className="text-[10px] text-gray-400 mt-1">Pending appointment</p>
                                           </div>
-                                       </div>
-                                    ) : (
-                                       <div>
-                                          <button
-                                             type="button"
-                                             onClick={() => {
-                                                setDirectorForm({ fname: "", lname: "", email: "", phone: "", password: "", sendEmail: true });
-                                                setAppointingProgram(program);
-                                             }}
-                                             className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 text-xs font-black uppercase tracking-wider border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
-                                          >
-                                             <UserCheck className="w-3.5 h-3.5" /> Appoint Director
-                                          </button>
-                                          <p className="text-[10px] text-gray-400 mt-1">Pending appointment</p>
-                                       </div>
-                                    )}
-                                 </td>
+                                       )}
+                                    </td>
+                                 )}
                                   <td className="px-6 py-5 whitespace-nowrap min-w-[150px]">
                                      {program.status === 'active' ? (
                                         <div className="inline-flex flex-col items-start">
@@ -699,7 +722,7 @@ export default function ProgramsPage() {
                                   </td>
                                  <td className="px-6 py-5 text-right sticky right-0 bg-white dark:bg-gray-950 shadow-md z-10">
                                     <div className="flex items-center justify-end gap-2">
-                                       {program.status !== "completed" && (
+                                       {!isBankUser && program.status !== "completed" && (
                                           <Button
                                              type="button"
                                              onClick={() => handleEndAndInitiateRepayment(program)}
@@ -716,20 +739,22 @@ export default function ProgramsPage() {
                                           onClick={() => setSelectedProgramDetails(program)}
                                           size="sm"
                                           className="h-8 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-                                          title="View Program Details & Director Credentials"
+                                          title="View Program Details"
                                        >
                                           <Eye className="w-3.5 h-3.5" /> Details
                                        </Button>
-                                       <Button
-                                          type="button"
-                                          onClick={() => handleOpenEdit(program)}
-                                          variant="outline"
-                                          size="sm"
-                                          className="h-8 px-2.5 rounded-lg border-gray-200 hover:bg-gray-100 text-gray-700 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 text-xs font-bold transition-all cursor-pointer"
-                                          title="Edit Program"
-                                       >
-                                          <Edit3 className="w-3.5 h-3.5" />
-                                       </Button>
+                                       {!isBankUser && (
+                                          <Button
+                                             type="button"
+                                             onClick={() => handleOpenEdit(program)}
+                                             variant="outline"
+                                             size="sm"
+                                             className="h-8 px-2.5 rounded-lg border-gray-200 hover:bg-gray-100 text-gray-700 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 text-xs font-bold transition-all cursor-pointer"
+                                             title="Edit Program"
+                                          >
+                                             <Edit3 className="w-3.5 h-3.5" />
+                                          </Button>
+                                       )}
                                     </div>
                                  </td>
                               </tr>
@@ -1406,7 +1431,8 @@ export default function ProgramsPage() {
                   </div>
 
                   <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
-                     {/* 1. PROGRAM DIRECTOR CREDENTIALS (KEY FOCUS) */}
+                     {/* 1. PROGRAM DIRECTOR CREDENTIALS (HIDDEN FOR BANK) */}
+                     {!isBankUser && (
                      <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/20 border-2 border-amber-200 dark:border-amber-800/60 space-y-4">
                         <div className="flex items-center justify-between">
                            <div className="flex items-center gap-2.5">
@@ -1569,6 +1595,7 @@ export default function ProgramsPage() {
                            </div>
                         )}
                      </div>
+                     )}
 
                      {/* 2. INSTITUTION DETAILS */}
                      <div className="p-5 rounded-2xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 space-y-3">
@@ -1644,16 +1671,18 @@ export default function ProgramsPage() {
                         <Coins className="w-3.5 h-3.5" /> Fund Program
                      </Button>
                      <div className="flex items-center gap-2">
-                        <Button
-                           onClick={() => {
-                              handleOpenEdit(selectedProgramDetails);
-                              setSelectedProgramDetails(null);
-                           }}
-                           variant="outline"
-                           className="h-9 px-3 rounded-xl font-bold text-xs cursor-pointer"
-                        >
-                           <Edit3 className="w-3.5 h-3.5" /> Edit Program
-                        </Button>
+                        {!isBankUser && (
+                           <Button
+                              onClick={() => {
+                                 handleOpenEdit(selectedProgramDetails);
+                                 setSelectedProgramDetails(null);
+                              }}
+                              variant="outline"
+                              className="h-9 px-3 rounded-xl font-bold text-xs cursor-pointer"
+                           >
+                              <Edit3 className="w-3.5 h-3.5" /> Edit Program
+                           </Button>
+                        )}
                         <Button
                            onClick={() => {
                               setSelectedProgramDetails(null);
