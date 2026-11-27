@@ -725,6 +725,9 @@ export default function SalesDistributionDashboard() {
                         <option value="paid" className="bg-slate-900 text-white">
                           Paid
                         </option>
+                        <option value="assigned" className="bg-slate-900 text-white">
+                          Assigned
+                        </option>
                         <option value="ready_for_sales" className="bg-slate-900 text-white">
                           Ready For Sales
                         </option>
@@ -733,6 +736,9 @@ export default function SalesDistributionDashboard() {
                         </option>
                         <option value="in_progress" className="bg-slate-900 text-white">
                           In Progress
+                        </option>
+                        <option value="in_transit" className="bg-slate-900 text-white">
+                          In Transit
                         </option>
                         <option value="delivered" className="bg-slate-900 text-white">
                           Delivered
