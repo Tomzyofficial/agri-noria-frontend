@@ -559,7 +559,7 @@ export default function WarehousePage() {
               </button>
             </div>
 
-            <form onSubmit={handleIntakeSubmit} className="space-y-4">
+            <form onSubmit={handleIntakeSubmit} className="job-search-form space-y-4">
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
                   Commodity / Crop Type
@@ -569,13 +569,13 @@ export default function WarehousePage() {
                   onChange={(e) =>
                     setIntakeForm({ ...intakeForm, commodity: e.target.value })
                   }
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
+                  className="w-full !bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs font-bold !text-white focus:outline-none focus:border-amber-500"
                 >
-                  <option value="Maize">Maize</option>
-                  <option value="Rice">Rice</option>
-                  <option value="Soybean">Soybean</option>
-                  <option value="Sorghum">Sorghum</option>
-                  <option value="Cocoa">Cocoa</option>
+                  <option value="Maize" className="bg-slate-900 text-white">Maize</option>
+                  <option value="Rice" className="bg-slate-900 text-white">Rice</option>
+                  <option value="Soybean" className="bg-slate-900 text-white">Soybean</option>
+                  <option value="Sorghum" className="bg-slate-900 text-white">Sorghum</option>
+                  <option value="Cocoa" className="bg-slate-900 text-white">Cocoa</option>
                 </select>
               </div>
 
@@ -592,7 +592,7 @@ export default function WarehousePage() {
                     onChange={(e) =>
                       setIntakeForm({ ...intakeForm, quantity: e.target.value })
                     }
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
+                    className="w-full !bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs font-bold !text-white placeholder:text-slate-400 focus:outline-none focus:border-amber-500"
                     required
                   />
                 </div>
@@ -608,11 +608,11 @@ export default function WarehousePage() {
                         measuring_scale: e.target.value,
                       })
                     }
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-3 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
+                    className="w-full !bg-slate-800 border border-slate-700 rounded-xl px-3 py-3 text-xs font-bold !text-white focus:outline-none focus:border-amber-500"
                   >
-                    <option value="Tons">Tons</option>
-                    <option value="Kg">Kg</option>
-                    <option value="g">g</option>
+                    <option value="Tons" className="bg-slate-900 text-white">Tons</option>
+                    <option value="Kg" className="bg-slate-900 text-white">Kg</option>
+                    <option value="g" className="bg-slate-900 text-white">g</option>
                   </select>
                 </div>
               </div>
@@ -632,7 +632,7 @@ export default function WarehousePage() {
                       price_per_unit: e.target.value,
                     })
                   }
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
+                  className="w-full !bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs font-bold !text-white placeholder:text-slate-400 focus:outline-none focus:border-amber-500"
                   required
                 />
               </div>
@@ -651,7 +651,7 @@ export default function WarehousePage() {
                       warehouse_name: e.target.value,
                     })
                   }
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs font-bold text-white focus:outline-none focus:border-amber-500"
+                  className="w-full !bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs font-bold !text-white placeholder:text-slate-400 focus:outline-none focus:border-amber-500"
                   required
                 />
               </div>
