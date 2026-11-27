@@ -77,7 +77,7 @@ function RequesterCard({ req }) {
           <p className="font-black text-base text-slate-900 dark:text-white truncate">
             {req.fname} {req.lname}
           </p>
-          {req.onboarding_status === "verified" ? (
+          {req.onboarding_status === "verified" || req.is_verified === true || req.approval_status === "approved" ? (
             <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-full">
               <ShieldCheck className="w-3 h-3" />
               Verified
